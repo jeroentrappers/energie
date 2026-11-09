@@ -766,6 +766,21 @@ loadHistMeta();
 fetch("/api/entities").then((r) => r.json()).then((list) => { entities = list; renderDevices(); render(S.snap); }).catch(() => {});
 setInterval(() => { refreshCharts(false); }, 5000);
 setInterval(() => { loadPrices(); loadHistMeta(); }, 60000);
+// Installing on a phone: the service worker exists only on HTTPS or this machine, and the
+// button appears when the browser offers the installation.
+if (navigator.serviceWorker) navigator.serviceWorker.register("/sw.js").catch(() => {});
+let installPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  $("install").textContent = T("Installeren");
+  $("install").classList.remove("hidden");
+});
+$("install").addEventListener("click", () => {
+  if (installPrompt) installPrompt.prompt();
+  installPrompt = null;
+  $("install").classList.add("hidden");
+});
 // A public demo says so and keeps its controls off. The server refuses writes either way.
 fetch("/api/demo").then((r) => {
   if (!r.ok) return;

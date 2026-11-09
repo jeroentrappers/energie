@@ -370,7 +370,9 @@ fn origin_ok(oidc: &Oidc, method: &Method, headers: &HeaderMap) -> bool {
 
 async fn check(State(g): State<Arc<Guard>>, req: Request, next: Next) -> Response {
     let path = req.uri().path().to_string();
-    if matches!(path.as_str(), "/healthz" | "/auth/login" | "/auth/callback" | "/auth/logged-out" | "/auth/basic") {
+    if matches!(path.as_str(), "/healthz" | "/auth/login" | "/auth/callback" | "/auth/logged-out" | "/auth/basic")
+        || super::is_install_file(&path)
+    {
         return next.run(req).await;
     }
     let authorization = req.headers().get(header::AUTHORIZATION).cloned();
@@ -873,6 +875,11 @@ mod tests {
         let app = app(&idp, None);
         assert_eq!(send(&app, get_req("/api/state")).await.status(), StatusCode::UNAUTHORIZED);
         assert_eq!(send(&app, get_req("/healthz")).await.status(), StatusCode::OK);
+        assert_ne!(
+            send(&app, get_req("/sw.js")).await.status(),
+            StatusCode::SEE_OTHER,
+            "install files need no sign-in"
+        );
     }
 
     /// With OIDC alone a password means nothing.

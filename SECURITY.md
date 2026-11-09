@@ -35,6 +35,9 @@ the public internet.
   `listen` port + 1), which always binds to loopback and is used by the `energie credentials`
   command. Anything running on the machine can reach it. Don't forward it through a reverse
   proxy.
+- The files a phone needs to install the app (`/manifest.webmanifest`, `/sw.js` and the icons)
+  are served without a sign-in. They are the same static files for everyone. The service worker
+  stores nothing on the device.
 - There are no roles: anyone signed in has full control.
 
 ### Secrets

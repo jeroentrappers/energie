@@ -76,6 +76,15 @@ pub fn router(st: AppState) -> Router {
         .route("/api/history", get(history))
         .route("/api/prices", get(prices_get))
         .route("/api/cloud", get(cloud_get))
+        .route(
+            "/manifest.webmanifest",
+            get(|| asset("application/manifest+json", include_str!("assets/manifest.webmanifest"))),
+        )
+        .route("/sw.js", get(|| asset("text/javascript; charset=utf-8", include_str!("assets/sw.js"))))
+        .route("/assets/icon-192.png", get(|| image(include_bytes!("assets/icon-192.png"))))
+        .route("/assets/icon-512.png", get(|| image(include_bytes!("assets/icon-512.png"))))
+        .route("/assets/icon-maskable-512.png", get(|| image(include_bytes!("assets/icon-maskable-512.png"))))
+        .route("/assets/apple-touch-icon.png", get(|| image(include_bytes!("assets/apple-touch-icon.png"))))
         .route("/assets/app.css", get(|| asset("text/css; charset=utf-8", include_str!("assets/app.css"))))
         .route("/assets/app.js", get(|| asset("text/javascript; charset=utf-8", include_str!("assets/app.js"))))
         .route("/assets/i18n.js", get(|| asset("text/javascript; charset=utf-8", include_str!("assets/i18n.js"))))
@@ -114,7 +123,10 @@ pub fn require_password(router: Router, password: String) -> Router {
     router.layer(axum::middleware::from_fn(move |req: axum::extract::Request, next: axum::middleware::Next| {
         let password = password.clone();
         async move {
-            if req.uri().path() == "/healthz" || basic_auth_ok(req.headers().get(header::AUTHORIZATION), &password) {
+            if req.uri().path() == "/healthz"
+                || is_install_file(req.uri().path())
+                || basic_auth_ok(req.headers().get(header::AUTHORIZATION), &password)
+            {
                 return next.run(req).await;
             }
             (StatusCode::UNAUTHORIZED, [(header::WWW_AUTHENTICATE, "Basic realm=\"energie\"")], "password required\n")
@@ -219,6 +231,24 @@ pub fn render_page(s: &Snapshot) -> String {
         .replace("{{CONTROLS_MODUS}}", &render_groups(&settings, s.settings_editable, &[fields::MODUS]))
         .replace("{{CONTROLS}}", &render_controls(&settings, s.settings_editable))
         .replace("{{STATE}}", &live_json(s).to_string().replace("</", "<\\/"))
+}
+
+async fn image(body: &'static [u8]) -> Response {
+    ([(header::CONTENT_TYPE, "image/png"), (header::CACHE_CONTROL, "max-age=604800")], body).into_response()
+}
+
+/// What a phone must fetch to install the app, before anyone has signed in. Static files that
+/// say nothing about the installation; the page and its scripts stay behind the sign-in.
+pub fn is_install_file(path: &str) -> bool {
+    matches!(
+        path,
+        "/manifest.webmanifest"
+            | "/sw.js"
+            | "/assets/icon-192.png"
+            | "/assets/icon-512.png"
+            | "/assets/icon-maskable-512.png"
+            | "/assets/apple-touch-icon.png"
+    )
 }
 
 async fn asset(kind: &'static str, body: &'static str) -> Response {
@@ -1074,6 +1104,40 @@ mod tests {
         let mut signed_in = from(post(url, body), lo);
         signed_in.headers_mut().insert(header::AUTHORIZATION, basic("u:s3cret"));
         assert_eq!(call(&app, signed_in).await.0, StatusCode::NOT_FOUND);
+    }
+
+    /// The install files are served, in the shape a browser accepts, and the page links them.
+    #[tokio::test]
+    async fn the_app_can_be_installed() {
+        let (app, _) = app(Mode::Simulate, false);
+        let (code, body) = call(&app, get("/manifest.webmanifest")).await;
+        assert_eq!(code, StatusCode::OK);
+        let m: Value = serde_json::from_str(&body).unwrap();
+        assert_eq!((m["display"].as_str(), m["start_url"].as_str()), (Some("standalone"), Some("/")));
+        for icon in m["icons"].as_array().unwrap() {
+            let r = app.clone().oneshot(get(icon["src"].as_str().unwrap())).await.unwrap();
+            assert_eq!(r.status(), StatusCode::OK, "{icon}");
+            assert_eq!(r.headers()["content-type"], "image/png");
+            assert!(is_install_file(icon["src"].as_str().unwrap()), "{icon}");
+        }
+        let (code, sw) = call(&app, get("/sw.js")).await;
+        assert_eq!(code, StatusCode::OK);
+        assert!(!sw.contains("caches."), "the service worker must not store anything");
+        let (_, html) = call(&app, get("/")).await;
+        assert!(html.contains("/manifest.webmanifest") && html.contains("/assets/apple-touch-icon.png"));
+    }
+
+    /// Only the install files skip the password.
+    #[tokio::test]
+    async fn the_password_covers_all_but_the_install_files() {
+        let (app, _rt) = app(Mode::Simulate, false);
+        let app = require_password(app, "s3cret".into());
+        for path in ["/manifest.webmanifest", "/sw.js", "/assets/icon-192.png", "/assets/apple-touch-icon.png"] {
+            assert_eq!(app.clone().oneshot(get(path)).await.unwrap().status(), StatusCode::OK, "{path}");
+        }
+        for path in ["/", "/assets/app.js", "/api/state", "/api/events"] {
+            assert_eq!(call(&app, get(path)).await.0, StatusCode::UNAUTHORIZED, "{path}");
+        }
     }
 
     /// In a demo reading works and every write is refused, whatever it would have changed.

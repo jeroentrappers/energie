@@ -22,6 +22,21 @@ shows the limit that covers them, and applying it sets *Cheap charging: price li
 the grid level to *Max to peak*. The limit is a price, not a timetable: every quarter hour below it counts,
 on any day, and the preview says how many others that includes.
 
+## Installing on a phone
+
+The dashboard installs as an app, with its own icon and window. On Android, use the *Install*
+button in the header or *Install app* in the Chrome menu. On iPhone, open it in Safari and choose
+*Share*, then *Add to Home Screen*.
+
+Installing needs HTTPS, because browsers only allow it on a secure address. Put a TLS reverse
+proxy in front of energie, as for OIDC. On plain `http://` a phone can at most add a bookmark to
+the home screen.
+
+The app stores no energy data on the phone and shows live values only, so it needs a connection
+to the server. Away from home that means a VPN or a public HTTPS address with sign-in. OIDC
+is the better sign-in for an installed app, because the password dialog isn't available in every
+installed-app window.
+
 ## The kill switch
 
 Any of these immediately stops all writes to devices. Queued commands are dropped.

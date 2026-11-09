@@ -10,6 +10,7 @@ version may include breaking changes.
 - Installations without a home battery: leave out the `battery_inverter` device, and the solar
   surplus goes to the cars and the battery controls disappear. See
   `deploy/energie.solar-ev.example.toml`. Charger slots without a device are hidden too.
+- The dashboard installs as an app on phones (needs HTTPS). Its service worker caches nothing.
 - Drag across the price chart to choose the hours for grid charging.
 - `demo = true`, a read-only mode for a public demonstration of the simulator.
 
