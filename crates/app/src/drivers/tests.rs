@@ -210,7 +210,7 @@ fn driver_selections_need_their_device() {
     assert!(err("[devices.solis]\naddress = \"127.0.0.1\"\nreadonly = false\n").contains("readonly"));
     assert!(err("[devices.wasmachine]\n").contains("wasmachine"));
     // Writable and selected: accepted.
-    Config::parse("mode = \"control\"\n[sources]\ndefault = \"sim\"\n[actuators]\nevse = \"driver\"\n[devices.smartevse]\nhost = \"h\"\nread_only = false\n")
+    Config::parse("mode = \"control\"\n[sources]\ndefault = \"sim\"\n[actuators]\nevse = \"driver\"\n[devices.smartevse]\nhost = \"127.0.0.1\"\nread_only = false\n")
         .unwrap();
 }
 
