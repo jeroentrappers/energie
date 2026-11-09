@@ -13,7 +13,7 @@
 //! | `GET /api/history` | the history store: series and tiers, or `?series=a,b:max&from=&to=&step=` |
 //! | `GET /api/prices` | today's (and tomorrow's) offtake and injection quarter prices |
 //! | `GET /api/cloud` | `{id: {kind, auth}}`: the sign-in state of every device that logs in with a password |
-//! | `POST /api/cloud/{id}/credentials` | new credentials for device `id` (loopback peers only; `energie credentials set`): stored in the state dir, then a login; answers the sign-in state |
+//! | `POST /api/cloud/{id}/credentials` | on the `cli_listen` port only: new credentials for device `id` (`energie credentials set`): stored in the state dir, then a login; answers the sign-in state |
 //! | `GET /assets/*` | the page's stylesheet and scripts (compiled in) |
 //! | `GET /healthz` | `200` while ticking, `503` when stale or not started |
 
@@ -53,6 +53,16 @@ pub struct AppState {
     pub history: Option<SharedHistory>,
 }
 
+/// The API of the `energie credentials` command, on its own loopback-only listener. A reverse
+/// proxy forwards to the main port and cannot reach this one, so these routes need no exception
+/// in the sign-in of the main port.
+pub fn cli_router(st: AppState) -> Router {
+    Router::new()
+        .route("/api/cloud", get(cloud_get))
+        .route("/api/cloud/{id}/credentials", axum::routing::post(credentials_post))
+        .with_state(st)
+}
+
 pub fn router(st: AppState) -> Router {
     Router::new()
         .route("/", get(index))
@@ -66,7 +76,6 @@ pub fn router(st: AppState) -> Router {
         .route("/api/history", get(history))
         .route("/api/prices", get(prices_get))
         .route("/api/cloud", get(cloud_get))
-        .route("/api/cloud/{id}/credentials", axum::routing::post(credentials_post))
         .route("/assets/app.css", get(|| asset("text/css; charset=utf-8", include_str!("assets/app.css"))))
         .route("/assets/app.js", get(|| asset("text/javascript; charset=utf-8", include_str!("assets/app.js"))))
         .route("/assets/charts.js", get(|| asset("text/javascript; charset=utf-8", include_str!("assets/charts.js"))))
@@ -85,23 +94,13 @@ pub fn protect(router: Router, password: Option<String>, oidc: Option<Arc<oidc::
 }
 
 /// HTTP Basic in front of the router (any user name, compared in constant time). `/healthz`
-/// stays open for monitors, and the `energie credentials` command on the host itself keeps
-/// working: those routes are served to loopback peers, and the credentials route refuses
-/// everyone else on its own.
+/// stays open for monitors.
 pub fn require_password(router: Router, password: String) -> Router {
     let password: Arc<str> = password.into();
     router.layer(axum::middleware::from_fn(move |req: axum::extract::Request, next: axum::middleware::Next| {
         let password = password.clone();
         async move {
-            let local_cli = req.uri().path().starts_with("/api/cloud")
-                && req
-                    .extensions()
-                    .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
-                    .is_some_and(|peer| peer.0.ip().is_loopback());
-            if req.uri().path() == "/healthz"
-                || local_cli
-                || basic_auth_ok(req.headers().get(header::AUTHORIZATION), &password)
-            {
+            if req.uri().path() == "/healthz" || basic_auth_ok(req.headers().get(header::AUTHORIZATION), &password) {
                 return next.run(req).await;
             }
             (StatusCode::UNAUTHORIZED, [(header::WWW_AUTHENTICATE, "Basic realm=\"energie\"")], "password required\n")
@@ -989,7 +988,8 @@ mod tests {
         let (rt, snap) = Runtime::new(parts);
         let rt = Arc::new(Mutex::new(rt));
         let (_stop, stop) = watch::channel(false);
-        let app = router(AppState { rt: rt.clone(), snap, stale_after: Duration::from_secs(10), stop, history: None });
+        let app =
+            cli_router(AppState { rt: rt.clone(), snap, stale_after: Duration::from_secs(10), stop, history: None });
 
         let (code, body) = call(&app, get("/api/cloud")).await;
         assert_eq!(code, StatusCode::OK);
@@ -1034,6 +1034,22 @@ mod tests {
         assert_eq!(auth.value, energie_drivers::entity::Value::Text("wacht".into()));
     }
 
+    /// Through the main port, as behind a reverse proxy on this machine (a loopback peer): the
+    /// credentials route does not exist and the sign-in state needs a sign-in.
+    #[tokio::test]
+    async fn a_loopback_peer_on_the_main_port_gets_no_exception() {
+        let (app, _rt) = app(Mode::Simulate, false);
+        let app = require_password(app, "s3cret".into());
+        let lo = [127, 0, 0, 1];
+        let url = "/api/cloud/ev3/credentials";
+        let body = r#"{"username":"u","password":"p"}"#;
+        assert_eq!(call(&app, from(post(url, body), lo)).await.0, StatusCode::UNAUTHORIZED);
+        assert_eq!(call(&app, from(get("/api/cloud"), lo)).await.0, StatusCode::UNAUTHORIZED);
+        let mut signed_in = from(post(url, body), lo);
+        signed_in.headers_mut().insert(header::AUTHORIZATION, basic("u:s3cret"));
+        assert_eq!(call(&app, signed_in).await.0, StatusCode::NOT_FOUND);
+    }
+
     /// A device that takes no credentials says so.
     #[tokio::test]
     async fn credentials_for_a_device_without_a_login() {
@@ -1041,7 +1057,7 @@ mod tests {
         parts.devices.push(Arc::new(Car::default()));
         let (rt, snap) = Runtime::new(parts);
         let (_stop, stop) = watch::channel(false);
-        let app = router(AppState {
+        let app = cli_router(AppState {
             rt: Arc::new(Mutex::new(rt)),
             snap,
             stale_after: Duration::from_secs(10),

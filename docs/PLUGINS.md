@@ -182,7 +182,7 @@ client fetches at its own interval and answers from its cache in between.
 session or refresh token is rejected, through a login gate (one login per 30 min, none after
 three rejections until the credentials change). New credentials are set at run time, in every
 mode, with `energie credentials set <id>` on the host: the CLI posts them to
-`POST /api/cloud/<id>/credentials` (loopback peers only), the device task stores them in
+`POST /api/cloud/<id>/credentials` (on the loopback-only `cli_listen` port), the device task stores them in
 `<state_dir>/credentials/<id>.json` (0600; they win over `credentials_file`) and logs in at once.
 A driver kind takes part by implementing `Source::auth` and `Source::set_credentials`
 (`energie_drivers::AuthStatus`); the app then gives the device a credentials queue of its own,

@@ -5,6 +5,9 @@ version may include breaking changes.
 
 ## 0.2.0 - 2026-11-09
 
+- `energie credentials` now uses its own loopback-only port (`cli_listen`, default `listen` + 1).
+  The main port no longer trusts loopback peers for `/api/cloud`, so a reverse proxy on the same
+  machine cannot expose it. Pass `--url` if you used a custom `listen`.
 - Multi-architecture container image at `ghcr.io/jeroentrappers/energie`, a Compose setup in
   `deploy/docker`, and `energie --healthcheck` for container health checks.
 - Sign in through any OpenID Connect provider (`[oidc]`), for browsers and for API clients with

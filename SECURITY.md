@@ -31,10 +31,10 @@ the public internet.
   reverse proxy in front of it, can reach the API. A proxy must do its own authentication.
 - energie does not serve TLS, and Basic authentication sends the password in a reversible form.
   For access beyond a trusted LAN, use a VPN, or a reverse proxy that provides TLS.
-- `POST /api/cloud/<id>/credentials` and `GET /api/cloud` also accept connections from the
-  machine itself without the password, for the `energie credentials` command. **If you run a
-  reverse proxy on the same machine, its requests look local, so block `/api/cloud` at the
-  proxy.**
+- New device credentials are accepted only on a separate port, `cli_listen` (default: the
+  `listen` port + 1), which always binds to loopback and is used by the `energie credentials`
+  command. Anything running on the machine can reach it. Don't forward it through a reverse
+  proxy.
 - There are no roles: anyone signed in has full control.
 
 ### Secrets

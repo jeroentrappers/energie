@@ -21,10 +21,10 @@ usage:
           [--trace <field>]
                                        replay an HA recorder export through the engine
                                        and compare with what HA decided
-  energie credentials set <device> [--url http://127.0.0.1:8080]
+  energie credentials set <device> [--url http://127.0.0.1:8081]
                                        new credentials for a cloud device (Kia, VW): asked
                                        here, kept by the running service, which logs in at once
-  energie credentials status [--url http://127.0.0.1:8080]
+  energie credentials status [--url http://127.0.0.1:8081]
                                        how each cloud device's sign-in is doing
   energie --healthcheck [port]         ask the local service for /healthz (default port 8080);
                                        exit 0 when healthy, for container health checks

@@ -2,7 +2,7 @@
 //!
 //! `set` asks for the kind's fields (the password without echo on a terminal; one line per
 //! field from stdin otherwise) and posts them to the running service's
-//! `POST /api/cloud/{id}/credentials`, which only accepts loopback peers, keeps them in the state
+//! `POST /api/cloud/{id}/credentials` on the loopback-only `cli_listen` port, keeps them in the state
 //! dir (0600) and signs in at once. Nothing is written by this process itself, so it works with
 //! the service's `DynamicUser` state dir. `status` prints `GET /api/cloud`.
 
@@ -10,8 +10,8 @@ use std::io::BufRead;
 
 use serde_json::{Map, Value};
 
-/// The service's address unless `--url` says otherwise (the default `listen`).
-pub const DEFAULT_URL: &str = "http://127.0.0.1:8080";
+/// The service's command port unless `--url` says otherwise (the default `cli_listen`).
+pub const DEFAULT_URL: &str = "http://127.0.0.1:8081";
 
 /// `energie credentials …`
 #[derive(Debug, PartialEq)]

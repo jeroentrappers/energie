@@ -471,6 +471,9 @@ pub struct Config {
     pub mode: Mode,
     #[serde(default = "default_listen")]
     pub listen: String,
+    /// The loopback address of the `energie credentials` command. Default: `listen`'s port + 1.
+    #[serde(default)]
+    pub cli_listen: Option<String>,
     #[serde(default = "default_state_dir")]
     pub state_dir: PathBuf,
     /// A file holding the dashboard and API password (HTTP Basic, any user name). Required
@@ -651,6 +654,15 @@ impl Config {
             || self.plan().is_ok_and(|p| p.uses(&Provider::Ha, self.mode))
     }
 
+    /// Where the `energie credentials` command connects: always on this machine.
+    pub fn cli_listen(&self) -> String {
+        self.cli_listen.clone().unwrap_or_else(|| {
+            let port = self.listen.rsplit_once(':').and_then(|(_, p)| p.parse::<u16>().ok()).unwrap_or(8080);
+            // Port 0 asks the system for a free one, here as for `listen`.
+            format!("127.0.0.1:{}", if port == 0 { 0 } else { port.saturating_add(1) })
+        })
+    }
+
     /// Whether anything needs the house model.
     pub fn needs_sim(&self) -> bool {
         self.plan().is_ok_and(|p| p.uses(&Provider::Sim, self.mode))
@@ -662,6 +674,9 @@ impl Config {
     }
 
     fn validate(&self) -> Result<()> {
+        if self.cli_listen.as_deref().is_some_and(|l| !listen_is_loopback(l)) {
+            return Err(Error::new("cli_listen must be a loopback address"));
+        }
         if self.web_password_file.is_none() && self.oidc.is_none() && !listen_is_loopback(&self.listen) {
             return Err(Error::new(format!(
                 "listen = \"{}\" can be reached from other machines, so [oidc] or web_password_file is required",
@@ -828,6 +843,18 @@ mod tests {
         assert!(err("mode = \"simulate\"\n[history]\nminute_days = 0\n").contains("minute_days"));
         assert!(err("mode = \"simulate\"\n[history]\nseed_from_ha = true\n").contains("[ha]"));
         assert!(err("mode = \"simulate\"\n[history]\nextra_series = [\"\"]\n").contains("extra_series"));
+    }
+
+    /// The command port derives from `listen` and can never leave this machine.
+    #[test]
+    fn the_command_port_stays_on_this_machine() {
+        let parse = |top: &str| Config::parse(&format!("mode = \"simulate\"\n{top}\n"));
+        assert_eq!(parse("").unwrap().cli_listen(), "127.0.0.1:8081");
+        let pw = "web_password_file = \"/p\"\n";
+        assert_eq!(parse(&format!("listen = \"0.0.0.0:9000\"\n{pw}")).unwrap().cli_listen(), "127.0.0.1:9001");
+        assert_eq!(parse("listen = \"127.0.0.1:0\"").unwrap().cli_listen(), "127.0.0.1:0");
+        assert_eq!(parse("cli_listen = \"127.0.0.1:7000\"").unwrap().cli_listen(), "127.0.0.1:7000");
+        assert!(parse("cli_listen = \"0.0.0.0:7000\"").unwrap_err().0.contains("loopback"));
     }
 
     /// Reaching the dashboard from another machine takes a password; this machine alone does not.

@@ -371,6 +371,24 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
         }
         None => None,
     };
+    // The command port stays optional: without it the service still runs, only `energie
+    // credentials` cannot reach it.
+    let cli_addr = cfg.cli_listen();
+    match tokio::net::TcpListener::bind(&cli_addr).await {
+        Ok(cli) => {
+            let (app, mut stop) = (web::cli_router(state.clone()), web_stop.clone());
+            tasks.push(tokio::spawn(async move {
+                let app = app.into_make_service_with_connect_info::<std::net::SocketAddr>();
+                let shutdown = async move {
+                    let _ = stop.wait_for(|s| *s).await;
+                };
+                axum::serve(cli, app).with_graceful_shutdown(shutdown).await.expect("axum::serve does not fail");
+            }));
+        }
+        Err(e) => {
+            tracing::warn!(addr = %cli_addr, error = %e, "command port unavailable; energie credentials will not work")
+        }
+    }
     tasks.push(tokio::spawn(async move {
         let app = web::router(state);
         let app = web::protect(app, web_password, oidc);
@@ -378,8 +396,6 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
             let _ = web_stop.wait_for(|s| *s).await;
         };
         // axum retries accept errors itself; serve only ends at shutdown.
-        // The peer address lets `/api/cloud/{id}/credentials` refuse anything but loopback.
-        let app = app.into_make_service_with_connect_info::<std::net::SocketAddr>();
         axum::serve(listener, app).with_graceful_shutdown(shutdown).await.expect("axum::serve does not fail");
     }));
     tracing::info!(mode = cfg.mode.label(), "listening on http://{addr}");

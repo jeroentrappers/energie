@@ -16,7 +16,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 
-use axum::extract::{ConnectInfo, Query, Request, State};
+use axum::extract::{Query, Request, State};
 use axum::http::{HeaderMap, Method, StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{Html, IntoResponse, Response};
@@ -371,11 +371,6 @@ fn origin_ok(oidc: &Oidc, method: &Method, headers: &HeaderMap) -> bool {
 async fn check(State(g): State<Arc<Guard>>, req: Request, next: Next) -> Response {
     let path = req.uri().path().to_string();
     if matches!(path.as_str(), "/healthz" | "/auth/login" | "/auth/callback" | "/auth/logged-out" | "/auth/basic") {
-        return next.run(req).await;
-    }
-    let local_cli = path.starts_with("/api/cloud")
-        && req.extensions().get::<ConnectInfo<std::net::SocketAddr>>().is_some_and(|peer| peer.0.ip().is_loopback());
-    if local_cli {
         return next.run(req).await;
     }
     let authorization = req.headers().get(header::AUTHORIZATION).cloned();
