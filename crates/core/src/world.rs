@@ -193,7 +193,7 @@ pub struct Vriezer {
 /// Fluvius portal data (cloud, display only).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Fluvius {
-    /// `sensor.fluvius_meter_1sag3200274808_peak_power`, kW.
+    /// `sensor.fluvius_meter_1sag0000000000_peak_power`, kW.
     pub peak_kw: Option<f64>,
 }
 

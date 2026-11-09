@@ -3015,7 +3015,7 @@
   }
  },
  {
-  "entity_id": "sensor.fluvius_meter_1sag3200274808_peak_power",
+  "entity_id": "sensor.fluvius_meter_1sag0000000000_peak_power",
   "state": "3.892",
   "attributes": {
    "state_class": "measurement",
@@ -3038,7 +3038,7 @@
    },
    "unit_of_measurement": "kW",
    "device_class": "power",
-   "friendly_name": "Fluvius meter 1SAG3200274808 Peak power"
+   "friendly_name": "Fluvius meter 1SAG0000000000 Peak power"
   },
   "last_changed": "2026-11-05T12:21:07.593763+00:00",
   "last_reported": "2026-11-07T12:22:00.512589+00:00",

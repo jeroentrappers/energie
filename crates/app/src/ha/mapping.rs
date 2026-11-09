@@ -194,7 +194,7 @@ pub fn world_bindings() -> Vec<Binding<World>> {
         b("switch.airco_zolder_power", "airco.zolder_on", |w, e| w.airco.zolder_on = on(e)),
         b("sensor.vriezer_vermogen", "vriezer.power_w", |w, e| w.vriezer.power_w = num(e)),
         b("switch.vriezer", "vriezer.switch_on", |w, e| w.vriezer.switch_on = on(e)),
-        b("sensor.fluvius_meter_1sag3200274808_peak_power", "fluvius.peak_kw", |w, e| w.fluvius.peak_kw = num(e)),
+        b("sensor.fluvius_meter_1sag0000000000_peak_power", "fluvius.peak_kw", |w, e| w.fluvius.peak_kw = num(e)),
     ]
 }
 

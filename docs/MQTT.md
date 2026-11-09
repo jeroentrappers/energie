@@ -411,7 +411,7 @@ entities then take other ids until it is removed).
 | `world_car_buzz_odometer_km` | `sensor.de_buzz_kilometerstand` | `sensor.de_buzz_kilometerstand` |
 | `world_load_airco_beneden_on` | `switch.airco_beneden_power` | `switch.airco_beneden_power` |
 | `world_load_airco_zolder_on` | `switch.airco_zolder_power` | `switch.airco_zolder_power` |
-| `world_capacity_peak_peak_kw` | `sensor.fluvius_meter_1sag3200274808_peak_power` | `sensor.fluvius_meter_1sag3200274808_peak_power` |
+| `world_capacity_peak_peak_kw` | `sensor.fluvius_meter_1sag0000000000_peak_power` | `sensor.fluvius_meter_1sag0000000000_peak_power` |
 
 #### Integration entities of device instances (`ev3`, `forecast`) (10)
 
