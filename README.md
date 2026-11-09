@@ -91,7 +91,7 @@ build provenance.
 | --- | --- | --- |
 | Linux (static, any distribution) | x86-64, ARM64, ARMv7, RISC-V 64 | Recommended |
 | macOS | Apple Silicon, Intel | Supported for evaluation |
-| Windows | x86-64, ARM64 | Experimental: secrets files are not permission-protected |
+| Windows | x86-64, ARM64 | Experimental: secrets files are not permission-protected, and MQTT reconnection is untested |
 
 ## Documentation
 
