@@ -2,6 +2,7 @@
 
 [advisories]
 ignore = [
+    { id = "RUSTSEC-2026-0387", reason = "Timing leaks in crypto-bigint 0.5 when handling secret integers. energie only verifies provider signatures with public keys through jsonwebtoken; private-key operations happen in tests only. The fix needs jsonwebtoken to move to crypto-bigint 0.7." },
     { id = "RUSTSEC-2023-0071", reason = "Timing attack on RSA private-key operations. energie only encrypts a password with the server's public key; private keys appear only in tests." },
 ]
 
