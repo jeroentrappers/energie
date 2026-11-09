@@ -406,6 +406,7 @@ async fn silent_gateway_times_out_then_recovers() {
 }
 
 /// Nothing listening: the connect fails with an I/O error.
+#[cfg(unix)] // Windows retries a refused connect until the timeout
 #[tokio::test]
 async fn unreachable_gateway() {
     let mut s = Solis::tcp(cfg("127.0.0.1:9".parse().unwrap()));

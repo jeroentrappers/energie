@@ -377,7 +377,8 @@ mod tests {
         let p = dir.path().join("token");
         std::fs::write(&p, "  abc\n").unwrap();
         assert_eq!(read_secret(&p).unwrap(), "abc");
-        assert!(read_secret(&dir.path().join("x")).unwrap_err().to_string().contains("/x"));
+        let missing = dir.path().join("x");
+        assert!(read_secret(&missing).unwrap_err().to_string().contains(&*missing.to_string_lossy()));
         assert_eq!(socket("192.168.1.20", 502).unwrap(), "192.168.1.20:502".parse().unwrap());
         assert_eq!(socket("192.168.1.20:1502", 502).unwrap(), "192.168.1.20:1502".parse().unwrap());
         assert!(socket("omvormer.lan", 502).unwrap_err().to_string().contains("address: \"omvormer.lan\""));

@@ -34,7 +34,7 @@ fn run_failures_exit_non_zero() {
         &cfg,
         format!(
             "mode = \"simulate\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\n[sources]\np1 = \"driver\"\n[devices.homewizard]\naddress = \"127.0.0.1\"\nserial = \"x\"\ntoken_file = \"/nonexistent/hw-token\"\n",
-            dir.path().display()
+            dir.path().display().to_string().replace('\\', "/")
         ),
     )
     .unwrap();
@@ -66,17 +66,20 @@ fn check_config_validates_the_example() {
 }
 
 /// A simulate run: starts, answers `/healthz`, and on SIGTERM writes its state and exits 0.
+#[cfg(unix)]
 #[test]
 fn simulate_run_stops_cleanly_on_sigterm() {
     simulate_run_stops_cleanly_on("-TERM");
 }
 
 /// Ctrl-C (SIGINT) stops it the same way.
+#[cfg(unix)]
 #[test]
 fn simulate_run_stops_cleanly_on_sigint() {
     simulate_run_stops_cleanly_on("-INT");
 }
 
+#[cfg(unix)]
 fn simulate_run_stops_cleanly_on(signal: &str) {
     let dir = tempfile::tempdir().unwrap();
     let cfg = dir.path().join("energie.toml");
@@ -84,7 +87,7 @@ fn simulate_run_stops_cleanly_on(signal: &str) {
         &cfg,
         format!(
             "mode = \"simulate\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\ntick_ms = 200\n[sim]\nspeed = 5.0\n",
-            dir.path().join("state").display()
+            dir.path().join("state").display().to_string().replace('\\', "/")
         ),
     )
     .unwrap();

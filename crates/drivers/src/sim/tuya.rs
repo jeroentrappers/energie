@@ -113,9 +113,8 @@ async fn next_frame(rd: &mut (impl AsyncReadExt + Unpin), key: &Key, buf: &mut V
 }
 
 /// Server side of the handshake; the session key on success.
-async fn handshake(stream: &mut TcpStream, local: &Key) -> Option<Key> {
-    let mut buf = Vec::new();
-    let start = next_frame(stream, local, &mut buf).await.filter(|f| f.cmd == cmd::SESS_KEY_NEG_START)?;
+async fn handshake(stream: &mut TcpStream, local: &Key, buf: &mut Vec<u8>) -> Option<Key> {
+    let start = next_frame(stream, local, buf).await.filter(|f| f.cmd == cmd::SESS_KEY_NEG_START)?;
     let client_nonce: Key = protocol::decrypt(local, &start.payload).ok()?.try_into().ok()?;
     let device_nonce: Key = rand::random();
     let body = [&device_nonce[..], &protocol::hmac(local, &client_nonce)[..]].concat();
@@ -126,7 +125,7 @@ async fn handshake(stream: &mut TcpStream, local: &Key) -> Option<Key> {
         payload: protocol::encrypt(local, &body),
     };
     stream.write_all(&protocol::pack(local, &resp)).await.ok()?;
-    let finish = next_frame(stream, local, &mut buf).await.filter(|f| f.cmd == cmd::SESS_KEY_NEG_FINISH)?;
+    let finish = next_frame(stream, local, buf).await.filter(|f| f.cmd == cmd::SESS_KEY_NEG_FINISH)?;
     let proof = protocol::decrypt(local, &finish.payload).ok()?;
     (proof == protocol::hmac(local, &device_nonce)).then(|| protocol::session_key(local, &client_nonce, &device_nonce))
 }
@@ -155,10 +154,11 @@ fn status_json(dps: &Map<String, Value>) -> Vec<u8> {
 /// One client session; `None` ends it (closing the socket).
 async fn session(mut stream: TcpStream, dev: Shared, mut events: broadcast::Receiver<Ev>) -> Option<()> {
     let local = dev.lock().unwrap().key;
-    let key = handshake(&mut stream, &local).await?;
+    // Shared with the handshake: the first query can arrive in the same read as its last frame.
+    let mut buf = Vec::new();
+    let key = handshake(&mut stream, &local, &mut buf).await?;
     dev.lock().unwrap().handshakes += 1;
     let (mut rd, mut wr) = stream.into_split();
-    let mut buf = Vec::new();
     let mut seq = 100;
     loop {
         seq += 1;
