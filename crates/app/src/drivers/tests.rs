@@ -199,7 +199,7 @@ fn driver_selections_need_their_device() {
     assert!(err("ev3 = \"driver\"\n").contains("sources.ev3: there is no native driver"));
     assert!(err("[actuators]\nairco = \"driver\"\n").contains("actuators.airco: there is no native driver"));
     assert!(err("[actuators]\nsolis = \"driver\"\n").contains("actuators.solis = \"driver\" needs [devices.solis]"));
-    let ro = err("[actuators]\nevse = \"driver\"\n[devices.smartevse]\nhost = \"h\"\n");
+    let ro = err("[actuators]\nevse = \"driver\"\n[devices.smartevse]\nhost = \"127.0.0.1\"\n");
     assert!(ro.contains("devices.smartevse.read_only is true"), "{ro}");
     assert!(err("[devices.omnik]\nbase_url = \"http://x\"\npoll_ms = 0\n").contains("devices.omnik.poll_ms"));
     assert!(
