@@ -1,0 +1,120 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-latest, zig: true }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-latest, zig: true }
+          - { target: armv7-unknown-linux-musleabihf, os: ubuntu-latest, zig: true }
+          - { target: riscv64gc-unknown-linux-musl, os: ubuntu-latest, zig: true }
+          - { target: aarch64-apple-darwin, os: macos-latest }
+          - { target: x86_64-apple-darwin, os: macos-latest }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest }
+          - { target: aarch64-pc-windows-msvc, os: windows-11-arm }
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check that the tag matches the crate version
+        shell: bash
+        run: |
+          want="$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)"
+          test "${GITHUB_REF_NAME}" = "v${want}" || { echo "tag ${GITHUB_REF_NAME} is not v${want}"; exit 1; }
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-python@v5
+        if: matrix.zig
+        with:
+          python-version: "3.12"
+      - name: Install cargo-zigbuild
+        if: matrix.zig
+        run: pip install cargo-zigbuild
+      - name: Build with zig
+        if: matrix.zig
+        run: cargo zigbuild --release --locked -p energie --target ${{ matrix.target }}
+      - name: Build
+        if: "!matrix.zig"
+        run: cargo build --release --locked -p energie --target ${{ matrix.target }}
+      - name: Package
+        id: package
+        shell: bash
+        run: |
+          name="energie-${GITHUB_REF_NAME}-${{ matrix.target }}"
+          mkdir -p "dist/${name}/deploy"
+          cp LICENSE NOTICE.md README.md CHANGELOG.md "dist/${name}/"
+          cp deploy/energie.service deploy/energie.example.toml deploy/energie.standalone.example.toml "dist/${name}/deploy/"
+          if [[ "${{ matrix.target }}" == *windows* ]]; then
+            cp "target/${{ matrix.target }}/release/energie.exe" "dist/${name}/"
+            (cd dist && 7z a "${name}.zip" "${name}" > /dev/null)
+            echo "file=dist/${name}.zip" >> "$GITHUB_OUTPUT"
+          else
+            cp "target/${{ matrix.target }}/release/energie" "dist/${name}/"
+            tar -C dist -czf "dist/${name}.tar.gz" "${name}"
+            echo "file=dist/${name}.tar.gz" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ steps.package.outputs.file }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ steps.package.outputs.file }}
+          if-no-files-found: error
+
+  smoke:
+    name: Run the x86-64 binary
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: x86_64-unknown-linux-musl
+      - name: Start in simulate mode and check the health endpoint
+        run: |
+          tar xzf energie-*.tar.gz
+          cd energie-*/
+          ./energie --version
+          printf 'mode = "simulate"\nlisten = "127.0.0.1:18080"\nstate_dir = "./state"\n' > sim.toml
+          ./energie --config sim.toml &
+          for _ in $(seq 1 30); do
+            curl -fs http://127.0.0.1:18080/healthz && exit 0
+            sleep 1
+          done
+          exit 1
+
+  publish:
+    needs: [build, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          sha256sum energie-* > SHA256SUMS
+          cat SHA256SUMS
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '$0 ~ "^## "v" " {f=1; next} /^## / {f=0} f' ../CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" energie-* SHA256SUMS --title "energie $GITHUB_REF_NAME" --notes-file notes.md

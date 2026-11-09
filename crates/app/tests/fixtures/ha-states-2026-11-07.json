@@ -1,0 +1,5579 @@
+[
+ {
+  "entity_id": "automation.airco_koelen_op_pv_overschot",
+  "state": "on",
+  "attributes": {
+   "id": "airco_dump_start",
+   "last_triggered": "2026-09-14T11:10:00.239675+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Airco: koelen op PV-overschot"
+  },
+  "last_changed": "2026-11-05T12:21:10.189344+00:00",
+  "last_reported": "2026-11-05T12:21:10.189344+00:00",
+  "last_updated": "2026-11-05T12:21:10.189344+00:00",
+  "context": {
+   "id": "01M6NTFSXD3YKJFCR4W1MZKC25",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.airco_stop_overschot_koeling",
+  "state": "on",
+  "attributes": {
+   "id": "airco_dump_stop",
+   "last_triggered": "2026-09-14T11:48:46.813503+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Airco: stop overschot-koeling"
+  },
+  "last_changed": "2026-11-05T12:21:10.189427+00:00",
+  "last_reported": "2026-11-05T12:21:10.189427+00:00",
+  "last_updated": "2026-11-05T12:21:10.189427+00:00",
+  "context": {
+   "id": "01M6NTFSXDRDH9SZ2WZMB5G26V",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.batterij_auto_kwh_budget_beheer",
+  "state": "on",
+  "attributes": {
+   "id": "batterij_naar_auto_beheer",
+   "last_triggered": "2026-11-07T12:46:00.457141+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Batterij-dump: kWh-budget beheer"
+  },
+  "last_changed": "2026-11-05T12:21:10.190702+00:00",
+  "last_reported": "2026-11-07T12:46:00.457431+00:00",
+  "last_updated": "2026-11-07T12:46:00.457431+00:00",
+  "context": {
+   "id": "01M6V0PQ88NT4FJP26ZE3TQV1P",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.batterij_autonoom_netladen_door_omvormer_stoppen",
+  "state": "on",
+  "attributes": {
+   "id": "batterij_autonoom_netladen_stop",
+   "last_triggered": "2026-11-03T01:15:21.559763+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Batterij: autonoom netladen door omvormer stoppen"
+  },
+  "last_changed": "2026-11-05T12:21:10.191118+00:00",
+  "last_reported": "2026-11-05T12:21:10.191118+00:00",
+  "last_updated": "2026-11-05T12:21:10.191118+00:00",
+  "context": {
+   "id": "01M6NTFSXF81ZQWM0BK88KSPZ8",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.buzz_handshake_herstel_vastgelopen_connected_to_ev",
+  "state": "on",
+  "attributes": {
+   "id": "ev_laden_buzz_handshake_herstel",
+   "last_triggered": "2026-11-07T09:47:02.497972+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Buzz: handshake-herstel (vastgelopen 'Connected to EV')"
+  },
+  "last_changed": "2026-11-05T12:21:10.190556+00:00",
+  "last_reported": "2026-11-07T09:47:02.766999+00:00",
+  "last_updated": "2026-11-07T09:47:02.766999+00:00",
+  "context": {
+   "id": "01M6TPF0Z1MHKZNC661F34HHT6",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.buzz_laadweigering_teller_resetten",
+  "state": "on",
+  "attributes": {
+   "id": "buzz_laadweigering_reset",
+   "last_triggered": "2026-11-07T09:48:08.503474+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Buzz: laadweigering-teller resetten"
+  },
+  "last_changed": "2026-11-05T12:21:10.191264+00:00",
+  "last_reported": "2026-11-07T09:48:08.503662+00:00",
+  "last_updated": "2026-11-07T09:48:08.503662+00:00",
+  "context": {
+   "id": "01M6TPH1DQ6QS3VSCJYFVXNHN7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.buzz_modewissel_stempel",
+  "state": "on",
+  "attributes": {
+   "id": "buzz_mode_stempel",
+   "last_triggered": "2026-11-07T10:25:43.162336+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Buzz: modewissel-stempel"
+  },
+  "last_changed": "2026-11-05T12:21:10.191191+00:00",
+  "last_reported": "2026-11-07T10:25:43.162594+00:00",
+  "last_updated": "2026-11-07T10:25:43.162594+00:00",
+  "context": {
+   "id": "01M6TRNV7T8KZ20R15SYPTS9GM",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.buzz_override_terug_naar_6a_bij_uitpluggen",
+  "state": "on",
+  "attributes": {
+   "id": "ev_laden_buzz_reset_op_uitplug",
+   "last_triggered": "2026-10-31T20:03:19.055989+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Buzz: override terug naar 6A bij uitpluggen"
+  },
+  "last_changed": "2026-11-05T12:21:10.190629+00:00",
+  "last_reported": "2026-11-05T12:21:10.190629+00:00",
+  "last_updated": "2026-11-05T12:21:10.190629+00:00",
+  "context": {
+   "id": "01M6NTFSXEZH7PK81DVECG6D89",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.capaciteit_piekhistoriek_bijwerken",
+  "state": "on",
+  "attributes": {
+   "id": "capaciteit_piekhistoriek_bijwerken",
+   "last_triggered": "2026-10-31T23:00:05.903255+00:00",
+   "mode": "queued",
+   "current": 0,
+   "max": 10,
+   "friendly_name": "Capaciteit piekhistoriek bijwerken"
+  },
+  "last_changed": "2026-11-05T12:21:10.191466+00:00",
+  "last_reported": "2026-11-05T12:21:10.191466+00:00",
+  "last_updated": "2026-11-05T12:21:10.191466+00:00",
+  "context": {
+   "id": "01M6NTFSXFAG83YD6FWTR52R6N",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.dagbalans_rapport_23_55",
+  "state": "on",
+  "attributes": {
+   "id": "dagbalans_rapport",
+   "last_triggered": "2026-11-06T22:55:00.217364+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Dagbalans: rapport (23:55)"
+  },
+  "last_changed": "2026-11-05T12:21:10.190816+00:00",
+  "last_reported": "2026-11-06T22:55:01.163428+00:00",
+  "last_updated": "2026-11-06T22:55:01.163428+00:00",
+  "context": {
+   "id": "01M6SH53KSHW6GN4HGMA51ND71",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.dispatcher_off_target_waarschuwing",
+  "state": "on",
+  "attributes": {
+   "id": "dispatcher_off_target_alert",
+   "last_triggered": "2026-10-31T21:21:29.936548+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Dispatcher off-target waarschuwing"
+  },
+  "last_changed": "2026-11-05T12:21:10.190047+00:00",
+  "last_reported": "2026-11-05T12:21:10.190047+00:00",
+  "last_updated": "2026-11-05T12:21:10.190047+00:00",
+  "context": {
+   "id": "01M6NTFSXEEZXCYE440NKZXQZY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.entso_e_day_ahead_morgen_binnenhalen_zodra_beschikbaar",
+  "state": "on",
+  "attributes": {
+   "id": "entsoe_dayahead_morgen_ophalen",
+   "last_triggered": "2026-11-07T12:46:00.481599+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "ENTSO-E: day-ahead morgen binnenhalen zodra beschikbaar"
+  },
+  "last_changed": "2026-11-05T12:21:10.190413+00:00",
+  "last_reported": "2026-11-07T12:46:00.485915+00:00",
+  "last_updated": "2026-11-07T12:46:00.485915+00:00",
+  "context": {
+   "id": "01M6V0PQ91C6P7E2CNTX1B4Z7D",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.ev_cable_auto_heal_tuya_local_when_unavailable",
+  "state": "on",
+  "attributes": {
+   "id": "ev_cable_autoheal",
+   "last_triggered": "2026-11-02T08:27:46.103543+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "EV cable: auto-heal tuya_local when unavailable"
+  },
+  "last_changed": "2026-11-05T12:21:10.190120+00:00",
+  "last_reported": "2026-11-05T12:21:10.190120+00:00",
+  "last_updated": "2026-11-05T12:21:10.190120+00:00",
+  "context": {
+   "id": "01M6NTFSXEAYV4NN59SQYZNMHQ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.ev_cascade_stilstand_van_hoger_geprioriteerde_auto",
+  "state": "on",
+  "attributes": {
+   "id": "ev_hoger_laadstil_beheer",
+   "last_triggered": "2026-11-07T12:46:00.299534+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "EV-cascade: stilstand van hoger geprioriteerde auto"
+  },
+  "last_changed": "2026-11-05T12:21:10.190974+00:00",
+  "last_reported": "2026-11-07T12:46:00.300299+00:00",
+  "last_updated": "2026-11-07T12:46:00.300299+00:00",
+  "context": {
+   "id": "01M6V0PQ3BMH788GQJVA43ZBTY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.ev_laden_buzz_smartevse",
+  "state": "on",
+  "attributes": {
+   "id": "ev_laden_buzz",
+   "last_triggered": "2026-11-07T12:45:52.641310+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "EV laden Buzz (SmartEVSE)"
+  },
+  "last_changed": "2026-11-05T12:21:10.190193+00:00",
+  "last_reported": "2026-11-07T12:45:52.646065+00:00",
+  "last_updated": "2026-11-07T12:45:52.646065+00:00",
+  "context": {
+   "id": "01M6V0PFM0EM2RB6W2MD67YTV7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.ev_laden_ev3_laadkabel",
+  "state": "on",
+  "attributes": {
+   "id": "ev_laden_cable",
+   "last_triggered": "2026-11-02T08:17:46.102755+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "EV laden EV3 (laadkabel)"
+  },
+  "last_changed": "2026-11-05T12:21:10.190266+00:00",
+  "last_reported": "2026-11-05T12:21:10.190266+00:00",
+  "last_updated": "2026-11-05T12:21:10.190266+00:00",
+  "context": {
+   "id": "01M6NTFSXEC92JY5HQ16311W5B",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.goedkoop_laden_net_laden_batterij_auto_s_bij_lage_prijs",
+  "state": "on",
+  "attributes": {
+   "id": "goedkoop_laden",
+   "last_triggered": "2026-11-07T12:45:01.470992+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Grid -> batterij-laden (folded into netniveau)"
+  },
+  "last_changed": "2026-11-05T12:21:10.190484+00:00",
+  "last_reported": "2026-11-07T12:45:01.471863+00:00",
+  "last_updated": "2026-11-07T12:45:01.471863+00:00",
+  "context": {
+   "id": "01M6V0MXMYDA98786YVPXD33WG",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.hoofdzekering_beveiliging_per_fase",
+  "state": "on",
+  "attributes": {
+   "id": "breaker_guard",
+   "last_triggered": "2026-11-01T13:12:59.162071+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Hoofdzekering-beveiliging (per fase)"
+  },
+  "last_changed": "2026-11-05T12:21:10.190341+00:00",
+  "last_reported": "2026-11-05T12:21:10.190341+00:00",
+  "last_updated": "2026-11-05T12:21:10.190341+00:00",
+  "context": {
+   "id": "01M6NTFSXE0P3B37KN35QZYEP7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.nachtdekking_berekenen_zon_overname",
+  "state": "on",
+  "attributes": {
+   "id": "nachtdekking_eind",
+   "last_triggered": "2026-11-07T12:00:00.376067+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Nachtdekking: berekenen (zon-overname)"
+  },
+  "last_changed": "2026-11-05T12:21:10.189732+00:00",
+  "last_reported": "2026-11-07T12:00:01.223595+00:00",
+  "last_updated": "2026-11-07T12:00:01.223595+00:00",
+  "context": {
+   "id": "01M6TY2FVQZP7M2TKZJB17K16Y",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.nachtdekking_startmeting_22_00",
+  "state": "on",
+  "attributes": {
+   "id": "nachtdekking_start",
+   "last_triggered": "2026-11-06T21:00:00.451518+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Nachtdekking: startmeting (22:00)"
+  },
+  "last_changed": "2026-11-05T12:21:10.189657+00:00",
+  "last_reported": "2026-11-06T21:00:00.452707+00:00",
+  "last_updated": "2026-11-06T21:00:00.452707+00:00",
+  "context": {
+   "id": "01M6SAJHJ3DAJE6BP33C1JGYNG",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.negatieve_injectie_export_limiet_herstellen",
+  "state": "on",
+  "attributes": {
+   "id": "neg_injectie_herstel",
+   "last_triggered": "2026-10-10T14:33:00.019724+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Negatieve injectie: export-limiet herstellen"
+  },
+  "last_changed": "2026-11-05T12:21:10.189957+00:00",
+  "last_reported": "2026-11-05T12:21:10.189957+00:00",
+  "last_updated": "2026-11-05T12:21:10.189957+00:00",
+  "context": {
+   "id": "01M6NTFSXDT2B4GK4YT88EXCHJ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.negatieve_injectie_pv_export_begrenzen",
+  "state": "on",
+  "attributes": {
+   "id": "neg_injectie_curtail",
+   "last_triggered": "2026-10-10T08:48:00.011301+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Negatieve injectie: PV-export begrenzen"
+  },
+  "last_changed": "2026-11-05T12:21:10.189883+00:00",
+  "last_reported": "2026-11-05T12:21:10.189883+00:00",
+  "last_updated": "2026-11-05T12:21:10.189883+00:00",
+  "context": {
+   "id": "01M6NTFSXDJH1DCP6TN8D7Y8PN",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.peak_guard_afschakelen",
+  "state": "on",
+  "attributes": {
+   "id": "peakguard_afschakelen",
+   "last_triggered": "2026-11-07T10:24:17.641229+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Peak guard: afschakelen"
+  },
+  "last_changed": "2026-11-05T12:21:10.189101+00:00",
+  "last_reported": "2026-11-07T10:24:37.908779+00:00",
+  "last_updated": "2026-11-07T10:24:37.908779+00:00",
+  "context": {
+   "id": "01M6TRKVGMJDMGJAQN602FHFNC",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.peak_guard_herstel",
+  "state": "on",
+  "attributes": {
+   "id": "peakguard_herstel",
+   "last_triggered": "2026-11-05T16:28:34.654509+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Peak guard: herstel"
+  },
+  "last_changed": "2026-11-05T12:21:10.189251+00:00",
+  "last_reported": "2026-11-05T16:28:34.957301+00:00",
+  "last_updated": "2026-11-05T16:28:34.957301+00:00",
+  "context": {
+   "id": "01M6P8MTEYE81KBFA4RTWZYAPT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.smartevse_pilot_activeren_auto_ingeplugd_pilot_op_a",
+  "state": "on",
+  "attributes": {
+   "id": "smartevse_pilot_arm",
+   "last_triggered": "2026-11-06T14:47:49.244239+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "SmartEVSE: pilot activeren (auto ingeplugd, pilot op A)"
+  },
+  "last_changed": "2026-11-05T12:21:10.191046+00:00",
+  "last_reported": "2026-11-06T14:47:49.501468+00:00",
+  "last_updated": "2026-11-06T14:47:49.501468+00:00",
+  "context": {
+   "id": "01M6RN91QVGYAGKCEPF56844V0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.smartevse_plug_status_vasthouden",
+  "state": "on",
+  "attributes": {
+   "id": "smartevse_plug_latch",
+   "last_triggered": "2026-09-01T15:37:09.421544+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "SmartEVSE: plug-status vasthouden"
+  },
+  "last_changed": "2026-11-05T12:21:10.190897+00:00",
+  "last_reported": "2026-11-05T12:21:10.190897+00:00",
+  "last_updated": "2026-11-05T12:21:10.190897+00:00",
+  "context": {
+   "id": "01M6NTFSXEYXE7X3P7D5Y2GJ74",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.solis_watchdog_ha_herstart_bij_uitval",
+  "state": "on",
+  "attributes": {
+   "id": "solis_watchdog",
+   "last_triggered": "2026-10-30T12:32:52.154078+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Solis watchdog: HA-herstart bij uitval"
+  },
+  "last_changed": "2026-11-05T12:21:10.189806+00:00",
+  "last_reported": "2026-11-05T12:21:10.189806+00:00",
+  "last_updated": "2026-11-05T12:21:10.189806+00:00",
+  "context": {
+   "id": "01M6NTFSXDYY159NQEKK3WJFF0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.soluna_dispatcher_ha_beheer_batterij",
+  "state": "on",
+  "attributes": {
+   "id": "soluna_dispatcher",
+   "last_triggered": "2026-11-07T12:46:00.452091+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Soluna dispatcher (HA-beheer batterij)"
+  },
+  "last_changed": "2026-11-05T12:21:10.189507+00:00",
+  "last_reported": "2026-11-07T12:46:00.458232+00:00",
+  "last_updated": "2026-11-07T12:46:00.458232+00:00",
+  "context": {
+   "id": "01M6V0PQ83RBE25F8YCVAWH4K6",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "automation.vriezer_bewaking",
+  "state": "on",
+  "attributes": {
+   "id": "vriezer_bewaking",
+   "last_triggered": "2026-06-30T04:47:02.162943+00:00",
+   "mode": "single",
+   "current": 0,
+   "friendly_name": "Vriezer: bewaking"
+  },
+  "last_changed": "2026-11-05T12:21:10.189584+00:00",
+  "last_reported": "2026-11-05T12:21:10.189584+00:00",
+  "last_updated": "2026-11-05T12:21:10.189584+00:00",
+  "context": {
+   "id": "01M6NTFSXDC68VK4SQMNE68VF2",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.capaciteitspiek_risico",
+  "state": "off",
+  "attributes": {
+   "device_class": "problem",
+   "friendly_name": "Capaciteitspiek risico"
+  },
+  "last_changed": "2026-11-07T10:24:22.718271+00:00",
+  "last_reported": "2026-11-07T10:24:22.718271+00:00",
+  "last_updated": "2026-11-07T10:24:22.718271+00:00",
+  "context": {
+   "id": "01M6TRKCNW4CDBFQA9EZY9M6CY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.dispatcher_off_target",
+  "state": "off",
+  "attributes": {
+   "device_class": "problem",
+   "friendly_name": "Dispatcher off-target"
+  },
+  "last_changed": "2026-11-07T00:15:34.483790+00:00",
+  "last_reported": "2026-11-07T00:15:34.483790+00:00",
+  "last_updated": "2026-11-07T00:15:34.483790+00:00",
+  "context": {
+   "id": "01M6SNRMJH26QA46BEV6SBZGH7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.ev3_ev_battery_plug",
+  "state": "off",
+  "attributes": {
+   "device_class": "plug",
+   "friendly_name": "EV3 EV-laadkabel aangesloten"
+  },
+  "last_changed": "2026-11-06T05:22:05.640683+00:00",
+  "last_reported": "2026-11-07T12:23:21.547831+00:00",
+  "last_updated": "2026-11-06T05:22:05.640683+00:00",
+  "context": {
+   "id": "01M6QMX5P8C5TQN6JTB4M8M2CC",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.solis_offline",
+  "state": "off",
+  "attributes": {
+   "device_class": "problem",
+   "friendly_name": "Solis offline"
+  },
+  "last_changed": "2026-11-05T12:21:06.261031+00:00",
+  "last_reported": "2026-11-05T12:21:06.261031+00:00",
+  "last_updated": "2026-11-05T12:21:06.261031+00:00",
+  "context": {
+   "id": "01M6NTFP2NZAESSEYGK0TVSV52",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "counter.buzz_laadweigering",
+  "state": "0",
+  "attributes": {
+   "editable": true,
+   "initial": 0,
+   "step": 1,
+   "minimum": 0,
+   "icon": "mdi:ev-plug-type2",
+   "friendly_name": "Buzz laadweigering"
+  },
+  "last_changed": "2026-11-07T09:48:08.503621+00:00",
+  "last_reported": "2026-11-07T09:48:08.503621+00:00",
+  "last_updated": "2026-11-07T09:48:08.503621+00:00",
+  "context": {
+   "id": "01M6TPH1DQ6QS3VSCJYFVXNHN7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "counter.peak_guard_interventies",
+  "state": "2880",
+  "attributes": {
+   "editable": true,
+   "initial": 0,
+   "step": 1,
+   "icon": "mdi:counter",
+   "friendly_name": "Peak guard interventies"
+  },
+  "last_changed": "2026-11-07T10:24:17.641534+00:00",
+  "last_reported": "2026-11-07T10:24:17.641534+00:00",
+  "last_updated": "2026-11-07T10:24:17.641534+00:00",
+  "context": {
+   "id": "01M6TRK7Q9R151C3P7Y5K5VFHK",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_boolean.airco_dump_sessie_bezig",
+  "state": "off",
+  "attributes": {
+   "editable": true,
+   "icon": "mdi:snowflake-check",
+   "friendly_name": "Airco dump-sessie bezig"
+  },
+  "last_changed": "2026-11-05T12:19:05.999858+00:00",
+  "last_reported": "2026-11-05T12:19:05.999858+00:00",
+  "last_updated": "2026-11-05T12:19:05.999858+00:00",
+  "context": {
+   "id": "01M6NTC0MFFH9NN8E0QMFXP2X4",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_boolean.airco_overschot_koeling_actief",
+  "state": "off",
+  "attributes": {
+   "editable": true,
+   "icon": "mdi:snowflake",
+   "friendly_name": "Airco overschot-koeling actief"
+  },
+  "last_changed": "2026-11-05T12:19:05.999799+00:00",
+  "last_reported": "2026-11-05T12:19:05.999799+00:00",
+  "last_updated": "2026-11-05T12:19:05.999799+00:00",
+  "context": {
+   "id": "01M6NTC0MF0F0C0E9AGKE3XSFX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_boolean.batterij_net_laden",
+  "state": "off",
+  "attributes": {
+   "editable": true,
+   "icon": "mdi:transmission-tower-import",
+   "friendly_name": "Batterij net-laden"
+  },
+  "last_changed": "2026-11-07T00:15:49.484008+00:00",
+  "last_reported": "2026-11-07T00:15:49.484008+00:00",
+  "last_updated": "2026-11-07T00:15:49.484008+00:00",
+  "context": {
+   "id": "01M6SNS37AB5CF7BYGYWRE32FW",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_boolean.batterij_reservering_actief",
+  "state": "on",
+  "attributes": {
+   "editable": true,
+   "icon": "mdi:battery-plus",
+   "friendly_name": "Batterij reservering actief"
+  },
+  "last_changed": "2026-11-05T12:19:06.000306+00:00",
+  "last_reported": "2026-11-05T12:19:06.000306+00:00",
+  "last_updated": "2026-11-05T12:19:06.000306+00:00",
+  "context": {
+   "id": "01M6NTC0MGAVD9CPPCDG7QB6FT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_boolean.ev_hoger_laadstil",
+  "state": "off",
+  "attributes": {
+   "editable": true,
+   "icon": "mdi:car-off",
+   "friendly_name": "Ev hoger laadstil"
+  },
+  "last_changed": "2026-11-07T09:48:08.503302+00:00",
+  "last_reported": "2026-11-07T09:51:08.023389+00:00",
+  "last_updated": "2026-11-07T09:48:08.503302+00:00",
+  "context": {
+   "id": "01M6TPH1DPE6C85ZZMV3YFVR2T",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_boolean.peak_guard_actief",
+  "state": "on",
+  "attributes": {
+   "editable": true,
+   "icon": "mdi:shield-lightning",
+   "friendly_name": "Peak guard actief"
+  },
+  "last_changed": "2026-11-05T12:19:05.999668+00:00",
+  "last_reported": "2026-11-05T12:19:05.999668+00:00",
+  "last_updated": "2026-11-05T12:19:05.999668+00:00",
+  "context": {
+   "id": "01M6NTC0MF6ZVDJRSBN07NG6ZN",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_boolean.pv_overschot_laden_actief",
+  "state": "on",
+  "attributes": {
+   "editable": true,
+   "icon": "mdi:solar-power",
+   "friendly_name": "PV-overschot laden actief"
+  },
+  "last_changed": "2026-11-05T12:19:05.999738+00:00",
+  "last_reported": "2026-11-05T12:19:05.999738+00:00",
+  "last_updated": "2026-11-05T12:19:05.999738+00:00",
+  "context": {
+   "id": "01M6NTC0MFSZFTFMSMQKBP1GYW",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_boolean.soluna_absorptie_actief",
+  "state": "on",
+  "attributes": {
+   "editable": true,
+   "icon": "mdi:battery-sync",
+   "friendly_name": "Soluna HA-beheer actief"
+  },
+  "last_changed": "2026-11-05T12:19:05.999914+00:00",
+  "last_reported": "2026-11-05T12:19:05.999914+00:00",
+  "last_updated": "2026-11-05T12:19:05.999914+00:00",
+  "context": {
+   "id": "01M6NTC0MF624EJY6Q6Y8ANQTE",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_boolean.soluna_absorptie_bezig",
+  "state": "off",
+  "attributes": {
+   "editable": true,
+   "icon": "mdi:battery-charging-medium",
+   "friendly_name": "Soluna sturing bezig"
+  },
+  "last_changed": "2026-11-07T07:36:00.455812+00:00",
+  "last_reported": "2026-11-07T07:36:00.455812+00:00",
+  "last_updated": "2026-11-07T07:36:00.455812+00:00",
+  "context": {
+   "id": "01M6TEZ364CG866RMA196DR68M",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_datetime.watchdog_laatste_herstart",
+  "state": "2026-10-30 13:32:52",
+  "attributes": {
+   "has_date": true,
+   "has_time": true,
+   "editable": true,
+   "year": 2026,
+   "month": 10,
+   "day": 30,
+   "hour": 13,
+   "minute": 32,
+   "second": 52,
+   "timestamp": 1793363572.0,
+   "friendly_name": "Watchdog laatste herstart"
+  },
+  "last_changed": "2026-11-05T12:19:49.147773+00:00",
+  "last_reported": "2026-11-05T12:19:49.147773+00:00",
+  "last_updated": "2026-11-05T12:19:49.147773+00:00",
+  "context": {
+   "id": "01M6NTDARVKR62TVW2PKR9P5NH",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.airco_dump_overschot_drempel",
+  "state": "800.0",
+  "attributes": {
+   "min": 500.0,
+   "max": 4000.0,
+   "step": 100.0,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "W",
+   "icon": "mdi:transmission-tower-export",
+   "friendly_name": "Airco dump overschot-drempel"
+  },
+  "last_changed": "2026-11-05T12:19:05.997274+00:00",
+  "last_reported": "2026-11-05T12:19:05.997274+00:00",
+  "last_updated": "2026-11-05T12:19:05.997274+00:00",
+  "context": {
+   "id": "01M6NTC0MDGB5NA44NPPE1Q9M3",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.airco_dump_soc_drempel",
+  "state": "98.0",
+  "attributes": {
+   "min": 50.0,
+   "max": 100.0,
+   "step": 1.0,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "%",
+   "icon": "mdi:battery-high",
+   "friendly_name": "Airco dump SoC-drempel"
+  },
+  "last_changed": "2026-11-05T12:19:05.997387+00:00",
+  "last_reported": "2026-11-05T12:19:05.997387+00:00",
+  "last_updated": "2026-11-05T12:19:05.997387+00:00",
+  "context": {
+   "id": "01M6NTC0MD81WQHYCR9K9YNFK8",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.batterij_naar_auto_budget",
+  "state": "5.0",
+  "attributes": {
+   "min": 0.5,
+   "max": 60.0,
+   "step": 0.5,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "kWh",
+   "icon": "mdi:battery-charging-medium",
+   "friendly_name": "Batterij naar auto budget"
+  },
+  "last_changed": "2026-11-05T12:19:05.997824+00:00",
+  "last_reported": "2026-11-05T12:19:05.997824+00:00",
+  "last_updated": "2026-11-05T12:19:05.997824+00:00",
+  "context": {
+   "id": "01M6NTC0MD32ZJ85VJEXGQZPVT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.batterij_naar_auto_start_kwh",
+  "state": "549.546",
+  "attributes": {
+   "min": 0.0,
+   "max": 1000000.0,
+   "step": 0.001,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "kWh",
+   "icon": "mdi:counter",
+   "friendly_name": "Batterij naar auto start kWh"
+  },
+  "last_changed": "2026-11-05T12:19:05.997928+00:00",
+  "last_reported": "2026-11-05T12:19:05.997928+00:00",
+  "last_updated": "2026-11-05T12:19:05.997928+00:00",
+  "context": {
+   "id": "01M6NTC0MDC2V7W4R5RNPW7R1M",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.batterij_reserve_soc",
+  "state": "15.0",
+  "attributes": {
+   "min": 5.0,
+   "max": 90.0,
+   "step": 5.0,
+   "mode": "slider",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "%",
+   "icon": "mdi:battery-arrow-down",
+   "friendly_name": "Batterij reserve SoC"
+  },
+  "last_changed": "2026-11-06T15:12:28.000266+00:00",
+  "last_reported": "2026-11-06T15:12:28.000266+00:00",
+  "last_updated": "2026-11-06T15:12:28.000266+00:00",
+  "context": {
+   "id": "01M6RPP5TZ9GRQJDA1AH77RT9K",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.batterij_reservering_w",
+  "state": "700.0",
+  "attributes": {
+   "min": 0.0,
+   "max": 3000.0,
+   "step": 50.0,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "W",
+   "icon": "mdi:battery-plus",
+   "friendly_name": "Batterij reservering w"
+  },
+  "last_changed": "2026-11-05T12:19:05.998696+00:00",
+  "last_reported": "2026-11-05T12:19:05.998696+00:00",
+  "last_updated": "2026-11-05T12:19:05.998696+00:00",
+  "context": {
+   "id": "01M6NTC0ME1H8GV31GNBQ5AWEN",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.batterij_setpoint_bias",
+  "state": "200.0",
+  "attributes": {
+   "min": -200.0,
+   "max": 200.0,
+   "step": 0.1,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "W",
+   "friendly_name": "Batterij setpoint bias"
+  },
+  "last_changed": "2026-11-07T00:16:00.453936+00:00",
+  "last_reported": "2026-11-07T00:21:00.454057+00:00",
+  "last_updated": "2026-11-07T00:16:00.453936+00:00",
+  "context": {
+   "id": "01M6SNSDY3WFR9VY6PB2PFQVJS",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.buzz_ice_verbruik",
+  "state": "9.0",
+  "attributes": {
+   "min": 0.0,
+   "max": 30.0,
+   "step": 0.1,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "L/100km",
+   "friendly_name": "Buzz ICE verbruik"
+  },
+  "last_changed": "2026-11-05T12:19:05.996845+00:00",
+  "last_reported": "2026-11-05T12:19:05.996845+00:00",
+  "last_updated": "2026-11-05T12:19:05.996845+00:00",
+  "context": {
+   "id": "01M6NTC0MC00ZKTN8MJ5X2DQG3",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.buzz_laaddoel_soc",
+  "state": "100.0",
+  "attributes": {
+   "min": 50.0,
+   "max": 100.0,
+   "step": 5.0,
+   "mode": "slider",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "%",
+   "icon": "mdi:battery-charging-80",
+   "friendly_name": "Buzz laaddoel SoC"
+  },
+  "last_changed": "2026-11-05T12:19:05.997490+00:00",
+  "last_reported": "2026-11-05T12:19:05.997490+00:00",
+  "last_updated": "2026-11-05T12:19:05.997490+00:00",
+  "context": {
+   "id": "01M6NTC0MDMEZN8N151DZB63Q3",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.buzz_odometer_start",
+  "state": "0.0",
+  "attributes": {
+   "min": 0.0,
+   "max": 1000000.0,
+   "step": 0.1,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "km",
+   "friendly_name": "Buzz odometer start"
+  },
+  "last_changed": "2026-11-05T12:19:05.996918+00:00",
+  "last_reported": "2026-11-05T12:19:05.996918+00:00",
+  "last_updated": "2026-11-05T12:19:05.996918+00:00",
+  "context": {
+   "id": "01M6NTC0MCF8NF4Q820HBRYF3Y",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.capaciteit_maandtarget_instelling",
+  "state": "3.9",
+  "attributes": {
+   "min": 2.5,
+   "max": 12.0,
+   "step": 0.1,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "kW",
+   "icon": "mdi:transmission-tower",
+   "friendly_name": "Capaciteit maandtarget instelling"
+  },
+  "last_changed": "2026-11-06T15:12:39.577652+00:00",
+  "last_reported": "2026-11-06T15:12:39.577652+00:00",
+  "last_updated": "2026-11-06T15:12:39.577652+00:00",
+  "context": {
+   "id": "01M6RPPH4SNGJFRX7C86YKDTQK",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.ev3_ice_verbruik",
+  "state": "6.5",
+  "attributes": {
+   "min": 0.0,
+   "max": 30.0,
+   "step": 0.1,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "L/100km",
+   "friendly_name": "EV3 ICE verbruik"
+  },
+  "last_changed": "2026-11-05T12:19:05.996652+00:00",
+  "last_reported": "2026-11-05T12:19:05.996652+00:00",
+  "last_updated": "2026-11-05T12:19:05.996652+00:00",
+  "context": {
+   "id": "01M6NTC0MCPTYM6DNCJQFSPW7K",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.ev3_odometer_start",
+  "state": "1967.2",
+  "attributes": {
+   "min": 0.0,
+   "max": 1000000.0,
+   "step": 0.1,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "km",
+   "friendly_name": "EV3 odometer start"
+  },
+  "last_changed": "2026-11-05T12:19:05.996740+00:00",
+  "last_reported": "2026-11-05T12:19:05.996740+00:00",
+  "last_updated": "2026-11-05T12:19:05.996740+00:00",
+  "context": {
+   "id": "01M6NTC0MCN107EPQPDAZ7JR0J",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.ev_benzineprijs",
+  "state": "1.75",
+  "attributes": {
+   "min": 0.0,
+   "max": 5.0,
+   "step": 0.01,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "€/L",
+   "friendly_name": "EV benzineprijs"
+  },
+  "last_changed": "2026-11-05T12:19:05.996567+00:00",
+  "last_reported": "2026-11-05T12:19:05.996567+00:00",
+  "last_updated": "2026-11-05T12:19:05.996567+00:00",
+  "context": {
+   "id": "01M6NTC0MC05SVEE5QEZRNYYYQ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.ev_hoger_laadstil_sinds",
+  "state": "0.0",
+  "attributes": {
+   "min": 0.0,
+   "max": 9999999999.0,
+   "step": 1.0,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "icon": "mdi:timer-sand",
+   "friendly_name": "Ev hoger laadstil sinds"
+  },
+  "last_changed": "2026-11-07T10:25:47.189146+00:00",
+  "last_reported": "2026-11-07T10:25:47.189146+00:00",
+  "last_updated": "2026-11-07T10:25:47.189146+00:00",
+  "context": {
+   "id": "01M6TRNZ5M2QDX27AQVDM6DPH3",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.goedkoop_laden_prijs_drempel",
+  "state": "0.38",
+  "attributes": {
+   "min": 0.05,
+   "max": 0.6,
+   "step": 0.01,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "€/kWh",
+   "icon": "mdi:cash",
+   "friendly_name": "Goedkoop laden prijs drempel"
+  },
+  "last_changed": "2026-11-07T09:53:20.871005+00:00",
+  "last_reported": "2026-11-07T09:53:20.871005+00:00",
+  "last_updated": "2026-11-07T09:53:20.871005+00:00",
+  "context": {
+   "id": "01M6TPTJF6ZK79CMGQRZQHVE7W",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.nacht_batterij_kwh",
+  "state": "0.34",
+  "attributes": {
+   "min": 0.0,
+   "max": 100.0,
+   "step": 0.01,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "kWh",
+   "friendly_name": "Nacht batterij kWh"
+  },
+  "last_changed": "2026-11-07T12:00:00.377831+00:00",
+  "last_reported": "2026-11-07T12:00:00.377831+00:00",
+  "last_updated": "2026-11-07T12:00:00.377831+00:00",
+  "context": {
+   "id": "01M6TY2FVQZP7M2TKZJB17K16Y",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.nacht_duur_uren",
+  "state": "15.0",
+  "attributes": {
+   "min": 0.0,
+   "max": 24.0,
+   "step": 0.1,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "u",
+   "icon": "mdi:weather-night",
+   "friendly_name": "Nacht duur uren"
+  },
+  "last_changed": "2026-11-07T12:00:00.378134+00:00",
+  "last_reported": "2026-11-07T12:00:00.378134+00:00",
+  "last_updated": "2026-11-07T12:00:00.378134+00:00",
+  "context": {
+   "id": "01M6TY2FVQZP7M2TKZJB17K16Y",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.nacht_ev_net_startmeting",
+  "state": "1619.61",
+  "attributes": {
+   "min": 0.0,
+   "max": 999999.0,
+   "step": 0.001,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "kWh",
+   "icon": "mdi:ev-station",
+   "friendly_name": "Nacht ev net startmeting"
+  },
+  "last_changed": "2026-11-06T21:00:00.452634+00:00",
+  "last_reported": "2026-11-06T21:00:00.452634+00:00",
+  "last_updated": "2026-11-06T21:00:00.452634+00:00",
+  "context": {
+   "id": "01M6SAJHJ3DAJE6BP33C1JGYNG",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.nacht_import_kwh",
+  "state": "16.56",
+  "attributes": {
+   "min": 0.0,
+   "max": 100.0,
+   "step": 0.01,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "kWh",
+   "friendly_name": "Nacht import kWh"
+  },
+  "last_changed": "2026-11-07T12:00:00.376471+00:00",
+  "last_reported": "2026-11-07T12:00:00.376471+00:00",
+  "last_updated": "2026-11-07T12:00:00.376471+00:00",
+  "context": {
+   "id": "01M6TY2FVQZP7M2TKZJB17K16Y",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.nacht_import_startmeting",
+  "state": "0.0",
+  "attributes": {
+   "min": 0.0,
+   "max": 999999.0,
+   "step": 0.001,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "kWh",
+   "friendly_name": "Nacht import startmeting"
+  },
+  "last_changed": "2026-11-07T12:00:00.378639+00:00",
+  "last_reported": "2026-11-07T12:00:00.378639+00:00",
+  "last_updated": "2026-11-07T12:00:00.378639+00:00",
+  "context": {
+   "id": "01M6TY2FVQZP7M2TKZJB17K16Y",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.nacht_ontlaad_startmeting",
+  "state": "749.95",
+  "attributes": {
+   "min": 0.0,
+   "max": 999999.0,
+   "step": 0.001,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "kWh",
+   "friendly_name": "Nacht ontlaad startmeting"
+  },
+  "last_changed": "2026-11-06T21:00:00.452319+00:00",
+  "last_reported": "2026-11-06T21:00:00.452319+00:00",
+  "last_updated": "2026-11-06T21:00:00.452319+00:00",
+  "context": {
+   "id": "01M6SAJHJ3DAJE6BP33C1JGYNG",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.nachtdekking",
+  "state": "2.0",
+  "attributes": {
+   "min": 0.0,
+   "max": 100.0,
+   "step": 1.0,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "%",
+   "icon": "mdi:weather-night",
+   "friendly_name": "Nachtdekking"
+  },
+  "last_changed": "2026-11-07T12:00:00.378426+00:00",
+  "last_reported": "2026-11-07T12:00:00.378426+00:00",
+  "last_updated": "2026-11-07T12:00:00.378426+00:00",
+  "context": {
+   "id": "01M6TY2FVQZP7M2TKZJB17K16Y",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_number.prijs_backup_nu",
+  "state": "0.37692",
+  "attributes": {
+   "min": -1.0,
+   "max": 5.0,
+   "step": 1e-05,
+   "mode": "box",
+   "initial": null,
+   "editable": true,
+   "unit_of_measurement": "EUR/kWh",
+   "icon": "mdi:cash-clock",
+   "friendly_name": "Prijs backup nu"
+  },
+  "last_changed": "2026-11-07T12:45:01.470439+00:00",
+  "last_reported": "2026-11-07T12:45:01.470439+00:00",
+  "last_updated": "2026-11-07T12:45:01.470439+00:00",
+  "context": {
+   "id": "01M6V0MXMY0ZK4J4KY69G65WXX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_select.ev_batterij_niveau",
+  "state": "Uit",
+  "attributes": {
+   "options": [
+    "Uit",
+    "6A-brug",
+    "Ontlaad-budget"
+   ],
+   "editable": true,
+   "icon": "mdi:home-battery",
+   "friendly_name": "Ev batterij niveau"
+  },
+  "last_changed": "2026-11-05T12:19:05.999509+00:00",
+  "last_reported": "2026-11-05T12:19:05.999509+00:00",
+  "last_updated": "2026-11-05T12:19:05.999509+00:00",
+  "context": {
+   "id": "01M6NTC0MF4R0H53J19MTCQ7Q0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_select.ev_net_niveau",
+  "state": "Max tot piek",
+  "attributes": {
+   "options": [
+    "Uit",
+    "6A-brug",
+    "Max tot piek"
+   ],
+   "editable": true,
+   "icon": "mdi:transmission-tower",
+   "friendly_name": "Ev net niveau"
+  },
+  "last_changed": "2026-11-06T17:33:08.152631+00:00",
+  "last_reported": "2026-11-06T17:33:08.152631+00:00",
+  "last_updated": "2026-11-06T17:33:08.152631+00:00",
+  "context": {
+   "id": "01M6RYQR5RFJ8NGGVTS94XV6ZC",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_select.zonprioriteit",
+  "state": "Buzz → Batterij → EV3",
+  "attributes": {
+   "options": [
+    "EV3 → Buzz → Batterij",
+    "Buzz → EV3 → Batterij",
+    "EV3 → Batterij → Buzz",
+    "Buzz → Batterij → EV3",
+    "Batterij → EV3 → Buzz",
+    "Batterij → Buzz → EV3"
+   ],
+   "editable": true,
+   "icon": "mdi:sort",
+   "friendly_name": "Zonprioriteit"
+  },
+  "last_changed": "2026-11-06T13:45:09.170531+00:00",
+  "last_reported": "2026-11-06T13:45:09.170531+00:00",
+  "last_updated": "2026-11-06T13:45:09.170531+00:00",
+  "context": {
+   "id": "01M6RHP9SJ6A6CT0BBBZ28F1PF",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_text.capaciteit_piekhistoriek",
+  "state": "2025-11:6.572,2025-12:8.011,2026-01:6.748,2026-02:6.299,2026-03:7.046,2026-04:6.180,2026-05:8.791,2026-06:5.929,2026-07:3.400,2026-08:2.940,2026-09:3.910,2026-10:4.916",
+  "attributes": {
+   "mode": "text",
+   "min": 0,
+   "max": 255,
+   "pattern": null,
+   "editable": true,
+   "icon": "mdi:chart-timeline-variant",
+   "friendly_name": "Capaciteit piekhistoriek"
+  },
+  "last_changed": "2026-11-05T12:19:31.344684+00:00",
+  "last_reported": "2026-11-05T12:19:31.344684+00:00",
+  "last_updated": "2026-11-05T12:19:31.344684+00:00",
+  "context": {
+   "id": "01M6NTCSCGWTVNHWXPFPAVCB06",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "input_text.smartevse_plug_laatst_bekend",
+  "state": "Connected",
+  "attributes": {
+   "mode": "text",
+   "min": 0,
+   "max": 20,
+   "pattern": null,
+   "editable": true,
+   "icon": "mdi:ev-plug-type2",
+   "friendly_name": "SmartEVSE plug laatst bekend"
+  },
+  "last_changed": "2026-11-07T09:48:19.521136+00:00",
+  "last_reported": "2026-11-07T09:48:19.521136+00:00",
+  "last_updated": "2026-11-07T09:48:19.521136+00:00",
+  "context": {
+   "id": "01M6TPHC6037M9C32G83FGFZ0R",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.ev3_ac_charging_limit",
+  "state": "100",
+  "attributes": {
+   "min": 50,
+   "max": 100,
+   "step": 10,
+   "mode": "slider",
+   "unit_of_measurement": "%",
+   "icon": "mdi:ev-plug-type2",
+   "friendly_name": "EV3 AC-laadlimiet"
+  },
+  "last_changed": "2026-11-06T05:22:05.644860+00:00",
+  "last_reported": "2026-11-07T12:23:21.550097+00:00",
+  "last_updated": "2026-11-06T05:22:05.644860+00:00",
+  "context": {
+   "id": "01M6QMX5PCC64QV7676A9PZSMN",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.ev_charging_cable_charge_current",
+  "state": "unavailable",
+  "attributes": {
+   "restored": true,
+   "min": 6.0,
+   "max": 16.0,
+   "step": 1.0,
+   "mode": "auto",
+   "device_class": "current",
+   "friendly_name": "EV charging cable Charge current",
+   "supported_features": 0,
+   "unit_of_measurement": "A"
+  },
+  "last_changed": "2026-11-05T12:21:12.447959+00:00",
+  "last_reported": "2026-11-05T12:21:12.447959+00:00",
+  "last_updated": "2026-11-05T12:21:12.447959+00:00",
+  "context": {
+   "id": "01M6NTFW3ZQSXC9B7CX13WGPBJ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.smartevse_1234_charge_current_override",
+  "state": "14.8",
+  "attributes": {
+   "min": 0.0,
+   "max": 29.0,
+   "step": 1.0,
+   "mode": "slider",
+   "friendly_name": "SmartEVSE/1234 Charge Current Override"
+  },
+  "last_changed": "2026-11-07T12:45:52.925579+00:00",
+  "last_reported": "2026-11-07T12:45:52.925579+00:00",
+  "last_updated": "2026-11-07T12:45:52.925579+00:00",
+  "context": {
+   "id": "01M6V0PFWXC1KPEA9NWPTX6GXT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.solis_s6_eh1p_backflow_power_2",
+  "state": "5500",
+  "attributes": {
+   "min": 0,
+   "max": 20000,
+   "step": 1,
+   "mode": "auto",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Solis S6-EH1P Backflow Power"
+  },
+  "last_changed": "2026-11-05T12:21:08.099938+00:00",
+  "last_reported": "2026-11-05T12:21:08.099938+00:00",
+  "last_updated": "2026-11-05T12:21:08.099938+00:00",
+  "context": {
+   "id": "01M6NTFQW33JT6DXZFK02A80S5",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.solis_s6_eh1p_rc_force_battery_charge_power_2",
+  "state": "0",
+  "attributes": {
+   "min": 0,
+   "max": 655350,
+   "step": 1,
+   "mode": "auto",
+   "device_limit": 8000,
+   "device_limit_source": "inverter_rating",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Solis S6-EH1P RC Force Battery Charge Power"
+  },
+  "last_changed": "2026-11-07T07:36:02.163377+00:00",
+  "last_reported": "2026-11-07T07:36:02.163377+00:00",
+  "last_updated": "2026-11-07T07:36:02.163377+00:00",
+  "context": {
+   "id": "01M6TEZ364CG866RMA196DR68M",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.solis_s6_eh1p_rc_force_battery_discharge_power_2",
+  "state": "0",
+  "attributes": {
+   "min": 0,
+   "max": 655350,
+   "step": 1,
+   "mode": "auto",
+   "device_limit": 8000,
+   "device_limit_source": "inverter_rating",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Solis S6-EH1P RC Force Battery Discharge Power"
+  },
+  "last_changed": "2026-11-06T20:37:32.103776+00:00",
+  "last_reported": "2026-11-06T20:51:01.803762+00:00",
+  "last_updated": "2026-11-06T20:37:32.103776+00:00",
+  "context": {
+   "id": "01M6S99B6KRRCCYT8S7CA24C3B",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.solis_s6_eh1p_rc_timeout_2",
+  "state": "10",
+  "attributes": {
+   "min": 1,
+   "max": 30,
+   "step": 1,
+   "mode": "auto",
+   "unit_of_measurement": "min",
+   "friendly_name": "Solis S6-EH1P RC Timeout"
+  },
+  "last_changed": "2026-11-05T12:21:08.109670+00:00",
+  "last_reported": "2026-11-05T12:21:08.109670+00:00",
+  "last_updated": "2026-11-05T12:21:08.109670+00:00",
+  "context": {
+   "id": "01M6NTFQWDNB8PZAWGXESWD897",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "select.ev_charging_cable_charging_operation",
+  "state": "unavailable",
+  "attributes": {
+   "restored": true,
+   "options": [
+    "Start charging",
+    "Stop charging",
+    "No operation"
+   ],
+   "icon": "mdi:ev-station",
+   "friendly_name": "EV charging cable Charging operation",
+   "supported_features": 0
+  },
+  "last_changed": "2026-11-05T12:21:12.447947+00:00",
+  "last_reported": "2026-11-05T12:21:12.447947+00:00",
+  "last_updated": "2026-11-05T12:21:12.447947+00:00",
+  "context": {
+   "id": "01M6NTFW3ZAR0H75TFA1JRK21A",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "select.smartevse_1234_mode",
+  "state": "Normal",
+  "attributes": {
+   "options": [
+    "Off",
+    "Normal",
+    "Smart",
+    "Solar",
+    "Pause"
+   ],
+   "friendly_name": "SmartEVSE/1234 Mode"
+  },
+  "last_changed": "2026-11-07T10:25:43.161960+00:00",
+  "last_reported": "2026-11-07T10:25:43.161960+00:00",
+  "last_updated": "2026-11-07T10:25:43.161960+00:00",
+  "context": {
+   "id": "01M6TRNTRM8G9ESPTWH4RYCVSB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "select.solis_s6_eh1p_rc_force_charge_discharge_2",
+  "state": "Solis RC Force Battery Charge",
+  "attributes": {
+   "options": [
+    "None",
+    "Solis RC Force Battery Charge",
+    "Solis RC Force Battery Discharge"
+   ],
+   "raw_value": 1,
+   "set_bits": [
+    0
+   ],
+   "friendly_name": "Solis S6-EH1P RC Force Charge/Discharge"
+  },
+  "last_changed": "2026-11-06T20:37:30.874814+00:00",
+  "last_reported": "2026-11-06T20:51:00.900892+00:00",
+  "last_updated": "2026-11-06T20:37:30.874814+00:00",
+  "context": {
+   "id": "01M6S99B6KRRCCYT8S7CA24C3B",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.batterij_beschikbare_energie",
+  "state": "9.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy_storage",
+   "friendly_name": "Batterij beschikbare energie"
+  },
+  "last_changed": "2026-11-07T07:35:38.021081+00:00",
+  "last_reported": "2026-11-07T07:35:38.021081+00:00",
+  "last_updated": "2026-11-07T07:35:38.021081+00:00",
+  "context": {
+   "id": "01M6TEYD94945E11BBT2K3CHMR",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.batterij_geladen_dag",
+  "state": "4.684",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "6.665",
+   "last_valid_state": "621.762",
+   "last_reset": "2026-11-06T23:00:00.004035+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Batterij geladen dag"
+  },
+  "last_changed": "2026-11-07T12:32:53.852609+00:00",
+  "last_reported": "2026-11-07T12:32:53.852609+00:00",
+  "last_updated": "2026-11-07T12:32:53.852609+00:00",
+  "context": {
+   "id": "01M6TZYQ2WNJCEQM6CRSCPWHMD",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.batterij_geladen_energie",
+  "state": "621.762",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.batterij_laadvermogen",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Batterij geladen energie"
+  },
+  "last_changed": "2026-11-07T12:32:53.852132+00:00",
+  "last_reported": "2026-11-07T12:36:08.851415+00:00",
+  "last_updated": "2026-11-07T12:32:53.852132+00:00",
+  "context": {
+   "id": "01M6TZYQ2WC0M2K64E0YFEFGVP",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.batterij_laadvermogen",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Batterij laadvermogen"
+  },
+  "last_changed": "2026-11-07T12:45:53.848527+00:00",
+  "last_reported": "2026-11-07T12:45:53.848527+00:00",
+  "last_updated": "2026-11-07T12:45:53.848527+00:00",
+  "context": {
+   "id": "01M6V0PGSRSCNWM0NDKP6BCFYB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.batterij_naar_auto_geleverd_kwh",
+  "state": "0",
+  "attributes": {
+   "state_class": "total",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Batterij naar auto geleverd kWh"
+  },
+  "last_changed": "2026-11-05T12:21:06.323648+00:00",
+  "last_reported": "2026-11-05T12:21:06.323648+00:00",
+  "last_updated": "2026-11-05T12:21:06.323648+00:00",
+  "context": {
+   "id": "01M6NTFP4K8MB7TEM6534MMDV5",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.batterij_ontlaadvermogen",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Batterij ontlaadvermogen"
+  },
+  "last_changed": "2026-11-07T07:50:23.024262+00:00",
+  "last_reported": "2026-11-07T07:50:23.024262+00:00",
+  "last_updated": "2026-11-07T07:50:23.024262+00:00",
+  "context": {
+   "id": "01M6TFSDHFZQ6DK0EDCSBXX2GS",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.batterij_ontladen_dag",
+  "state": "0.326",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "8.380",
+   "last_valid_state": "750.288",
+   "last_reset": "2026-11-06T23:00:00.013692+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Batterij ontladen dag"
+  },
+  "last_changed": "2026-11-07T07:50:08.024562+00:00",
+  "last_reported": "2026-11-07T07:50:08.024562+00:00",
+  "last_updated": "2026-11-07T07:50:08.024562+00:00",
+  "context": {
+   "id": "01M6TFRYWR92RSFAZ585CFR53N",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.batterij_ontladen_energie",
+  "state": "750.288",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.batterij_ontlaadvermogen",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Batterij ontladen energie"
+  },
+  "last_changed": "2026-11-07T07:50:08.023975+00:00",
+  "last_reported": "2026-11-07T07:50:23.026194+00:00",
+  "last_updated": "2026-11-07T07:50:08.023975+00:00",
+  "context": {
+   "id": "01M6TFRYWQ82TWX7P03CPTGV4M",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.batterij_reservering_effectief",
+  "state": "700",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Batterij reservering effectief"
+  },
+  "last_changed": "2026-11-07T09:48:19.522974+00:00",
+  "last_reported": "2026-11-07T09:48:19.522974+00:00",
+  "last_updated": "2026-11-07T09:48:19.522974+00:00",
+  "context": {
+   "id": "01M6TPHC5Z2D1ETZQ6HP00S8NG",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.batterij_setpoint",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Batterij setpoint"
+  },
+  "last_changed": "2026-11-07T10:24:22.717720+00:00",
+  "last_reported": "2026-11-07T10:24:22.717720+00:00",
+  "last_updated": "2026-11-07T10:24:22.717720+00:00",
+  "context": {
+   "id": "01M6TRKCNW4CDBFQA9EZY9M6CY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_besparing_per_100km",
+  "state": "13.31",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/100km",
+   "friendly_name": "Buzz besparing per 100km"
+  },
+  "last_changed": "2026-11-07T12:28:27.638371+00:00",
+  "last_reported": "2026-11-07T12:28:27.638371+00:00",
+  "last_updated": "2026-11-07T12:28:27.638371+00:00",
+  "context": {
+   "id": "01M6TZPK3PH7NHY8YR3VP464DT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_ice_kost_per_100km",
+  "state": "15.75",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/100km",
+   "friendly_name": "Buzz ICE kost per 100km"
+  },
+  "last_changed": "2026-11-05T12:21:06.310229+00:00",
+  "last_reported": "2026-11-05T12:21:06.310229+00:00",
+  "last_updated": "2026-11-05T12:21:06.310229+00:00",
+  "context": {
+   "id": "01M6NTFP466M3TYZ1V25M2SGVX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laad_zonaandeel",
+  "state": "37",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "friendly_name": "Buzz laad zonaandeel"
+  },
+  "last_changed": "2026-11-05T12:21:06.304484+00:00",
+  "last_reported": "2026-11-05T12:21:06.304484+00:00",
+  "last_updated": "2026-11-05T12:21:06.304484+00:00",
+  "context": {
+   "id": "01M6NTFP40MQP11NWQPA2FSPQJ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadenergie_dag",
+  "state": "11.590921713341944454303757",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "0.735250249105000004858664",
+   "last_valid_state": "1626.301454200279860790274866",
+   "last_reset": "2026-11-06T23:00:00.017565+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Buzz laadenergie dag"
+  },
+  "last_changed": "2026-11-07T12:45:52.921775+00:00",
+  "last_reported": "2026-11-07T12:45:52.921775+00:00",
+  "last_updated": "2026-11-07T12:45:52.921775+00:00",
+  "context": {
+   "id": "01M6V0PFWSMBMT4Z636RBZFDZJ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadenergie_maand",
+  "state": "12.543854502817222237960100",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "385.367270191485055478860932",
+   "last_valid_state": "1626.301454200279860790274866",
+   "last_reset": "2026-10-31T23:00:00.006084+00:00",
+   "next_reset": "2026-12-01T00:00:00+01:00",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Buzz laadenergie maand"
+  },
+  "last_changed": "2026-11-07T12:45:52.921828+00:00",
+  "last_reported": "2026-11-07T12:45:52.921828+00:00",
+  "last_updated": "2026-11-07T12:45:52.921828+00:00",
+  "context": {
+   "id": "01M6V0PFWST8QS6YF0WHP0FPQ6",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadenergie_net",
+  "state": "1029.722441982498277573582527",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.buzz_laadvermogen_net",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Buzz laadenergie net"
+  },
+  "last_changed": "2026-11-07T12:46:12.667724+00:00",
+  "last_reported": "2026-11-07T12:46:12.667724+00:00",
+  "last_updated": "2026-11-07T12:46:12.667724+00:00",
+  "context": {
+   "id": "01M6V0Q35VX4T4Q1DWY2ACTRMT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadenergie_totaal",
+  "state": "1626.301454200279860790274866",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.buzz_laadvermogen_totaal",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Buzz laadenergie totaal"
+  },
+  "last_changed": "2026-11-07T12:45:52.920055+00:00",
+  "last_reported": "2026-11-07T12:45:52.920055+00:00",
+  "last_updated": "2026-11-07T12:45:52.920055+00:00",
+  "context": {
+   "id": "01M6V0PFWR7PQN37FS32DAT6M1",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadenergie_zon",
+  "state": "596.7363663395304721605775566",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.buzz_laadvermogen_zon",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Buzz laadenergie zon"
+  },
+  "last_changed": "2026-11-07T12:46:12.667399+00:00",
+  "last_reported": "2026-11-07T12:46:12.667399+00:00",
+  "last_updated": "2026-11-07T12:46:12.667399+00:00",
+  "context": {
+   "id": "01M6V0Q35V07460EB2V0FZPJJF",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadkost_dag",
+  "state": "3.9209022493123611093836076",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "0.3041162470178611067240172",
+   "last_valid_state": "244.3648702885389444896879543",
+   "last_reset": "2026-11-06T23:00:00.016372+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "unit_of_measurement": "€",
+   "friendly_name": "Buzz laadkost dag"
+  },
+  "last_changed": "2026-11-07T12:46:12.668158+00:00",
+  "last_reported": "2026-11-07T12:46:12.668158+00:00",
+  "last_updated": "2026-11-07T12:46:12.668158+00:00",
+  "context": {
+   "id": "01M6V0Q35W4X45RJ2R247SN8GP",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadkost_maand",
+  "state": "4.2998678648698055496248100",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "64.9495370068874444465772463",
+   "last_valid_state": "244.3648702885389444896879543",
+   "last_reset": "2026-10-31T23:00:00.001991+00:00",
+   "next_reset": "2026-12-01T00:00:00+01:00",
+   "unit_of_measurement": "€",
+   "friendly_name": "Buzz laadkost maand"
+  },
+  "last_changed": "2026-11-07T12:46:12.668205+00:00",
+  "last_reported": "2026-11-07T12:46:12.668205+00:00",
+  "last_updated": "2026-11-07T12:46:12.668205+00:00",
+  "context": {
+   "id": "01M6V0Q35W5H42BCMC9QB6T6Q0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadkost_net",
+  "state": "244.3648702885389444896879543",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.buzz_laadkost_per_uur",
+   "unit_of_measurement": "€",
+   "icon": "mdi:chart-histogram",
+   "friendly_name": "Buzz laadkost net"
+  },
+  "last_changed": "2026-11-07T12:46:12.667993+00:00",
+  "last_reported": "2026-11-07T12:46:12.667993+00:00",
+  "last_updated": "2026-11-07T12:46:12.667993+00:00",
+  "context": {
+   "id": "01M6V0Q35VKRQ97NS1DPM3Z67J",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadkost_per_100km",
+  "state": "2.44",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/100km",
+   "friendly_name": "Buzz laadkost per 100km"
+  },
+  "last_changed": "2026-11-07T12:28:27.638180+00:00",
+  "last_reported": "2026-11-07T12:28:27.638180+00:00",
+  "last_updated": "2026-11-07T12:28:27.638180+00:00",
+  "context": {
+   "id": "01M6TZPK3PH7NHY8YR3VP464DT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadkost_per_uur",
+  "state": "1.1556",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/h",
+   "friendly_name": "Buzz laadkost per uur"
+  },
+  "last_changed": "2026-11-07T12:46:12.667903+00:00",
+  "last_reported": "2026-11-07T12:46:12.667903+00:00",
+  "last_updated": "2026-11-07T12:46:12.667903+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadvermogen_net",
+  "state": "3.066",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "Buzz laadvermogen net"
+  },
+  "last_changed": "2026-11-07T12:46:12.667561+00:00",
+  "last_reported": "2026-11-07T12:46:12.667561+00:00",
+  "last_updated": "2026-11-07T12:46:12.667561+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadvermogen_totaal",
+  "state": "3.404",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "Buzz laadvermogen totaal"
+  },
+  "last_changed": "2026-11-07T12:45:52.919636+00:00",
+  "last_reported": "2026-11-07T12:45:52.919636+00:00",
+  "last_updated": "2026-11-07T12:45:52.919636+00:00",
+  "context": {
+   "id": "01M6V0PFWP7EH5DVBNNGM35FKB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_laadvermogen_zon",
+  "state": "0.338",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "Buzz laadvermogen zon"
+  },
+  "last_changed": "2026-11-07T12:46:12.667013+00:00",
+  "last_reported": "2026-11-07T12:46:12.667013+00:00",
+  "last_updated": "2026-11-07T12:46:12.667013+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.buzz_verbruik_per_100km",
+  "state": "16.2",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kWh/100km",
+   "friendly_name": "Buzz verbruik per 100km"
+  },
+  "last_changed": "2026-11-07T10:41:22.993836+00:00",
+  "last_reported": "2026-11-07T10:41:22.993836+00:00",
+  "last_updated": "2026-11-07T10:41:22.993836+00:00",
+  "context": {
+   "id": "01M6TSJH1GXG0P8RX8ERXVDTB8",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.capaciteit_maandtarget",
+  "state": "3.9",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "Capaciteit maandtarget"
+  },
+  "last_changed": "2026-11-06T15:12:39.577852+00:00",
+  "last_reported": "2026-11-06T15:12:39.577852+00:00",
+  "last_updated": "2026-11-06T15:12:39.577852+00:00",
+  "context": {
+   "id": "01M6RPPH4SNGJFRX7C86YKDTQK",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.capaciteitspiek_meerkost",
+  "state": "0.04",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€",
+   "friendly_name": "Capaciteitspiek meerkost"
+  },
+  "last_changed": "2026-11-06T15:12:39.577987+00:00",
+  "last_reported": "2026-11-06T15:12:39.577987+00:00",
+  "last_updated": "2026-11-06T15:12:39.577987+00:00",
+  "context": {
+   "id": "01M6RPPH4SNGJFRX7C86YKDTQK",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.capaciteitstarief_deze_maand",
+  "state": "19.27",
+  "attributes": {
+   "unit_of_measurement": "€",
+   "friendly_name": "Capaciteitstarief deze maand"
+  },
+  "last_changed": "2026-11-05T12:21:06.210390+00:00",
+  "last_reported": "2026-11-05T12:21:06.210390+00:00",
+  "last_updated": "2026-11-05T12:21:06.210390+00:00",
+  "context": {
+   "id": "01M6NTFP12KHHXB34SGEYK0EG7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.capaciteitstarief_factuur_deze_maand",
+  "state": "27.69",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€",
+   "friendly_name": "Capaciteitstarief factuur deze maand"
+  },
+  "last_changed": "2026-11-05T12:21:06.382850+00:00",
+  "last_reported": "2026-11-05T12:21:06.382850+00:00",
+  "last_updated": "2026-11-05T12:21:06.382850+00:00",
+  "context": {
+   "id": "01M6NTFP6E6K1TGG655Z32SJW1",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.de_buzz_accu",
+  "state": "43",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "device_class": "battery",
+   "friendly_name": "De Buzz Accu"
+  },
+  "last_changed": "2026-11-05T12:21:09.720857+00:00",
+  "last_reported": "2026-11-05T12:21:11.434103+00:00",
+  "last_updated": "2026-11-05T12:21:09.720857+00:00",
+  "context": {
+   "id": "01M6NTFSER5ZE427E6NB0FXPEC",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.de_buzz_kilometerstand",
+  "state": "10019",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "km",
+   "device_class": "distance",
+   "icon": "mdi:counter",
+   "friendly_name": "De Buzz Kilometerstand"
+  },
+  "last_changed": "2026-11-05T12:21:09.722670+00:00",
+  "last_reported": "2026-11-05T12:21:11.434701+00:00",
+  "last_updated": "2026-11-05T12:21:09.722670+00:00",
+  "context": {
+   "id": "01M6NTFSET1CMC00T4Z0701WYC",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.de_buzz_laaddoel",
+  "state": "100",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "icon": "mdi:battery-charging-80",
+   "friendly_name": "De Buzz Laaddoel"
+  },
+  "last_changed": "2026-11-05T12:21:09.721025+00:00",
+  "last_reported": "2026-11-05T12:21:11.434150+00:00",
+  "last_updated": "2026-11-05T12:21:09.721025+00:00",
+  "context": {
+   "id": "01M6NTFSESJYNVX2DZGCQMT50J",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.energiekost_cumulatief",
+  "state": "738.740",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.kost_per_uur",
+   "unit_of_measurement": "€",
+   "icon": "mdi:chart-histogram",
+   "friendly_name": "Energiekost cumulatief"
+  },
+  "last_changed": "2026-11-07T12:46:12.666542+00:00",
+  "last_reported": "2026-11-07T12:46:12.666542+00:00",
+  "last_updated": "2026-11-07T12:46:12.666542+00:00",
+  "context": {
+   "id": "01M6V0Q35T3TYR7410KTR6E52V",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.energiekost_vandaag",
+  "state": "7.875",
+  "attributes": {
+   "state_class": "total",
+   "status": "collecting",
+   "last_period": "5.060",
+   "last_valid_state": "738.740",
+   "last_reset": "2026-11-06T23:00:00.009348+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "unit_of_measurement": "€",
+   "friendly_name": "Energiekost vandaag"
+  },
+  "last_changed": "2026-11-07T12:46:12.667127+00:00",
+  "last_reported": "2026-11-07T12:46:12.667127+00:00",
+  "last_updated": "2026-11-07T12:46:12.667127+00:00",
+  "context": {
+   "id": "01M6V0Q35VZ2YV7XWYMAPP1JTP",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.entso_e_energy_prices_15_min",
+  "state": "0.2266",
+  "attributes": {
+   "state_class": "measurement",
+   "updated_at": "2026-11-07T12:32:17.424212+00:00",
+   "prices_fields": [
+    "id",
+    "start",
+    "value",
+    "price_eur_mwh"
+   ],
+   "prices_today": {
+    "duration_minutes": 15,
+    "id": [
+     "PT15M-1794009600",
+     "PT15M-1794010500",
+     "PT15M-1794011400",
+     "PT15M-1794012300",
+     "PT15M-1794013200",
+     "PT15M-1794014100",
+     "PT15M-1794015000",
+     "PT15M-1794015900",
+     "PT15M-1794016800",
+     "PT15M-1794017700"
+    ],
+    "start": [
+     "2026-11-07T00:00Z",
+     "2026-11-07T00:15Z",
+     "2026-11-07T00:30Z",
+     "2026-11-07T00:45Z",
+     "2026-11-07T01:00Z",
+     "2026-11-07T01:15Z",
+     "2026-11-07T01:30Z",
+     "2026-11-07T01:45Z",
+     "2026-11-07T02:00Z",
+     "2026-11-07T02:15Z"
+    ],
+    "value": [
+     0.2497,
+     0.2433,
+     0.2386,
+     0.2374,
+     0.2398,
+     0.2379,
+     0.2324,
+     0.2337,
+     0.23,
+     0.23
+    ],
+    "price_eur_mwh": [
+     249.67,
+     243.31,
+     238.63,
+     237.4,
+     239.76,
+     237.85,
+     232.39,
+     233.66,
+     230.02,
+     229.96
+    ],
+    "total_points": 91,
+    "truncated": true
+   },
+   "prices_tomorrow": {
+    "duration_minutes": 15,
+    "total_points": 0
+   },
+   "unit_of_measurement": "EUR/kWh",
+   "friendly_name": "ENTSO-E Energy Prices 15 min"
+  },
+  "last_changed": "2026-11-07T12:32:17.424476+00:00",
+  "last_reported": "2026-11-07T12:32:17.424476+00:00",
+  "last_updated": "2026-11-07T12:32:17.424476+00:00",
+  "context": {
+   "id": "01M6TZXKGGWMC781JSZSGVR6R7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_besparing_per_100km",
+  "state": "8.89",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/100km",
+   "friendly_name": "EV3 besparing per 100km"
+  },
+  "last_changed": "2026-11-06T05:22:05.642339+00:00",
+  "last_reported": "2026-11-06T05:22:05.642339+00:00",
+  "last_updated": "2026-11-06T05:22:05.642339+00:00",
+  "context": {
+   "id": "01M6QMX5PA44TDRS9XF7NPJH7H",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_ev_battery_level",
+  "state": "54.5",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "device_class": "battery",
+   "friendly_name": "EV3 EV-accuniveau"
+  },
+  "last_changed": "2026-11-07T09:53:16.504547+00:00",
+  "last_reported": "2026-11-07T09:53:16.504547+00:00",
+  "last_updated": "2026-11-07T09:53:16.504547+00:00",
+  "context": {
+   "id": "01M6TPTE6RVR367JATY1BQYYCK",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_ice_kost_per_100km",
+  "state": "11.38",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/100km",
+   "friendly_name": "EV3 ICE kost per 100km"
+  },
+  "last_changed": "2026-11-05T12:21:06.292621+00:00",
+  "last_reported": "2026-11-05T12:21:06.292621+00:00",
+  "last_updated": "2026-11-05T12:21:06.292621+00:00",
+  "context": {
+   "id": "01M6NTFP3MCYQGXBY9EHDY1AEN",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laad_zonaandeel",
+  "state": "31",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "friendly_name": "EV3 laad zonaandeel"
+  },
+  "last_changed": "2026-11-05T12:21:06.286625+00:00",
+  "last_reported": "2026-11-05T12:21:06.286625+00:00",
+  "last_updated": "2026-11-05T12:21:06.286625+00:00",
+  "context": {
+   "id": "01M6NTFP3EJ5391EKMBJS355HT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadenergie_dag",
+  "state": "0",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "0",
+   "last_valid_state": "873.2202244317414164410710090",
+   "last_reset": "2026-11-06T23:00:00.005617+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "EV3 laadenergie dag"
+  },
+  "last_changed": "2026-11-05T12:21:08.893994+00:00",
+  "last_reported": "2026-11-06T23:00:00.005738+00:00",
+  "last_updated": "2026-11-06T23:00:00.005738+00:00",
+  "context": {
+   "id": "01M6SHE8C5B55RH9HMWMWWD02F",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadenergie_maand",
+  "state": "24.3007418978583333077809197",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "241.2196926921719722689149351",
+   "last_valid_state": "873.2202244317414164410710090",
+   "last_reset": "2026-10-31T23:00:00.012480+00:00",
+   "next_reset": "2026-12-01T00:00:00+01:00",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "EV3 laadenergie maand"
+  },
+  "last_changed": "2026-11-05T12:21:08.895703+00:00",
+  "last_reported": "2026-11-05T12:21:08.895580+00:00",
+  "last_updated": "2026-11-05T12:21:08.895703+00:00",
+  "context": {
+   "id": "01M6NTFRMZ0YWXKFPEA5SE9XYH",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadenergie_net",
+  "state": "600.4119500290298609902603306",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.ev3_laadvermogen_net",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "EV3 laadenergie net"
+  },
+  "last_changed": "2026-11-05T12:21:09.833458+00:00",
+  "last_reported": "2026-11-05T12:21:09.833390+00:00",
+  "last_updated": "2026-11-05T12:21:09.833458+00:00",
+  "context": {
+   "id": "01M6NTFSJ9YX8K5XABVHCBH3V1",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadenergie_totaal",
+  "state": "873.2202244317414164410710090",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.ev3_laadvermogen_totaal",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "EV3 laadenergie totaal"
+  },
+  "last_changed": "2026-11-05T12:21:09.833936+00:00",
+  "last_reported": "2026-11-05T12:21:09.833862+00:00",
+  "last_updated": "2026-11-05T12:21:09.833936+00:00",
+  "context": {
+   "id": "01M6NTFSJ9JJVTM2VWCKGN6WMV",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadenergie_zon",
+  "state": "272.8406513676034445254382987",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.ev3_laadvermogen_zon",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "EV3 laadenergie zon"
+  },
+  "last_changed": "2026-11-05T12:21:09.832971+00:00",
+  "last_reported": "2026-11-05T12:21:09.832896+00:00",
+  "last_updated": "2026-11-05T12:21:09.832971+00:00",
+  "context": {
+   "id": "01M6NTFSJ8PGVNK2WW1K8S07RA",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadkost_dag",
+  "state": "0",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "0",
+   "last_valid_state": "165.7965221740224999299787499",
+   "last_reset": "2026-11-06T23:00:00.006937+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "unit_of_measurement": "€",
+   "friendly_name": "EV3 laadkost dag"
+  },
+  "last_changed": "2026-11-05T12:21:08.892651+00:00",
+  "last_reported": "2026-11-06T23:00:00.007056+00:00",
+  "last_updated": "2026-11-06T23:00:00.007056+00:00",
+  "context": {
+   "id": "01M6SHE8C7SJYQKCPKHK9VFGFV",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadkost_maand",
+  "state": "8.9704073289399722384597755",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "54.6964070304010554707644660",
+   "last_valid_state": "165.7965221740224999299787499",
+   "last_reset": "2026-10-31T23:00:00.001614+00:00",
+   "next_reset": "2026-12-01T00:00:00+01:00",
+   "unit_of_measurement": "€",
+   "friendly_name": "EV3 laadkost maand"
+  },
+  "last_changed": "2026-11-05T12:21:08.893138+00:00",
+  "last_reported": "2026-11-05T12:21:08.893138+00:00",
+  "last_updated": "2026-11-05T12:21:08.893138+00:00",
+  "context": {
+   "id": "01M6NTFRMX1HZ8YTYS10YFM2XE",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadkost_net",
+  "state": "165.7965221740224999299787499",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.ev3_laadkost_per_uur",
+   "unit_of_measurement": "€",
+   "icon": "mdi:chart-histogram",
+   "friendly_name": "EV3 laadkost net"
+  },
+  "last_changed": "2026-11-05T12:21:09.834264+00:00",
+  "last_reported": "2026-11-05T12:21:09.834264+00:00",
+  "last_updated": "2026-11-05T12:21:09.834264+00:00",
+  "context": {
+   "id": "01M6NTFSJAAYNFTD2NP5970VJM",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadkost_per_100km",
+  "state": "2.49",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/100km",
+   "friendly_name": "EV3 laadkost per 100km"
+  },
+  "last_changed": "2026-11-06T05:22:05.642143+00:00",
+  "last_reported": "2026-11-06T05:22:05.642143+00:00",
+  "last_updated": "2026-11-06T05:22:05.642143+00:00",
+  "context": {
+   "id": "01M6QMX5PA44TDRS9XF7NPJH7H",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadkost_per_uur",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/h",
+   "friendly_name": "EV3 laadkost per uur"
+  },
+  "last_changed": "2026-11-05T12:21:06.284688+00:00",
+  "last_reported": "2026-11-05T12:21:06.284688+00:00",
+  "last_updated": "2026-11-05T12:21:06.284688+00:00",
+  "context": {
+   "id": "01M6NTFP3CHZNAPP77KWTNKQWW",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadvermogen_net",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "EV3 laadvermogen net"
+  },
+  "last_changed": "2026-11-05T12:21:06.280851+00:00",
+  "last_reported": "2026-11-05T12:21:06.280851+00:00",
+  "last_updated": "2026-11-05T12:21:06.280851+00:00",
+  "context": {
+   "id": "01M6NTFP382P2HY240QCTA3MKZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadvermogen_totaal",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "EV3 laadvermogen totaal"
+  },
+  "last_changed": "2026-11-05T12:21:06.282938+00:00",
+  "last_reported": "2026-11-05T12:21:06.282938+00:00",
+  "last_updated": "2026-11-05T12:21:06.282938+00:00",
+  "context": {
+   "id": "01M6NTFP3ANVK7ZQ0XJA3PYM0N",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_laadvermogen_zon",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "EV3 laadvermogen zon"
+  },
+  "last_changed": "2026-11-05T12:21:12.464774+00:00",
+  "last_reported": "2026-11-05T12:21:12.464774+00:00",
+  "last_updated": "2026-11-05T12:21:12.464774+00:00",
+  "context": {
+   "id": "01M6NTFW4GAE8JB5EPC066E916",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_odometer",
+  "state": "8634.1",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "km",
+   "device_class": "distance",
+   "icon": "mdi:speedometer",
+   "friendly_name": "EV3 Kilometerstand"
+  },
+  "last_changed": "2026-11-07T09:53:16.504194+00:00",
+  "last_reported": "2026-11-07T09:53:16.504194+00:00",
+  "last_updated": "2026-11-07T09:53:16.504194+00:00",
+  "context": {
+   "id": "01M6TPTE6R5GYN8EX48S81XTZM",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev3_verbruik_per_100km",
+  "state": "13.1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kWh/100km",
+   "friendly_name": "EV3 verbruik per 100km"
+  },
+  "last_changed": "2026-11-06T05:22:05.642247+00:00",
+  "last_reported": "2026-11-06T05:22:05.642247+00:00",
+  "last_updated": "2026-11-06T05:22:05.642247+00:00",
+  "context": {
+   "id": "01M6QMX5PA44TDRS9XF7NPJH7H",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev_actieve_laadauto",
+  "state": "buzz",
+  "attributes": {
+   "friendly_name": "EV actieve laadauto"
+  },
+  "last_changed": "2026-11-05T12:21:06.269680+00:00",
+  "last_reported": "2026-11-05T12:21:06.269680+00:00",
+  "last_updated": "2026-11-05T12:21:06.269680+00:00",
+  "context": {
+   "id": "01M6NTFP2XJ74WS1GD35BB879A",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev_charging_cable_spanning",
+  "state": "unavailable",
+  "attributes": {
+   "restored": true,
+   "state_class": "measurement",
+   "device_class": "voltage",
+   "friendly_name": "EV charging cable Spanning",
+   "supported_features": 0,
+   "unit_of_measurement": "V"
+  },
+  "last_changed": "2026-11-05T12:21:12.447898+00:00",
+  "last_reported": "2026-11-05T12:21:12.447898+00:00",
+  "last_updated": "2026-11-05T12:21:12.447898+00:00",
+  "context": {
+   "id": "01M6NTFW3ZVZ2QRCWXSS90F04X",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev_charging_cable_status",
+  "state": "unavailable",
+  "attributes": {
+   "restored": true,
+   "options": [
+    "available",
+    "plugged_in",
+    "charging",
+    "waiting_for_authorization",
+    "charged",
+    "waiting",
+    "fault"
+   ],
+   "device_class": "enum",
+   "icon": "mdi:ev-station",
+   "friendly_name": "EV charging cable Status",
+   "supported_features": 0
+  },
+  "last_changed": "2026-11-05T12:21:12.447876+00:00",
+  "last_reported": "2026-11-05T12:21:12.447876+00:00",
+  "last_updated": "2026-11-05T12:21:12.447876+00:00",
+  "context": {
+   "id": "01M6NTFW3Z6F7ESQQ6G9XGV9VF",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev_charging_cable_stroom",
+  "state": "unavailable",
+  "attributes": {
+   "restored": true,
+   "state_class": "measurement",
+   "device_class": "current",
+   "friendly_name": "EV charging cable Stroom",
+   "supported_features": 0,
+   "unit_of_measurement": "A"
+  },
+  "last_changed": "2026-11-05T12:21:12.447908+00:00",
+  "last_reported": "2026-11-05T12:21:12.447908+00:00",
+  "last_updated": "2026-11-05T12:21:12.447908+00:00",
+  "context": {
+   "id": "01M6NTFW3ZW8PHJP4HTA7D70QF",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev_charging_cable_vermogen",
+  "state": "unavailable",
+  "attributes": {
+   "restored": true,
+   "state_class": "measurement",
+   "device_class": "power",
+   "friendly_name": "EV charging cable Vermogen",
+   "supported_features": 0,
+   "unit_of_measurement": "kW"
+  },
+  "last_changed": "2026-11-05T12:21:12.447919+00:00",
+  "last_reported": "2026-11-05T12:21:12.447919+00:00",
+  "last_updated": "2026-11-05T12:21:12.447919+00:00",
+  "context": {
+   "id": "01M6NTFW3Z7G5FGWZK68QCY1YY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev_laadkabel_vermogen_w",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "EV laadkabel vermogen (W)"
+  },
+  "last_changed": "2026-11-05T12:21:06.313084+00:00",
+  "last_reported": "2026-11-05T12:21:06.313084+00:00",
+  "last_updated": "2026-11-05T12:21:06.313084+00:00",
+  "context": {
+   "id": "01M6NTFP490BN7FZ01VM5FPERB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev_laadvermogen_net",
+  "state": "3.066",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "EV laadvermogen net"
+  },
+  "last_changed": "2026-11-07T12:46:12.666852+00:00",
+  "last_reported": "2026-11-07T12:46:12.666852+00:00",
+  "last_updated": "2026-11-07T12:46:12.666852+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev_laadvermogen_smartevse",
+  "state": "3.404",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "EV laadvermogen smartevse"
+  },
+  "last_changed": "2026-11-07T12:45:52.919181+00:00",
+  "last_reported": "2026-11-07T12:45:52.919181+00:00",
+  "last_updated": "2026-11-07T12:45:52.919181+00:00",
+  "context": {
+   "id": "01M6V0PFWP7EH5DVBNNGM35FKB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev_laadvermogen_smartevse_w",
+  "state": "3404",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "EV laadvermogen smartevse (W)"
+  },
+  "last_changed": "2026-11-07T12:45:52.919787+00:00",
+  "last_reported": "2026-11-07T12:45:52.919787+00:00",
+  "last_updated": "2026-11-07T12:45:52.919787+00:00",
+  "context": {
+   "id": "01M6V0PFWP7EH5DVBNNGM35FKB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.ev_laadvermogen_zon",
+  "state": "0.338",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "EV laadvermogen zon"
+  },
+  "last_changed": "2026-11-07T12:46:12.665164+00:00",
+  "last_reported": "2026-11-07T12:46:12.665164+00:00",
+  "last_updated": "2026-11-07T12:46:12.665164+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.fluvius_meter_1sag3200274808_peak_power",
+  "state": "3.892",
+  "attributes": {
+   "state_class": "measurement",
+   "period_start": "2026-10-31T23:00:00+00:00",
+   "period_end": "2026-11-30T23:00:00+00:00",
+   "spike_window_start": "2026-11-01T13:45:00+00:00",
+   "spike_window_end": "2026-11-01T14:00:00+00:00",
+   "monthly_peaks_kw": {
+    "2026-01": 6.748,
+    "2026-02": 6.299,
+    "2026-03": 7.046,
+    "2026-04": 6.18,
+    "2026-05": 8.791,
+    "2026-06": 5.929,
+    "2026-07": 3.4,
+    "2026-08": 2.94,
+    "2026-09": 3.91,
+    "2026-10": 4.916,
+    "2026-11": 3.892
+   },
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "Fluvius meter 1SAG3200274808 Peak power"
+  },
+  "last_changed": "2026-11-05T12:21:07.593763+00:00",
+  "last_reported": "2026-11-07T12:22:00.512589+00:00",
+  "last_updated": "2026-11-05T12:21:07.593763+00:00",
+  "context": {
+   "id": "01M6NTFQC95653A0J68TE3BZD7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.gefactureerde_piek",
+  "state": "5.672",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "Gefactureerde piek"
+  },
+  "last_changed": "2026-11-05T12:21:06.379796+00:00",
+  "last_reported": "2026-11-05T12:21:06.379796+00:00",
+  "last_updated": "2026-11-05T12:21:06.379796+00:00",
+  "context": {
+   "id": "01M6NTFP6BKHV1W4H22NV8XYYD",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.huisverbruik_dag",
+  "state": "19.218",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "19.631",
+   "last_valid_state": "3019.402",
+   "last_reset": "2026-11-06T23:00:00.016541+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "friendly_name": "Huisverbruik dag"
+  },
+  "last_changed": "2026-11-07T12:46:12.666629+00:00",
+  "last_reported": "2026-11-07T12:46:12.666629+00:00",
+  "last_updated": "2026-11-07T12:46:12.666629+00:00",
+  "context": {
+   "id": "01M6V0Q35TB6HCRGZ1TFQXNPM4",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.huisverbruik_energie",
+  "state": "3019.402",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.huisverbruik_vermogen",
+   "icon": "mdi:chart-histogram",
+   "friendly_name": "Huisverbruik energie"
+  },
+  "last_changed": "2026-11-07T12:46:12.663930+00:00",
+  "last_reported": "2026-11-07T12:46:12.663930+00:00",
+  "last_updated": "2026-11-07T12:46:12.663930+00:00",
+  "context": {
+   "id": "01M6V0Q35Q17ATW3WYSWTDBDG4",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.huisverbruik_excl_stuurbaar",
+  "state": "195",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Huisverbruik excl stuurbaar"
+  },
+  "last_changed": "2026-11-07T12:46:12.664053+00:00",
+  "last_reported": "2026-11-07T12:46:12.664053+00:00",
+  "last_updated": "2026-11-07T12:46:12.664053+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.huisverbruik_vermogen",
+  "state": "3599",
+  "attributes": {
+   "friendly_name": "Huisverbruik vermogen"
+  },
+  "last_changed": "2026-11-07T12:46:12.662568+00:00",
+  "last_reported": "2026-11-07T12:46:12.662568+00:00",
+  "last_updated": "2026-11-07T12:46:12.662568+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.injectie_average_electricity_price",
+  "state": "0.23939",
+  "attributes": {
+   "state_class": "measurement",
+   "prices_today": [
+    {
+     "time": "2026-11-07 00:00:00+01:00",
+     "price": 0.24366
+    },
+    {
+     "time": "2026-11-07 00:15:00+01:00",
+     "price": 0.23711
+    },
+    {
+     "time": "2026-11-07 00:30:00+01:00",
+     "price": 0.23078
+    },
+    {
+     "time": "2026-11-07 00:45:00+01:00",
+     "price": 0.22412
+    },
+    {
+     "time": "2026-11-07 01:00:00+01:00",
+     "price": 0.22968
+    },
+    {
+     "time": "2026-11-07 01:15:00+01:00",
+     "price": 0.22344
+    },
+    {
+     "time": "2026-11-07 01:30:00+01:00",
+     "price": 0.21886
+    },
+    {
+     "time": "2026-11-07 01:45:00+01:00",
+     "price": 0.21765
+    },
+    {
+     "time": "2026-11-07 02:00:00+01:00",
+     "price": 0.21996
+    },
+    {
+     "time": "2026-11-07 02:15:00+01:00",
+     "price": 0.21809
+    },
+    {
+     "time": "2026-11-07 02:30:00+01:00",
+     "price": 0.21274
+    },
+    {
+     "time": "2026-11-07 02:45:00+01:00",
+     "price": 0.21399
+    },
+    {
+     "time": "2026-11-07 03:00:00+01:00",
+     "price": 0.21042
+    },
+    {
+     "time": "2026-11-07 03:15:00+01:00",
+     "price": 0.21036
+    },
+    {
+     "time": "2026-11-07 03:30:00+01:00",
+     "price": 0.2107
+    },
+    {
+     "time": "2026-11-07 03:45:00+01:00",
+     "price": 0.2123
+    },
+    {
+     "time": "2026-11-07 04:00:00+01:00",
+     "price": 0.21361
+    },
+    {
+     "time": "2026-11-07 04:15:00+01:00",
+     "price": 0.21138
+    },
+    {
+     "time": "2026-11-07 04:30:00+01:00",
+     "price": 0.21138
+    },
+    {
+     "time": "2026-11-07 04:45:00+01:00",
+     "price": 0.2122
+    },
+    {
+     "time": "2026-11-07 05:00:00+01:00",
+     "price": 0.21398
+    },
+    {
+     "time": "2026-11-07 05:15:00+01:00",
+     "price": 0.21547
+    },
+    {
+     "time": "2026-11-07 05:30:00+01:00",
+     "price": 0.21754
+    },
+    {
+     "time": "2026-11-07 05:45:00+01:00",
+     "price": 0.21474
+    },
+    {
+     "time": "2026-11-07 06:00:00+01:00",
+     "price": 0.21307
+    },
+    {
+     "time": "2026-11-07 06:15:00+01:00",
+     "price": 0.21422
+    },
+    {
+     "time": "2026-11-07 06:30:00+01:00",
+     "price": 0.21779
+    },
+    {
+     "time": "2026-11-07 06:45:00+01:00",
+     "price": 0.21882
+    },
+    {
+     "time": "2026-11-07 07:00:00+01:00",
+     "price": 0.22589
+    },
+    {
+     "time": "2026-11-07 07:15:00+01:00",
+     "price": 0.22996
+    },
+    {
+     "time": "2026-11-07 07:30:00+01:00",
+     "price": 0.22959
+    },
+    {
+     "time": "2026-11-07 07:45:00+01:00",
+     "price": 0.23
+    },
+    {
+     "time": "2026-11-07 08:00:00+01:00",
+     "price": 0.24134
+    },
+    {
+     "time": "2026-11-07 08:15:00+01:00",
+     "price": 0.23598
+    },
+    {
+     "time": "2026-11-07 08:30:00+01:00",
+     "price": 0.22715
+    },
+    {
+     "time": "2026-11-07 08:45:00+01:00",
+     "price": 0.22205
+    },
+    {
+     "time": "2026-11-07 09:00:00+01:00",
+     "price": 0.23615
+    },
+    {
+     "time": "2026-11-07 09:15:00+01:00",
+     "price": 0.22569
+    },
+    {
+     "time": "2026-11-07 09:30:00+01:00",
+     "price": 0.21453
+    },
+    {
+     "time": "2026-11-07 09:45:00+01:00",
+     "price": 0.2006
+    },
+    {
+     "time": "2026-11-07 10:00:00+01:00",
+     "price": 0.2153
+    },
+    {
+     "time": "2026-11-07 10:15:00+01:00",
+     "price": 0.20705
+    },
+    {
+     "time": "2026-11-07 10:30:00+01:00",
+     "price": 0.20808
+    },
+    {
+     "time": "2026-11-07 10:45:00+01:00",
+     "price": 0.20792
+    },
+    {
+     "time": "2026-11-07 11:00:00+01:00",
+     "price": 0.20657
+    },
+    {
+     "time": "2026-11-07 11:15:00+01:00",
+     "price": 0.20378
+    },
+    {
+     "time": "2026-11-07 11:30:00+01:00",
+     "price": 0.20532
+    },
+    {
+     "time": "2026-11-07 11:45:00+01:00",
+     "price": 0.21013
+    },
+    {
+     "time": "2026-11-07 12:00:00+01:00",
+     "price": 0.21017
+    },
+    {
+     "time": "2026-11-07 12:15:00+01:00",
+     "price": 0.20527
+    },
+    {
+     "time": "2026-11-07 12:30:00+01:00",
+     "price": 0.20841
+    },
+    {
+     "time": "2026-11-07 12:45:00+01:00",
+     "price": 0.20648
+    },
+    {
+     "time": "2026-11-07 13:00:00+01:00",
+     "price": 0.20787
+    },
+    {
+     "time": "2026-11-07 13:15:00+01:00",
+     "price": 0.20426
+    },
+    {
+     "time": "2026-11-07 13:30:00+01:00",
+     "price": 0.20709
+    },
+    {
+     "time": "2026-11-07 13:45:00+01:00",
+     "price": 0.2099
+    },
+    {
+     "time": "2026-11-07 14:00:00+01:00",
+     "price": 0.21152
+    },
+    {
+     "time": "2026-11-07 14:15:00+01:00",
+     "price": 0.21681
+    },
+    {
+     "time": "2026-11-07 14:30:00+01:00",
+     "price": 0.22095
+    },
+    {
+     "time": "2026-11-07 14:45:00+01:00",
+     "price": 0.24506
+    },
+    {
+     "time": "2026-11-07 15:00:00+01:00",
+     "price": 0.21726
+    },
+    {
+     "time": "2026-11-07 15:15:00+01:00",
+     "price": 0.25255
+    },
+    {
+     "time": "2026-11-07 15:30:00+01:00",
+     "price": 0.28921
+    },
+    {
+     "time": "2026-11-07 15:45:00+01:00",
+     "price": 0.31038
+    },
+    {
+     "time": "2026-11-07 16:00:00+01:00",
+     "price": 0.28711
+    },
+    {
+     "time": "2026-11-07 16:15:00+01:00",
+     "price": 0.2945
+    },
+    {
+     "time": "2026-11-07 16:30:00+01:00",
+     "price": 0.2997
+    },
+    {
+     "time": "2026-11-07 16:45:00+01:00",
+     "price": 0.30124
+    },
+    {
+     "time": "2026-11-07 17:00:00+01:00",
+     "price": 0.29655
+    },
+    {
+     "time": "2026-11-07 17:15:00+01:00",
+     "price": 0.29786
+    },
+    {
+     "time": "2026-11-07 17:30:00+01:00",
+     "price": 0.30435
+    },
+    {
+     "time": "2026-11-07 17:45:00+01:00",
+     "price": 0.30348
+    },
+    {
+     "time": "2026-11-07 18:00:00+01:00",
+     "price": 0.30344
+    },
+    {
+     "time": "2026-11-07 18:15:00+01:00",
+     "price": 0.30341
+    },
+    {
+     "time": "2026-11-07 18:30:00+01:00",
+     "price": 0.29886
+    },
+    {
+     "time": "2026-11-07 18:45:00+01:00",
+     "price": 0.30141
+    },
+    {
+     "time": "2026-11-07 19:00:00+01:00",
+     "price": 0.30319
+    },
+    {
+     "time": "2026-11-07 19:15:00+01:00",
+     "price": 0.29888
+    },
+    {
+     "time": "2026-11-07 19:30:00+01:00",
+     "price": 0.29862
+    },
+    {
+     "time": "2026-11-07 19:45:00+01:00",
+     "price": 0.30119
+    },
+    {
+     "time": "2026-11-07 20:00:00+01:00",
+     "price": 0.3013
+    },
+    {
+     "time": "2026-11-07 20:15:00+01:00",
+     "price": 0.29087
+    },
+    {
+     "time": "2026-11-07 20:30:00+01:00",
+     "price": 0.2868
+    },
+    {
+     "time": "2026-11-07 20:45:00+01:00",
+     "price": 0.27512
+    },
+    {
+     "time": "2026-11-07 21:00:00+01:00",
+     "price": 0.28598
+    },
+    {
+     "time": "2026-11-07 21:15:00+01:00",
+     "price": 0.27042
+    },
+    {
+     "time": "2026-11-07 21:30:00+01:00",
+     "price": 0.26205
+    },
+    {
+     "time": "2026-11-07 21:45:00+01:00",
+     "price": 0.24751
+    },
+    {
+     "time": "2026-11-07 22:00:00+01:00",
+     "price": 0.25766
+    },
+    {
+     "time": "2026-11-07 22:15:00+01:00",
+     "price": 0.24827
+    },
+    {
+     "time": "2026-11-07 22:30:00+01:00",
+     "price": 0.2444
+    },
+    {
+     "time": "2026-11-07 22:45:00+01:00",
+     "price": 0.23076
+    },
+    {
+     "time": "2026-11-07 23:00:00+01:00",
+     "price": 0.23
+    },
+    {
+     "time": "2026-11-07 23:15:00+01:00",
+     "price": 0.22103
+    },
+    {
+     "time": "2026-11-07 23:30:00+01:00",
+     "price": 0.21617
+    },
+    {
+     "time": "2026-11-07 23:45:00+01:00",
+     "price": 0.20521
+    }
+   ],
+   "prices_tomorrow": [],
+   "prices": [
+    {
+     "time": "2026-11-07 00:00:00+01:00",
+     "price": 0.24366
+    },
+    {
+     "time": "2026-11-07 00:15:00+01:00",
+     "price": 0.23711
+    },
+    {
+     "time": "2026-11-07 00:30:00+01:00",
+     "price": 0.23078
+    },
+    {
+     "time": "2026-11-07 00:45:00+01:00",
+     "price": 0.22412
+    },
+    {
+     "time": "2026-11-07 01:00:00+01:00",
+     "price": 0.22968
+    },
+    {
+     "time": "2026-11-07 01:15:00+01:00",
+     "price": 0.22344
+    },
+    {
+     "time": "2026-11-07 01:30:00+01:00",
+     "price": 0.21886
+    },
+    {
+     "time": "2026-11-07 01:45:00+01:00",
+     "price": 0.21765
+    },
+    {
+     "time": "2026-11-07 02:00:00+01:00",
+     "price": 0.21996
+    },
+    {
+     "time": "2026-11-07 02:15:00+01:00",
+     "price": 0.21809
+    },
+    {
+     "time": "2026-11-07 02:30:00+01:00",
+     "price": 0.21274
+    },
+    {
+     "time": "2026-11-07 02:45:00+01:00",
+     "price": 0.21399
+    },
+    {
+     "time": "2026-11-07 03:00:00+01:00",
+     "price": 0.21042
+    },
+    {
+     "time": "2026-11-07 03:15:00+01:00",
+     "price": 0.21036
+    },
+    {
+     "time": "2026-11-07 03:30:00+01:00",
+     "price": 0.2107
+    },
+    {
+     "time": "2026-11-07 03:45:00+01:00",
+     "price": 0.2123
+    },
+    {
+     "time": "2026-11-07 04:00:00+01:00",
+     "price": 0.21361
+    },
+    {
+     "time": "2026-11-07 04:15:00+01:00",
+     "price": 0.21138
+    },
+    {
+     "time": "2026-11-07 04:30:00+01:00",
+     "price": 0.21138
+    },
+    {
+     "time": "2026-11-07 04:45:00+01:00",
+     "price": 0.2122
+    },
+    {
+     "time": "2026-11-07 05:00:00+01:00",
+     "price": 0.21398
+    },
+    {
+     "time": "2026-11-07 05:15:00+01:00",
+     "price": 0.21547
+    },
+    {
+     "time": "2026-11-07 05:30:00+01:00",
+     "price": 0.21754
+    },
+    {
+     "time": "2026-11-07 05:45:00+01:00",
+     "price": 0.21474
+    },
+    {
+     "time": "2026-11-07 06:00:00+01:00",
+     "price": 0.21307
+    },
+    {
+     "time": "2026-11-07 06:15:00+01:00",
+     "price": 0.21422
+    },
+    {
+     "time": "2026-11-07 06:30:00+01:00",
+     "price": 0.21779
+    },
+    {
+     "time": "2026-11-07 06:45:00+01:00",
+     "price": 0.21882
+    },
+    {
+     "time": "2026-11-07 07:00:00+01:00",
+     "price": 0.22589
+    },
+    {
+     "time": "2026-11-07 07:15:00+01:00",
+     "price": 0.22996
+    },
+    {
+     "time": "2026-11-07 07:30:00+01:00",
+     "price": 0.22959
+    },
+    {
+     "time": "2026-11-07 07:45:00+01:00",
+     "price": 0.23
+    },
+    {
+     "time": "2026-11-07 08:00:00+01:00",
+     "price": 0.24134
+    },
+    {
+     "time": "2026-11-07 08:15:00+01:00",
+     "price": 0.23598
+    },
+    {
+     "time": "2026-11-07 08:30:00+01:00",
+     "price": 0.22715
+    },
+    {
+     "time": "2026-11-07 08:45:00+01:00",
+     "price": 0.22205
+    },
+    {
+     "time": "2026-11-07 09:00:00+01:00",
+     "price": 0.23615
+    },
+    {
+     "time": "2026-11-07 09:15:00+01:00",
+     "price": 0.22569
+    },
+    {
+     "time": "2026-11-07 09:30:00+01:00",
+     "price": 0.21453
+    },
+    {
+     "time": "2026-11-07 09:45:00+01:00",
+     "price": 0.2006
+    },
+    {
+     "time": "2026-11-07 10:00:00+01:00",
+     "price": 0.2153
+    },
+    {
+     "time": "2026-11-07 10:15:00+01:00",
+     "price": 0.20705
+    },
+    {
+     "time": "2026-11-07 10:30:00+01:00",
+     "price": 0.20808
+    },
+    {
+     "time": "2026-11-07 10:45:00+01:00",
+     "price": 0.20792
+    },
+    {
+     "time": "2026-11-07 11:00:00+01:00",
+     "price": 0.20657
+    },
+    {
+     "time": "2026-11-07 11:15:00+01:00",
+     "price": 0.20378
+    },
+    {
+     "time": "2026-11-07 11:30:00+01:00",
+     "price": 0.20532
+    },
+    {
+     "time": "2026-11-07 11:45:00+01:00",
+     "price": 0.21013
+    },
+    {
+     "time": "2026-11-07 12:00:00+01:00",
+     "price": 0.21017
+    },
+    {
+     "time": "2026-11-07 12:15:00+01:00",
+     "price": 0.20527
+    },
+    {
+     "time": "2026-11-07 12:30:00+01:00",
+     "price": 0.20841
+    },
+    {
+     "time": "2026-11-07 12:45:00+01:00",
+     "price": 0.20648
+    },
+    {
+     "time": "2026-11-07 13:00:00+01:00",
+     "price": 0.20787
+    },
+    {
+     "time": "2026-11-07 13:15:00+01:00",
+     "price": 0.20426
+    },
+    {
+     "time": "2026-11-07 13:30:00+01:00",
+     "price": 0.20709
+    },
+    {
+     "time": "2026-11-07 13:45:00+01:00",
+     "price": 0.2099
+    },
+    {
+     "time": "2026-11-07 14:00:00+01:00",
+     "price": 0.21152
+    },
+    {
+     "time": "2026-11-07 14:15:00+01:00",
+     "price": 0.21681
+    },
+    {
+     "time": "2026-11-07 14:30:00+01:00",
+     "price": 0.22095
+    },
+    {
+     "time": "2026-11-07 14:45:00+01:00",
+     "price": 0.24506
+    },
+    {
+     "time": "2026-11-07 15:00:00+01:00",
+     "price": 0.21726
+    },
+    {
+     "time": "2026-11-07 15:15:00+01:00",
+     "price": 0.25255
+    },
+    {
+     "time": "2026-11-07 15:30:00+01:00",
+     "price": 0.28921
+    },
+    {
+     "time": "2026-11-07 15:45:00+01:00",
+     "price": 0.31038
+    },
+    {
+     "time": "2026-11-07 16:00:00+01:00",
+     "price": 0.28711
+    },
+    {
+     "time": "2026-11-07 16:15:00+01:00",
+     "price": 0.2945
+    },
+    {
+     "time": "2026-11-07 16:30:00+01:00",
+     "price": 0.2997
+    },
+    {
+     "time": "2026-11-07 16:45:00+01:00",
+     "price": 0.30124
+    },
+    {
+     "time": "2026-11-07 17:00:00+01:00",
+     "price": 0.29655
+    },
+    {
+     "time": "2026-11-07 17:15:00+01:00",
+     "price": 0.29786
+    },
+    {
+     "time": "2026-11-07 17:30:00+01:00",
+     "price": 0.30435
+    },
+    {
+     "time": "2026-11-07 17:45:00+01:00",
+     "price": 0.30348
+    },
+    {
+     "time": "2026-11-07 18:00:00+01:00",
+     "price": 0.30344
+    },
+    {
+     "time": "2026-11-07 18:15:00+01:00",
+     "price": 0.30341
+    },
+    {
+     "time": "2026-11-07 18:30:00+01:00",
+     "price": 0.29886
+    },
+    {
+     "time": "2026-11-07 18:45:00+01:00",
+     "price": 0.30141
+    },
+    {
+     "time": "2026-11-07 19:00:00+01:00",
+     "price": 0.30319
+    },
+    {
+     "time": "2026-11-07 19:15:00+01:00",
+     "price": 0.29888
+    },
+    {
+     "time": "2026-11-07 19:30:00+01:00",
+     "price": 0.29862
+    },
+    {
+     "time": "2026-11-07 19:45:00+01:00",
+     "price": 0.30119
+    },
+    {
+     "time": "2026-11-07 20:00:00+01:00",
+     "price": 0.3013
+    },
+    {
+     "time": "2026-11-07 20:15:00+01:00",
+     "price": 0.29087
+    },
+    {
+     "time": "2026-11-07 20:30:00+01:00",
+     "price": 0.2868
+    },
+    {
+     "time": "2026-11-07 20:45:00+01:00",
+     "price": 0.27512
+    },
+    {
+     "time": "2026-11-07 21:00:00+01:00",
+     "price": 0.28598
+    },
+    {
+     "time": "2026-11-07 21:15:00+01:00",
+     "price": 0.27042
+    },
+    {
+     "time": "2026-11-07 21:30:00+01:00",
+     "price": 0.26205
+    },
+    {
+     "time": "2026-11-07 21:45:00+01:00",
+     "price": 0.24751
+    },
+    {
+     "time": "2026-11-07 22:00:00+01:00",
+     "price": 0.25766
+    },
+    {
+     "time": "2026-11-07 22:15:00+01:00",
+     "price": 0.24827
+    },
+    {
+     "time": "2026-11-07 22:30:00+01:00",
+     "price": 0.2444
+    },
+    {
+     "time": "2026-11-07 22:45:00+01:00",
+     "price": 0.23076
+    },
+    {
+     "time": "2026-11-07 23:00:00+01:00",
+     "price": 0.23
+    },
+    {
+     "time": "2026-11-07 23:15:00+01:00",
+     "price": 0.22103
+    },
+    {
+     "time": "2026-11-07 23:30:00+01:00",
+     "price": 0.21617
+    },
+    {
+     "time": "2026-11-07 23:45:00+01:00",
+     "price": 0.20521
+    }
+   ],
+   "unit_of_measurement": "€/kWh",
+   "attribution": "Data provided by ENTSO-e Transparency Platform",
+   "icon": "mdi:currency-eur",
+   "friendly_name": "entso-e (Injectie) Average electricity price (Injectie)"
+  },
+  "last_changed": "2026-11-06T23:00:00.008933+00:00",
+  "last_reported": "2026-11-06T23:00:00.008933+00:00",
+  "last_updated": "2026-11-06T23:00:00.008933+00:00",
+  "context": {
+   "id": "01M6SHE8C8THK9382CNEFTS10F",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.injectie_current_electricity_market_price",
+  "state": "0.2099",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/kWh",
+   "attribution": "Data provided by ENTSO-e Transparency Platform",
+   "icon": "mdi:currency-eur",
+   "friendly_name": "entso-e (Injectie) Current electricity market price (Injectie)"
+  },
+  "last_changed": "2026-11-07T12:45:00.011089+00:00",
+  "last_reported": "2026-11-07T12:45:00.011089+00:00",
+  "last_updated": "2026-11-07T12:45:00.011089+00:00",
+  "context": {
+   "id": "01M6V0MW7BB8CWDYKP011XFSV0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.injectie_dag",
+  "state": "0.004",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "0.522",
+   "last_valid_state": "8042.631",
+   "last_reset": "2026-11-06T23:00:00.015870+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "P1 Meter Injectie dag"
+  },
+  "last_changed": "2026-11-07T10:25:52.764117+00:00",
+  "last_reported": "2026-11-07T10:25:52.764117+00:00",
+  "last_updated": "2026-11-07T10:25:52.764117+00:00",
+  "context": {
+   "id": "01M6TRP4KWTZXG7NQTMPMCT9DF",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.injectie_effectieve_terugleververgoeding",
+  "state": "0.20707",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/kWh",
+   "friendly_name": "Injectie effectieve terugleververgoeding"
+  },
+  "last_changed": "2026-11-07T12:32:17.424777+00:00",
+  "last_reported": "2026-11-07T12:32:17.424777+00:00",
+  "last_updated": "2026-11-07T12:32:17.424777+00:00",
+  "context": {
+   "id": "01M6TZXKGGWMC781JSZSGVR6R7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.jeroen_average_electricity_price",
+  "state": "0.40946",
+  "attributes": {
+   "state_class": "measurement",
+   "prices_today": [
+    {
+     "time": "2026-11-07 00:00:00+01:00",
+     "price": 0.41417
+    },
+    {
+     "time": "2026-11-07 00:15:00+01:00",
+     "price": 0.40694
+    },
+    {
+     "time": "2026-11-07 00:30:00+01:00",
+     "price": 0.39996
+    },
+    {
+     "time": "2026-11-07 00:45:00+01:00",
+     "price": 0.39261
+    },
+    {
+     "time": "2026-11-07 01:00:00+01:00",
+     "price": 0.39874
+    },
+    {
+     "time": "2026-11-07 01:15:00+01:00",
+     "price": 0.39186
+    },
+    {
+     "time": "2026-11-07 01:30:00+01:00",
+     "price": 0.3868
+    },
+    {
+     "time": "2026-11-07 01:45:00+01:00",
+     "price": 0.38547
+    },
+    {
+     "time": "2026-11-07 02:00:00+01:00",
+     "price": 0.38802
+    },
+    {
+     "time": "2026-11-07 02:15:00+01:00",
+     "price": 0.38596
+    },
+    {
+     "time": "2026-11-07 02:30:00+01:00",
+     "price": 0.38005
+    },
+    {
+     "time": "2026-11-07 02:45:00+01:00",
+     "price": 0.38143
+    },
+    {
+     "time": "2026-11-07 03:00:00+01:00",
+     "price": 0.37749
+    },
+    {
+     "time": "2026-11-07 03:15:00+01:00",
+     "price": 0.37743
+    },
+    {
+     "time": "2026-11-07 03:30:00+01:00",
+     "price": 0.3778
+    },
+    {
+     "time": "2026-11-07 03:45:00+01:00",
+     "price": 0.37957
+    },
+    {
+     "time": "2026-11-07 04:00:00+01:00",
+     "price": 0.38102
+    },
+    {
+     "time": "2026-11-07 04:15:00+01:00",
+     "price": 0.37855
+    },
+    {
+     "time": "2026-11-07 04:30:00+01:00",
+     "price": 0.37855
+    },
+    {
+     "time": "2026-11-07 04:45:00+01:00",
+     "price": 0.37946
+    },
+    {
+     "time": "2026-11-07 05:00:00+01:00",
+     "price": 0.38142
+    },
+    {
+     "time": "2026-11-07 05:15:00+01:00",
+     "price": 0.38306
+    },
+    {
+     "time": "2026-11-07 05:30:00+01:00",
+     "price": 0.38535
+    },
+    {
+     "time": "2026-11-07 05:45:00+01:00",
+     "price": 0.38226
+    },
+    {
+     "time": "2026-11-07 06:00:00+01:00",
+     "price": 0.38041
+    },
+    {
+     "time": "2026-11-07 06:15:00+01:00",
+     "price": 0.38169
+    },
+    {
+     "time": "2026-11-07 06:30:00+01:00",
+     "price": 0.38562
+    },
+    {
+     "time": "2026-11-07 06:45:00+01:00",
+     "price": 0.38676
+    },
+    {
+     "time": "2026-11-07 07:00:00+01:00",
+     "price": 0.39456
+    },
+    {
+     "time": "2026-11-07 07:15:00+01:00",
+     "price": 0.39905
+    },
+    {
+     "time": "2026-11-07 07:30:00+01:00",
+     "price": 0.39864
+    },
+    {
+     "time": "2026-11-07 07:45:00+01:00",
+     "price": 0.39909
+    },
+    {
+     "time": "2026-11-07 08:00:00+01:00",
+     "price": 0.4116
+    },
+    {
+     "time": "2026-11-07 08:15:00+01:00",
+     "price": 0.40569
+    },
+    {
+     "time": "2026-11-07 08:30:00+01:00",
+     "price": 0.39595
+    },
+    {
+     "time": "2026-11-07 08:45:00+01:00",
+     "price": 0.39032
+    },
+    {
+     "time": "2026-11-07 09:00:00+01:00",
+     "price": 0.40588
+    },
+    {
+     "time": "2026-11-07 09:15:00+01:00",
+     "price": 0.39434
+    },
+    {
+     "time": "2026-11-07 09:30:00+01:00",
+     "price": 0.38202
+    },
+    {
+     "time": "2026-11-07 09:45:00+01:00",
+     "price": 0.36666
+    },
+    {
+     "time": "2026-11-07 10:00:00+01:00",
+     "price": 0.38288
+    },
+    {
+     "time": "2026-11-07 10:15:00+01:00",
+     "price": 0.37377
+    },
+    {
+     "time": "2026-11-07 10:30:00+01:00",
+     "price": 0.37491
+    },
+    {
+     "time": "2026-11-07 10:45:00+01:00",
+     "price": 0.37473
+    },
+    {
+     "time": "2026-11-07 11:00:00+01:00",
+     "price": 0.37324
+    },
+    {
+     "time": "2026-11-07 11:15:00+01:00",
+     "price": 0.37016
+    },
+    {
+     "time": "2026-11-07 11:30:00+01:00",
+     "price": 0.37187
+    },
+    {
+     "time": "2026-11-07 11:45:00+01:00",
+     "price": 0.37717
+    },
+    {
+     "time": "2026-11-07 12:00:00+01:00",
+     "price": 0.37722
+    },
+    {
+     "time": "2026-11-07 12:15:00+01:00",
+     "price": 0.37181
+    },
+    {
+     "time": "2026-11-07 12:30:00+01:00",
+     "price": 0.37527
+    },
+    {
+     "time": "2026-11-07 12:45:00+01:00",
+     "price": 0.37314
+    },
+    {
+     "time": "2026-11-07 13:00:00+01:00",
+     "price": 0.37468
+    },
+    {
+     "time": "2026-11-07 13:15:00+01:00",
+     "price": 0.37069
+    },
+    {
+     "time": "2026-11-07 13:30:00+01:00",
+     "price": 0.37381
+    },
+    {
+     "time": "2026-11-07 13:45:00+01:00",
+     "price": 0.37692
+    },
+    {
+     "time": "2026-11-07 14:00:00+01:00",
+     "price": 0.3787
+    },
+    {
+     "time": "2026-11-07 14:15:00+01:00",
+     "price": 0.38454
+    },
+    {
+     "time": "2026-11-07 14:30:00+01:00",
+     "price": 0.38911
+    },
+    {
+     "time": "2026-11-07 14:45:00+01:00",
+     "price": 0.41571
+    },
+    {
+     "time": "2026-11-07 15:00:00+01:00",
+     "price": 0.38504
+    },
+    {
+     "time": "2026-11-07 15:15:00+01:00",
+     "price": 0.42397
+    },
+    {
+     "time": "2026-11-07 15:30:00+01:00",
+     "price": 0.46442
+    },
+    {
+     "time": "2026-11-07 15:45:00+01:00",
+     "price": 0.48777
+    },
+    {
+     "time": "2026-11-07 16:00:00+01:00",
+     "price": 0.46211
+    },
+    {
+     "time": "2026-11-07 16:15:00+01:00",
+     "price": 0.47026
+    },
+    {
+     "time": "2026-11-07 16:30:00+01:00",
+     "price": 0.47599
+    },
+    {
+     "time": "2026-11-07 16:45:00+01:00",
+     "price": 0.47769
+    },
+    {
+     "time": "2026-11-07 17:00:00+01:00",
+     "price": 0.47252
+    },
+    {
+     "time": "2026-11-07 17:15:00+01:00",
+     "price": 0.47396
+    },
+    {
+     "time": "2026-11-07 17:30:00+01:00",
+     "price": 0.48112
+    },
+    {
+     "time": "2026-11-07 17:45:00+01:00",
+     "price": 0.48016
+    },
+    {
+     "time": "2026-11-07 18:00:00+01:00",
+     "price": 0.48012
+    },
+    {
+     "time": "2026-11-07 18:15:00+01:00",
+     "price": 0.48009
+    },
+    {
+     "time": "2026-11-07 18:30:00+01:00",
+     "price": 0.47507
+    },
+    {
+     "time": "2026-11-07 18:45:00+01:00",
+     "price": 0.47788
+    },
+    {
+     "time": "2026-11-07 19:00:00+01:00",
+     "price": 0.47984
+    },
+    {
+     "time": "2026-11-07 19:15:00+01:00",
+     "price": 0.47509
+    },
+    {
+     "time": "2026-11-07 19:30:00+01:00",
+     "price": 0.4748
+    },
+    {
+     "time": "2026-11-07 19:45:00+01:00",
+     "price": 0.47763
+    },
+    {
+     "time": "2026-11-07 20:00:00+01:00",
+     "price": 0.47776
+    },
+    {
+     "time": "2026-11-07 20:15:00+01:00",
+     "price": 0.46625
+    },
+    {
+     "time": "2026-11-07 20:30:00+01:00",
+     "price": 0.46176
+    },
+    {
+     "time": "2026-11-07 20:45:00+01:00",
+     "price": 0.44887
+    },
+    {
+     "time": "2026-11-07 21:00:00+01:00",
+     "price": 0.46085
+    },
+    {
+     "time": "2026-11-07 21:15:00+01:00",
+     "price": 0.44369
+    },
+    {
+     "time": "2026-11-07 21:30:00+01:00",
+     "price": 0.43445
+    },
+    {
+     "time": "2026-11-07 21:45:00+01:00",
+     "price": 0.41841
+    },
+    {
+     "time": "2026-11-07 22:00:00+01:00",
+     "price": 0.4296
+    },
+    {
+     "time": "2026-11-07 22:15:00+01:00",
+     "price": 0.41925
+    },
+    {
+     "time": "2026-11-07 22:30:00+01:00",
+     "price": 0.41498
+    },
+    {
+     "time": "2026-11-07 22:45:00+01:00",
+     "price": 0.39994
+    },
+    {
+     "time": "2026-11-07 23:00:00+01:00",
+     "price": 0.39909
+    },
+    {
+     "time": "2026-11-07 23:15:00+01:00",
+     "price": 0.3892
+    },
+    {
+     "time": "2026-11-07 23:30:00+01:00",
+     "price": 0.38384
+    },
+    {
+     "time": "2026-11-07 23:45:00+01:00",
+     "price": 0.37174
+    }
+   ],
+   "prices_tomorrow": [],
+   "prices": [
+    {
+     "time": "2026-11-07 00:00:00+01:00",
+     "price": 0.41417
+    },
+    {
+     "time": "2026-11-07 00:15:00+01:00",
+     "price": 0.40694
+    },
+    {
+     "time": "2026-11-07 00:30:00+01:00",
+     "price": 0.39996
+    },
+    {
+     "time": "2026-11-07 00:45:00+01:00",
+     "price": 0.39261
+    },
+    {
+     "time": "2026-11-07 01:00:00+01:00",
+     "price": 0.39874
+    },
+    {
+     "time": "2026-11-07 01:15:00+01:00",
+     "price": 0.39186
+    },
+    {
+     "time": "2026-11-07 01:30:00+01:00",
+     "price": 0.3868
+    },
+    {
+     "time": "2026-11-07 01:45:00+01:00",
+     "price": 0.38547
+    },
+    {
+     "time": "2026-11-07 02:00:00+01:00",
+     "price": 0.38802
+    },
+    {
+     "time": "2026-11-07 02:15:00+01:00",
+     "price": 0.38596
+    },
+    {
+     "time": "2026-11-07 02:30:00+01:00",
+     "price": 0.38005
+    },
+    {
+     "time": "2026-11-07 02:45:00+01:00",
+     "price": 0.38143
+    },
+    {
+     "time": "2026-11-07 03:00:00+01:00",
+     "price": 0.37749
+    },
+    {
+     "time": "2026-11-07 03:15:00+01:00",
+     "price": 0.37743
+    },
+    {
+     "time": "2026-11-07 03:30:00+01:00",
+     "price": 0.3778
+    },
+    {
+     "time": "2026-11-07 03:45:00+01:00",
+     "price": 0.37957
+    },
+    {
+     "time": "2026-11-07 04:00:00+01:00",
+     "price": 0.38102
+    },
+    {
+     "time": "2026-11-07 04:15:00+01:00",
+     "price": 0.37855
+    },
+    {
+     "time": "2026-11-07 04:30:00+01:00",
+     "price": 0.37855
+    },
+    {
+     "time": "2026-11-07 04:45:00+01:00",
+     "price": 0.37946
+    },
+    {
+     "time": "2026-11-07 05:00:00+01:00",
+     "price": 0.38142
+    },
+    {
+     "time": "2026-11-07 05:15:00+01:00",
+     "price": 0.38306
+    },
+    {
+     "time": "2026-11-07 05:30:00+01:00",
+     "price": 0.38535
+    },
+    {
+     "time": "2026-11-07 05:45:00+01:00",
+     "price": 0.38226
+    },
+    {
+     "time": "2026-11-07 06:00:00+01:00",
+     "price": 0.38041
+    },
+    {
+     "time": "2026-11-07 06:15:00+01:00",
+     "price": 0.38169
+    },
+    {
+     "time": "2026-11-07 06:30:00+01:00",
+     "price": 0.38562
+    },
+    {
+     "time": "2026-11-07 06:45:00+01:00",
+     "price": 0.38676
+    },
+    {
+     "time": "2026-11-07 07:00:00+01:00",
+     "price": 0.39456
+    },
+    {
+     "time": "2026-11-07 07:15:00+01:00",
+     "price": 0.39905
+    },
+    {
+     "time": "2026-11-07 07:30:00+01:00",
+     "price": 0.39864
+    },
+    {
+     "time": "2026-11-07 07:45:00+01:00",
+     "price": 0.39909
+    },
+    {
+     "time": "2026-11-07 08:00:00+01:00",
+     "price": 0.4116
+    },
+    {
+     "time": "2026-11-07 08:15:00+01:00",
+     "price": 0.40569
+    },
+    {
+     "time": "2026-11-07 08:30:00+01:00",
+     "price": 0.39595
+    },
+    {
+     "time": "2026-11-07 08:45:00+01:00",
+     "price": 0.39032
+    },
+    {
+     "time": "2026-11-07 09:00:00+01:00",
+     "price": 0.40588
+    },
+    {
+     "time": "2026-11-07 09:15:00+01:00",
+     "price": 0.39434
+    },
+    {
+     "time": "2026-11-07 09:30:00+01:00",
+     "price": 0.38202
+    },
+    {
+     "time": "2026-11-07 09:45:00+01:00",
+     "price": 0.36666
+    },
+    {
+     "time": "2026-11-07 10:00:00+01:00",
+     "price": 0.38288
+    },
+    {
+     "time": "2026-11-07 10:15:00+01:00",
+     "price": 0.37377
+    },
+    {
+     "time": "2026-11-07 10:30:00+01:00",
+     "price": 0.37491
+    },
+    {
+     "time": "2026-11-07 10:45:00+01:00",
+     "price": 0.37473
+    },
+    {
+     "time": "2026-11-07 11:00:00+01:00",
+     "price": 0.37324
+    },
+    {
+     "time": "2026-11-07 11:15:00+01:00",
+     "price": 0.37016
+    },
+    {
+     "time": "2026-11-07 11:30:00+01:00",
+     "price": 0.37187
+    },
+    {
+     "time": "2026-11-07 11:45:00+01:00",
+     "price": 0.37717
+    },
+    {
+     "time": "2026-11-07 12:00:00+01:00",
+     "price": 0.37722
+    },
+    {
+     "time": "2026-11-07 12:15:00+01:00",
+     "price": 0.37181
+    },
+    {
+     "time": "2026-11-07 12:30:00+01:00",
+     "price": 0.37527
+    },
+    {
+     "time": "2026-11-07 12:45:00+01:00",
+     "price": 0.37314
+    },
+    {
+     "time": "2026-11-07 13:00:00+01:00",
+     "price": 0.37468
+    },
+    {
+     "time": "2026-11-07 13:15:00+01:00",
+     "price": 0.37069
+    },
+    {
+     "time": "2026-11-07 13:30:00+01:00",
+     "price": 0.37381
+    },
+    {
+     "time": "2026-11-07 13:45:00+01:00",
+     "price": 0.37692
+    },
+    {
+     "time": "2026-11-07 14:00:00+01:00",
+     "price": 0.3787
+    },
+    {
+     "time": "2026-11-07 14:15:00+01:00",
+     "price": 0.38454
+    },
+    {
+     "time": "2026-11-07 14:30:00+01:00",
+     "price": 0.38911
+    },
+    {
+     "time": "2026-11-07 14:45:00+01:00",
+     "price": 0.41571
+    },
+    {
+     "time": "2026-11-07 15:00:00+01:00",
+     "price": 0.38504
+    },
+    {
+     "time": "2026-11-07 15:15:00+01:00",
+     "price": 0.42397
+    },
+    {
+     "time": "2026-11-07 15:30:00+01:00",
+     "price": 0.46442
+    },
+    {
+     "time": "2026-11-07 15:45:00+01:00",
+     "price": 0.48777
+    },
+    {
+     "time": "2026-11-07 16:00:00+01:00",
+     "price": 0.46211
+    },
+    {
+     "time": "2026-11-07 16:15:00+01:00",
+     "price": 0.47026
+    },
+    {
+     "time": "2026-11-07 16:30:00+01:00",
+     "price": 0.47599
+    },
+    {
+     "time": "2026-11-07 16:45:00+01:00",
+     "price": 0.47769
+    },
+    {
+     "time": "2026-11-07 17:00:00+01:00",
+     "price": 0.47252
+    },
+    {
+     "time": "2026-11-07 17:15:00+01:00",
+     "price": 0.47396
+    },
+    {
+     "time": "2026-11-07 17:30:00+01:00",
+     "price": 0.48112
+    },
+    {
+     "time": "2026-11-07 17:45:00+01:00",
+     "price": 0.48016
+    },
+    {
+     "time": "2026-11-07 18:00:00+01:00",
+     "price": 0.48012
+    },
+    {
+     "time": "2026-11-07 18:15:00+01:00",
+     "price": 0.48009
+    },
+    {
+     "time": "2026-11-07 18:30:00+01:00",
+     "price": 0.47507
+    },
+    {
+     "time": "2026-11-07 18:45:00+01:00",
+     "price": 0.47788
+    },
+    {
+     "time": "2026-11-07 19:00:00+01:00",
+     "price": 0.47984
+    },
+    {
+     "time": "2026-11-07 19:15:00+01:00",
+     "price": 0.47509
+    },
+    {
+     "time": "2026-11-07 19:30:00+01:00",
+     "price": 0.4748
+    },
+    {
+     "time": "2026-11-07 19:45:00+01:00",
+     "price": 0.47763
+    },
+    {
+     "time": "2026-11-07 20:00:00+01:00",
+     "price": 0.47776
+    },
+    {
+     "time": "2026-11-07 20:15:00+01:00",
+     "price": 0.46625
+    },
+    {
+     "time": "2026-11-07 20:30:00+01:00",
+     "price": 0.46176
+    },
+    {
+     "time": "2026-11-07 20:45:00+01:00",
+     "price": 0.44887
+    },
+    {
+     "time": "2026-11-07 21:00:00+01:00",
+     "price": 0.46085
+    },
+    {
+     "time": "2026-11-07 21:15:00+01:00",
+     "price": 0.44369
+    },
+    {
+     "time": "2026-11-07 21:30:00+01:00",
+     "price": 0.43445
+    },
+    {
+     "time": "2026-11-07 21:45:00+01:00",
+     "price": 0.41841
+    },
+    {
+     "time": "2026-11-07 22:00:00+01:00",
+     "price": 0.4296
+    },
+    {
+     "time": "2026-11-07 22:15:00+01:00",
+     "price": 0.41925
+    },
+    {
+     "time": "2026-11-07 22:30:00+01:00",
+     "price": 0.41498
+    },
+    {
+     "time": "2026-11-07 22:45:00+01:00",
+     "price": 0.39994
+    },
+    {
+     "time": "2026-11-07 23:00:00+01:00",
+     "price": 0.39909
+    },
+    {
+     "time": "2026-11-07 23:15:00+01:00",
+     "price": 0.3892
+    },
+    {
+     "time": "2026-11-07 23:30:00+01:00",
+     "price": 0.38384
+    },
+    {
+     "time": "2026-11-07 23:45:00+01:00",
+     "price": 0.37174
+    }
+   ],
+   "unit_of_measurement": "€/kWh",
+   "attribution": "Data provided by ENTSO-e Transparency Platform",
+   "icon": "mdi:currency-eur",
+   "friendly_name": "entso-e (Jeroen) Average electricity price (Jeroen)"
+  },
+  "last_changed": "2026-11-06T23:00:00.013262+00:00",
+  "last_reported": "2026-11-06T23:00:00.013262+00:00",
+  "last_updated": "2026-11-06T23:00:00.013262+00:00",
+  "context": {
+   "id": "01M6SHE8CDCNZ19S0H6JTC05NY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.jeroen_current_electricity_market_price",
+  "state": "0.37692",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/kWh",
+   "attribution": "Data provided by ENTSO-e Transparency Platform",
+   "icon": "mdi:currency-eur",
+   "friendly_name": "entso-e (Jeroen) Current electricity market price (Jeroen)"
+  },
+  "last_changed": "2026-11-07T12:45:00.002170+00:00",
+  "last_reported": "2026-11-07T12:45:00.002170+00:00",
+  "last_updated": "2026-11-07T12:45:00.002170+00:00",
+  "context": {
+   "id": "01M6V0MW72ERDCK1YPNH86MC74",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.jeroen_current_percentage_in_electricity_price_range",
+  "state": "8.5",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "attribution": "Data provided by ENTSO-e Transparency Platform",
+   "icon": "mdi:percent",
+   "friendly_name": "entso-e (Jeroen) Current percentage in electricity price range (Jeroen)"
+  },
+  "last_changed": "2026-11-07T12:45:00.012031+00:00",
+  "last_reported": "2026-11-07T12:45:00.012031+00:00",
+  "last_updated": "2026-11-07T12:45:00.012031+00:00",
+  "context": {
+   "id": "01M6V0MW7CJ81T91ZS1M4W1W62",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.kost_per_uur",
+  "state": "1.1556",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/h",
+   "friendly_name": "Kost per uur"
+  },
+  "last_changed": "2026-11-07T12:46:12.662894+00:00",
+  "last_reported": "2026-11-07T12:46:12.662894+00:00",
+  "last_updated": "2026-11-07T12:46:12.662894+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.kwartier_gemiddelde",
+  "state": "3270",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Kwartier gemiddelde"
+  },
+  "last_changed": "2026-11-07T12:46:12.661284+00:00",
+  "last_reported": "2026-11-07T12:46:12.661284+00:00",
+  "last_updated": "2026-11-07T12:46:12.661284+00:00",
+  "context": {
+   "id": "01M6V0Q35MW7D6MVJTTWCXZP59",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.kwartier_index",
+  "state": "3",
+  "attributes": {
+   "friendly_name": "Kwartier index"
+  },
+  "last_changed": "2026-11-07T12:45:00.259769+00:00",
+  "last_reported": "2026-11-07T12:45:00.259769+00:00",
+  "last_updated": "2026-11-07T12:45:00.259769+00:00",
+  "context": {
+   "id": "01M6V0MWF3E6YZ2CY70ASMZM9S",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.kwartier_toegestaan_vermogen",
+  "state": "3830",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Kwartier toegestaan vermogen"
+  },
+  "last_changed": "2026-11-07T12:46:12.661167+00:00",
+  "last_reported": "2026-11-07T12:46:12.661167+00:00",
+  "last_updated": "2026-11-07T12:46:12.661167+00:00",
+  "context": {
+   "id": "01M6V0Q35MW7D6MVJTTWCXZP59",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.kwartierprijs_volgend",
+  "state": "0.3787",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "€/kWh",
+   "friendly_name": "Kwartierprijs volgend"
+  },
+  "last_changed": "2026-11-07T12:45:00.208423+00:00",
+  "last_reported": "2026-11-07T12:45:00.208423+00:00",
+  "last_updated": "2026-11-07T12:45:00.208423+00:00",
+  "context": {
+   "id": "01M6V0MWDGG6VWKT9BRGNJVDW4",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.kwartiervermogen_projectie",
+  "state": "3085.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "P1"
+  },
+  "last_changed": "2026-11-07T12:46:12.662477+00:00",
+  "last_reported": "2026-11-07T12:46:12.662477+00:00",
+  "last_updated": "2026-11-07T12:46:12.662477+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.kwartiervermogen_vastgelegd",
+  "state": "0.264",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "friendly_name": "Kwartiervermogen vastgelegd"
+  },
+  "last_changed": "2026-11-07T12:46:12.660869+00:00",
+  "last_reported": "2026-11-07T12:46:12.660869+00:00",
+  "last_updated": "2026-11-07T12:46:12.660869+00:00",
+  "context": {
+   "id": "01M6V0Q35MW7D6MVJTTWCXZP59",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.netimport_dag",
+  "state": "20.523",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "12.676",
+   "last_valid_state": "11884.497",
+   "last_reset": "2026-11-06T23:00:00.011723+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "P1 Meter Netimport dag"
+  },
+  "last_changed": "2026-11-07T12:46:12.660671+00:00",
+  "last_reported": "2026-11-07T12:46:12.660671+00:00",
+  "last_updated": "2026-11-07T12:46:12.660671+00:00",
+  "context": {
+   "id": "01M6V0Q35MZR2GVFCG6XN1BFBD",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.omnik_hoofddak_inverter_omnik_hoofddak_current_power_production",
+  "state": "306",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Omnik hoofddak Inverter Huidige productie"
+  },
+  "last_changed": "2026-11-07T12:43:22.127734+00:00",
+  "last_reported": "2026-11-07T12:43:22.127734+00:00",
+  "last_updated": "2026-11-07T12:43:22.127734+00:00",
+  "context": {
+   "id": "01M6V0HWMFQTS50W4EXGCS2EEP",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.p1_meter_energie_export",
+  "state": "8042.631",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "P1 Meter Energie export"
+  },
+  "last_changed": "2026-11-07T10:25:52.764012+00:00",
+  "last_reported": "2026-11-07T12:46:12.662224+00:00",
+  "last_updated": "2026-11-07T10:25:52.764012+00:00",
+  "context": {
+   "id": "01M6TRP4KW4PDWZZRJM7XRQG14",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.p1_meter_energie_import",
+  "state": "11884.497",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "P1 Meter Energie import"
+  },
+  "last_changed": "2026-11-07T12:46:12.660519+00:00",
+  "last_reported": "2026-11-07T12:46:12.660519+00:00",
+  "last_updated": "2026-11-07T12:46:12.660519+00:00",
+  "context": {
+   "id": "01M6V0Q35M8NAFK9ZNWX5J3N53",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.p1_meter_kwartier_import",
+  "state": "0.066",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "0.898",
+   "last_valid_state": "11884.497",
+   "last_reset": "2026-11-07T12:45:00.005532+00:00",
+   "next_reset": "2026-11-07T14:00:00+01:00",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "P1 Meter Kwartier import"
+  },
+  "last_changed": "2026-11-07T12:46:12.660620+00:00",
+  "last_reported": "2026-11-07T12:46:12.660620+00:00",
+  "last_updated": "2026-11-07T12:46:12.660620+00:00",
+  "context": {
+   "id": "01M6V0Q35MW7D6MVJTTWCXZP59",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.p1_meter_p1_mediaan_90s",
+  "state": "3066",
+  "attributes": {
+   "state_class": "measurement",
+   "buffer_usage_ratio": 0.03,
+   "age_coverage_ratio": 0.5,
+   "source_value_valid": true,
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "icon": "mdi:calculator",
+   "friendly_name": "P1 mediaan (10s)"
+  },
+  "last_changed": "2026-11-07T12:46:12.662355+00:00",
+  "last_reported": "2026-11-07T12:46:12.662355+00:00",
+  "last_updated": "2026-11-07T12:46:12.662355+00:00",
+  "context": {
+   "id": "01M6V0Q35PM2V59ET42033DYPB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.p1_meter_piekverbruik_huidige_maand",
+  "state": "3892.0",
+  "attributes": {
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "P1 Meter Piekverbruik huidige maand"
+  },
+  "last_changed": "2026-11-05T12:21:08.600540+00:00",
+  "last_reported": "2026-11-07T12:46:12.670464+00:00",
+  "last_updated": "2026-11-05T12:21:08.600540+00:00",
+  "context": {
+   "id": "01M6NTFRBRHF0YEJGX7DT39Z3T",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.p1_meter_stroom_fase_1",
+  "state": "-1.4",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "A",
+   "device_class": "current",
+   "friendly_name": "P1 Meter Stroom fase 1"
+  },
+  "last_changed": "2026-11-07T12:46:12.668391+00:00",
+  "last_reported": "2026-11-07T12:46:12.668391+00:00",
+  "last_updated": "2026-11-07T12:46:12.668391+00:00",
+  "context": {
+   "id": "01M6V0Q35WCK9XPDY2CSHN3CRP",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.p1_meter_stroom_fase_2",
+  "state": "14.96",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "A",
+   "device_class": "current",
+   "friendly_name": "P1 Meter Stroom fase 2"
+  },
+  "last_changed": "2026-11-07T12:46:12.669207+00:00",
+  "last_reported": "2026-11-07T12:46:12.669207+00:00",
+  "last_updated": "2026-11-07T12:46:12.669207+00:00",
+  "context": {
+   "id": "01M6V0Q35XPMB1GSM39ZJ3H5E2",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.p1_meter_stroom_fase_3",
+  "state": "14.31",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "A",
+   "device_class": "current",
+   "friendly_name": "P1 Meter Stroom fase 3"
+  },
+  "last_changed": "2026-11-07T12:46:12.669830+00:00",
+  "last_reported": "2026-11-07T12:46:12.669830+00:00",
+  "last_updated": "2026-11-07T12:46:12.669830+00:00",
+  "context": {
+   "id": "01M6V0Q35XMK6SJHSCKZ37KFSM",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.p1_meter_vermogen",
+  "state": "3066.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "P1 Meter Vermogen"
+  },
+  "last_changed": "2026-11-07T12:46:12.662274+00:00",
+  "last_reported": "2026-11-07T12:46:12.662274+00:00",
+  "last_updated": "2026-11-07T12:46:12.662274+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.piek_verschil_fluvius_vs_p1",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Piek verschil Fluvius vs P1"
+  },
+  "last_changed": "2026-11-05T12:21:06.218273+00:00",
+  "last_reported": "2026-11-05T12:21:06.218273+00:00",
+  "last_updated": "2026-11-05T12:21:06.218273+00:00",
+  "context": {
+   "id": "01M6NTFP1AF8X119PX16S055V2",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.pv_bruto_overschot",
+  "state": "338",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "PV bruto overschot"
+  },
+  "last_changed": "2026-11-07T12:46:12.662787+00:00",
+  "last_reported": "2026-11-07T12:46:12.662787+00:00",
+  "last_updated": "2026-11-07T12:46:12.662787+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.pv_energie_dag",
+  "state": "2.900",
+  "attributes": {
+   "state_class": "total_increasing",
+   "status": "collecting",
+   "last_period": "5.701",
+   "last_valid_state": "1299.519",
+   "last_reset": "2026-11-06T23:00:00.005767+00:00",
+   "next_reset": "2026-11-08T00:00:00+01:00",
+   "friendly_name": "PV energie dag"
+  },
+  "last_changed": "2026-11-07T12:46:07.612242+00:00",
+  "last_reported": "2026-11-07T12:46:07.612242+00:00",
+  "last_updated": "2026-11-07T12:46:07.612242+00:00",
+  "context": {
+   "id": "01M6V0PY7WDWQ3GCSHGDAFDS6F",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.pv_energie_totaal",
+  "state": "1299.519",
+  "attributes": {
+   "state_class": "total",
+   "source": "sensor.pv_vermogen_totaal",
+   "icon": "mdi:chart-histogram",
+   "friendly_name": "PV energie totaal"
+  },
+  "last_changed": "2026-11-07T12:46:07.612029+00:00",
+  "last_reported": "2026-11-07T12:46:07.612029+00:00",
+  "last_updated": "2026-11-07T12:46:07.612029+00:00",
+  "context": {
+   "id": "01M6V0PY7W75FRVS9JRHCMFDT4",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.pv_overschot_beschikbaar",
+  "state": "-3066",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "PV overschot beschikbaar"
+  },
+  "last_changed": "2026-11-07T12:46:12.662651+00:00",
+  "last_reported": "2026-11-07T12:46:12.662651+00:00",
+  "last_updated": "2026-11-07T12:46:12.662651+00:00",
+  "context": {
+   "id": "01M6V0Q35P9MECT51Y6EEKASRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.pv_vermogen_totaal",
+  "state": "533",
+  "attributes": {
+   "friendly_name": "PV vermogen totaal"
+  },
+  "last_changed": "2026-11-07T12:46:07.611936+00:00",
+  "last_reported": "2026-11-07T12:46:07.611936+00:00",
+  "last_updated": "2026-11-07T12:46:07.611936+00:00",
+  "context": {
+   "id": "01M6V0PY7VB9XM7YWC6AAK4JS0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.smartevse_1234_charge_current",
+  "state": "14.8",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "A",
+   "device_class": "current",
+   "friendly_name": "SmartEVSE/1234 Charge Current"
+  },
+  "last_changed": "2026-11-07T12:45:52.918934+00:00",
+  "last_reported": "2026-11-07T12:45:52.918934+00:00",
+  "last_updated": "2026-11-07T12:45:52.918934+00:00",
+  "context": {
+   "id": "01M6V0PFWP7EH5DVBNNGM35FKB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.smartevse_1234_ev_plug_state",
+  "state": "Connected",
+  "attributes": {
+   "friendly_name": "SmartEVSE/1234 EV Plug State"
+  },
+  "last_changed": "2026-11-07T09:48:19.519481+00:00",
+  "last_reported": "2026-11-07T09:48:19.519481+00:00",
+  "last_updated": "2026-11-07T09:48:19.519481+00:00",
+  "context": {
+   "id": "01M6TPHC5Z2D1ETZQ6HP00S8NG",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.smartevse_1234_state",
+  "state": "Charging",
+  "attributes": {
+   "friendly_name": "SmartEVSE/1234 State"
+  },
+  "last_changed": "2026-11-07T10:25:47.186522+00:00",
+  "last_reported": "2026-11-07T10:25:47.186522+00:00",
+  "last_updated": "2026-11-07T10:25:47.186522+00:00",
+  "context": {
+   "id": "01M6TRNZ5JC7DPA2XS6G6KYNDD",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.smartevse_1234_stateid",
+  "state": "C",
+  "attributes": {
+   "friendly_name": "SmartEVSE/1234 StateID"
+  },
+  "last_changed": "2026-11-07T10:25:47.193240+00:00",
+  "last_reported": "2026-11-07T10:25:47.193240+00:00",
+  "last_updated": "2026-11-07T10:25:47.193240+00:00",
+  "context": {
+   "id": "01M6TRNZ5S74AXZ3EKSNFVTS38",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.solis_s6_eh1p_battery_power_net_2",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Solis S6-EH1P Battery Power Net"
+  },
+  "last_changed": "2026-11-07T12:45:53.848011+00:00",
+  "last_reported": "2026-11-07T12:46:08.850299+00:00",
+  "last_updated": "2026-11-07T12:45:53.848011+00:00",
+  "context": {
+   "id": "01M6V0PGSRSCNWM0NDKP6BCFYB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.solis_s6_eh1p_battery_soc_2",
+  "state": "100",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "device_class": "battery",
+   "friendly_name": "Solis S6-EH1P Battery SOC"
+  },
+  "last_changed": "2026-11-07T07:35:38.020881+00:00",
+  "last_reported": "2026-11-07T07:36:07.923357+00:00",
+  "last_updated": "2026-11-07T07:35:38.020881+00:00",
+  "context": {
+   "id": "01M6TEYD94945E11BBT2K3CHMR",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.solis_s6_eh1p_total_pv_power_2",
+  "state": "227",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Solis S6-EH1P Total PV Power"
+  },
+  "last_changed": "2026-11-07T12:46:07.611752+00:00",
+  "last_reported": "2026-11-07T12:46:07.611752+00:00",
+  "last_updated": "2026-11-07T12:46:07.611752+00:00",
+  "context": {
+   "id": "01M6V0PY7VB9XM7YWC6AAK4JS0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.stroomprijs_niveau",
+  "state": "goedkoop",
+  "attributes": {
+   "friendly_name": "Stroomprijs niveau"
+  },
+  "last_changed": "2026-11-07T08:15:00.001882+00:00",
+  "last_reported": "2026-11-07T08:15:00.001882+00:00",
+  "last_updated": "2026-11-07T08:15:00.001882+00:00",
+  "context": {
+   "id": "01M6TH6FX1ECX2GPFADBYV783J",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.stroomprijs_nu",
+  "state": "0.37692",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "EUR/kWh",
+   "friendly_name": "Stroomprijs nu"
+  },
+  "last_changed": "2026-11-07T12:45:01.470600+00:00",
+  "last_reported": "2026-11-07T12:45:01.470600+00:00",
+  "last_updated": "2026-11-07T12:45:01.470600+00:00",
+  "context": {
+   "id": "01M6V0MXMY0ZK4J4KY69G65WXX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.vaste_kosten_per_maand",
+  "state": "6.88",
+  "attributes": {
+   "unit_of_measurement": "€/maand",
+   "friendly_name": "Vaste kosten per maand"
+  },
+  "last_changed": "2026-11-05T12:21:06.208149+00:00",
+  "last_reported": "2026-11-05T12:21:06.208149+00:00",
+  "last_updated": "2026-11-05T12:21:06.208149+00:00",
+  "context": {
+   "id": "01M6NTFP109JKTNS142P3CWXX4",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.zelfverbruik_vandaag",
+  "state": "100",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "friendly_name": "Zelfverbruik vandaag"
+  },
+  "last_changed": "2026-11-07T08:11:06.790202+00:00",
+  "last_reported": "2026-11-07T08:11:06.790202+00:00",
+  "last_updated": "2026-11-07T08:11:06.790202+00:00",
+  "context": {
+   "id": "01M6TGZC555819E4N7QRATMVYB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.zelfverbruik_vandaag_kwh",
+  "state": "2.9",
+  "attributes": {
+   "state_class": "total",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "friendly_name": "Zelfverbruik vandaag kWh"
+  },
+  "last_changed": "2026-11-07T12:46:07.612600+00:00",
+  "last_reported": "2026-11-07T12:46:07.612600+00:00",
+  "last_updated": "2026-11-07T12:46:07.612600+00:00",
+  "context": {
+   "id": "01M6V0PY7WDWQ3GCSHGDAFDS6F",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.zelfvoorziening_vandaag",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "friendly_name": "Zelfvoorziening vandaag"
+  },
+  "last_changed": "2026-11-06T23:00:00.016695+00:00",
+  "last_reported": "2026-11-06T23:00:00.016695+00:00",
+  "last_updated": "2026-11-06T23:00:00.016695+00:00",
+  "context": {
+   "id": "01M6SHE8CGKCCK290K4CVW5XXR",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sun.sun",
+  "state": "above_horizon",
+  "attributes": {
+   "rising": false,
+   "friendly_name": "Sun"
+  },
+  "last_changed": "2026-11-07T06:43:58.668659+00:00",
+  "last_reported": "2026-11-07T12:46:07.124176+00:00",
+  "last_updated": "2026-11-07T12:43:11.017947+00:00",
+  "context": {
+   "id": "01M6V0HHS91AVER9QCWRKCEZY5",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "switch.airco_beneden_power",
+  "state": "off",
+  "attributes": {
+   "device_class": "switch",
+   "friendly_name": "Airco beneden Power"
+  },
+  "last_changed": "2026-11-05T12:21:09.066893+00:00",
+  "last_reported": "2026-11-07T12:37:42.470390+00:00",
+  "last_updated": "2026-11-05T12:21:09.066893+00:00",
+  "context": {
+   "id": "01M6NTFRTABPXW6MH5R1BKDNAB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "switch.airco_zolder_power",
+  "state": "off",
+  "attributes": {
+   "device_class": "switch",
+   "friendly_name": "Airco zolder Power"
+  },
+  "last_changed": "2026-11-05T12:21:09.067126+00:00",
+  "last_reported": "2026-11-07T12:41:59.491399+00:00",
+  "last_updated": "2026-11-05T12:21:09.067126+00:00",
+  "context": {
+   "id": "01M6NTFRTBJJT52S3S5C2CYEFE",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "switch.solis_s6_eh1p_allow_grid_to_charge_the_battery_2",
+  "state": "off",
+  "attributes": {
+   "friendly_name": "Solis S6-EH1P Allow Grid to Charge the Battery"
+  },
+  "last_changed": "2026-11-07T07:36:00.454634+00:00",
+  "last_reported": "2026-11-07T07:36:05.640200+00:00",
+  "last_updated": "2026-11-07T07:36:00.454634+00:00",
+  "context": {
+   "id": "01M6TEZ364CG866RMA196DR68M",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "switch.solis_s6_eh1p_grid_feed_in_power_limit_switch_2",
+  "state": "on",
+  "attributes": {
+   "friendly_name": "Solis S6-EH1P Grid feed in power limit switch"
+  },
+  "last_changed": "2026-11-05T12:23:38.122343+00:00",
+  "last_reported": "2026-11-05T12:36:08.142181+00:00",
+  "last_updated": "2026-11-05T12:23:38.122343+00:00",
+  "context": {
+   "id": "01M6NTMACA1CV3VQNQ58X0Y3VR",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "timer.steering_volgende_update",
+  "state": "active",
+  "attributes": {
+   "duration": "0:00:30",
+   "editable": true,
+   "last_transition": "started",
+   "finishes_at": "2026-11-07T12:46:30+00:00",
+   "remaining": "0:00:30",
+   "icon": "mdi:timer-sand",
+   "friendly_name": "Steering volgende update"
+  },
+  "last_changed": "2026-11-07T12:46:00.452437+00:00",
+  "last_reported": "2026-11-07T12:46:00.452437+00:00",
+  "last_updated": "2026-11-07T12:46:00.452437+00:00",
+  "context": {
+   "id": "01M6V0PQ83RBE25F8YCVAWH4K6",
+   "parent_id": null,
+   "user_id": null
+  }
+ }
+]

@@ -1,0 +1,174 @@
+# energie — standalone: in charge of the house, no Home Assistant needed.
+# THIS IS AN EXAMPLE. It writes to real devices once the addresses are right: keep
+# [control] dry_run = true until you have checked its plans (docs/INSTALL.md).
+# Every World section comes from a [[device]]; a section no device reads stays unavailable
+# (here: load:vriezer, which --check-config names). Settings and Memory live in the state dir
+# (settings_source = "local"); HA, if you keep it, is a view over MQTT that can still change
+# the settings. Check with:
+#   energie --check-config /etc/energie/energie.toml
+# Import HA's current helpers once, before the first start (read-only; needs an [ha] table,
+# for instance the commented one below, or a copy of the config with one):
+#   energie import-settings --from-ha --config /etc/energie/energie.toml
+
+mode = "control"
+listen = "0.0.0.0:8080"
+# Set this whenever listen is reachable from other machines (docs/INSTALL.md).
+web_password_file = "/run/credentials/energie.service/web-password"
+state_dir = "/var/lib/energie"
+tick_ms = 1000
+persist_interval_s = 60
+settings_source = "local"
+
+# Optional: import HA's helpers into an empty state dir at the first start, and nothing else
+# (no WebSocket session afterwards, no fallback, no service calls).
+# [ha]
+# url = "http://192.168.1.10:8123"
+# token_file = "/run/credentials/energie.service/ha-token"
+# import_only = true
+# seed = true
+
+[site]
+# Your location, for the sun position and the solar forecast.
+latitude = 50.85
+longitude = 4.35
+
+[control]
+dry_run = true
+
+[[device]]
+id = "p1"
+kind = "homewizard"                 # HomeWizard P1, local API v2 (HTTPS)
+role = "grid_meter"
+address = "192.168.1.30"
+serial = "aabbccddeeff"
+token_file = "/run/credentials/energie.service/homewizard-token"
+
+# The Solis hybrid: the battery and its own DC PV (solis.pv_power_w) are one reading, so
+# role = "battery_inverter" covers both; "pv" is the AC-coupled PV (the Omnik) that the logic
+# adds to it, so the Solis must not take that role as well.
+[[device]]
+id = "solis"
+kind = "solis_modbus"               # Modbus TCP gateway
+role = "battery_inverter"
+control = "battery_inverter"
+read_only = false
+address = "192.168.1.20:502"
+slave = 1
+
+[[device]]
+id = "omnik"
+kind = "omnik"                      # AC-coupled string inverter (js/status.js)
+role = "pv"
+base_url = "http://192.168.1.40"
+poll_ms = 30000
+
+[[device]]
+id = "evse"
+kind = "smartevse_mqtt"             # SmartEVSE (Buzz) over MQTT
+role = "charger:buzz"
+control = "charger:buzz"
+read_only = false
+host = "192.168.1.10"
+port = 1883
+prefix = "SmartEVSE/1234"
+username = "energie"
+password_file = "/run/credentials/energie.service/mqtt-password"
+client_id = "energie-smartevse"
+
+[[device]]
+id = "cable"
+kind = "tuya_cable"                 # Kolanky cable (EV3), Tuya local protocol 3.4
+role = "charger:ev3"
+control = "charger:ev3"
+read_only = false
+address = "192.168.1.60"
+device_id = "your-tuya-device-id"
+local_key_file = "/run/credentials/energie.service/cable-local-key"
+
+[[device]]
+id = "ev3"
+kind = "kia_connect"                # Kia Connect EU, the cached state (the car is never woken)
+role = "car:ev3"
+read_only = false                   # ev3_ac_limit becomes settable (number.ev3_ac_charging_limit)
+credentials_file = "/run/credentials/energie.service/cloud-kia"
+state_dir = "/var/lib/energie"
+poll_interval_s = 1800
+
+[[device]]
+id = "buzz"
+kind = "cupra_data_act"             # VW Group EU Data Act portal (ID.Buzz)
+role = "car:buzz"
+credentials_file = "/run/credentials/energie.service/cloud-cupra"
+poll_interval_s = 900
+
+[[device]]
+id = "airco"
+kind = "lg_thinq"                   # LG ThinQ Connect
+role = "load:airco"
+control = "load:airco"              # the airco dump switches the units
+read_only = false
+credentials_file = "/run/credentials/energie.service/cloud-lgthinq"
+beneden = "Airco beneden"
+zolder = "Airco zolder"
+
+[[device]]
+id = "fluvius"
+kind = "fluvius"                    # Mijn Fluvius: this month's peak and the monthly peaks
+role = "capacity_peak"
+credentials_file = "/run/credentials/energie.service/cloud-fluvius"
+state_dir = "/var/lib/energie"
+poll_interval_s = 21600
+
+[[device]]
+id = "forecast"
+kind = "forecast_solar"             # forecast.solar: describe your own panels
+role = "solar_forecast"
+declination = 30
+azimuth = 0                         # 0 = south, -90 = east
+kwp = 5.0
+
+[[device]]
+id = "prices"
+kind = "energy_charts"              # day-ahead prices, ENTSO-E fallback
+role = "price_feed"
+control = "price_feed"              # the price refresh
+read_only = false
+entsoe_token_file = "/run/credentials/energie.service/entsoe-token"
+poll_ms = 10000
+
+# The 1 s P1 values need not go out every second.
+[[publish]]
+match = "world_grid_meter_*"
+min_interval_s = 5
+deadband = 10
+[[publish]]
+match = "p1_*"
+min_interval_s = 5
+deadband = 10
+
+# The MQTT bridge (docs/MQTT.md): the entities, the summary, /set, HA discovery.
+[mqtt_publish]
+enabled = true
+broker = "192.168.1.10"
+port = 1883
+username = "energie"
+password_file = "/run/credentials/energie.service/mqtt-password"
+client_id = "energie"
+prefix = "energie"
+# Switch on only at the cutover, after the old HA entities are removed: the MQTT entities then
+# take over their entity ids (docs/MQTT.md, "Taking over HA's entity ids").
+discovery = true
+discovery_prefix = "homeassistant"
+include = ["*"]
+exclude = []
+summary_interval_s = 5
+
+# Push notifications through ntfy.
+[notify]
+kind = "ntfy"
+url = "https://ntfy.sh/your-secret-topic"
+token_file = "/run/credentials/energie.service/ntfy-token"
+
+[history]
+enabled = true
+extra_series = ["fluvius_month_*", "ev3_soc", "buzz_soc"]

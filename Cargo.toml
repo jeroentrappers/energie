@@ -1,0 +1,54 @@
+[workspace]
+resolver = "2"
+members = ["crates/core", "crates/drivers", "crates/cloud", "crates/app"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Jeroen Trappers"]
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/jeroentrappers/energie"
+homepage = "https://github.com/jeroentrappers/energie"
+publish = false
+
+[workspace.dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
+chrono-tz = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+aes = "0.8"
+async-trait = "0.1"
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "query", "json"] }
+base64 = "0.22"
+flate2 = "1"
+ecb = { version = "0.1", features = ["alloc"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+hmac = "0.12"
+http-body-util = "0.1"
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["server", "http1", "tokio", "service"] }
+quick-xml = "0.38"
+rand = "0.9"
+rpassword = "7"
+rsa = { version = "0.9", default-features = false, features = ["std"] }
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "pem", "ring"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+rumqttc = { version = "0.25", default-features = false }
+rumqttd = { version = "0.20", default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+sha2 = "0.10"
+tempfile = "3"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-modbus = { version = "0.17", default-features = false, features = ["tcp", "tcp-server"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+tokio-tungstenite = "0.28"
+toml = "0.9"
+tower = { version = "0.5", features = ["util"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "env-filter", "ansi"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

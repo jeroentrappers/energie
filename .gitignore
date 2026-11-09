@@ -1,0 +1,6 @@
+/target
+*.profraw
+/coverage
+/state
+*.local.toml
+.claude/

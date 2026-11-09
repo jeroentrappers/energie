@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Energie</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --fg: #1d2330; --muted: #667085; --line: #e3e6ec;
+  --accent: #2f6fde; --good: #1f9d55; --warn: #d97706; --bad: #d64545; --sun: #e0a100;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #11141a; --card: #1a1f28; --fg: #e6e9ef; --muted: #98a2b3; --line: #2a3140;
+    --accent: #6ea0ff; --good: #4cc38a; --warn: #f0a33a; --bad: #f06b6b; --sun: #f5c542; }
+}
+body { margin: 0; background: var(--bg); color: var(--fg); }
+</style>
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>Energie</h1>
+    <span class="badge" id="mode">{{MODE}}</span>
+    <span class="badge" id="ha">HA</span>
+    <span class="badge hidden" id="ctl">sturing</span>
+    <span class="note" id="now"></span>
+  </div>
+  <nav id="tabs">
+    <a href="#overzicht" data-tab="overzicht">Overzicht</a>
+    <a href="#capaciteit" data-tab="capaciteit">Capaciteitstarief</a>
+    <a href="#prijzen" data-tab="prijzen">Prijzen</a>
+    <a href="#batterij" data-tab="batterij">Batterij &amp; Solis</a>
+    <a href="#ev" data-tab="ev">EV laden</a>
+    <a href="#systeem" data-tab="systeem">Systeem</a>
+  </nav>
+</header>
+<main>
+  <noscript><section>Deze pagina heeft JavaScript nodig voor live waarden. De API staat op <a href="/api/state">/api/state</a>.</section></noscript>
+
+  <!-- ===================================================== Overzicht -->
+  <div class="view" data-view="overzicht">
+    <div class="badges" id="b_overzicht"></div>
+    <div class="two">
+      <section>
+        <h2>Energiestroom</h2>
+        <div id="flow" class="flow"></div>
+        <h3>🎯 Laaddoelen</h3>
+        <ul class="plain" id="laaddoelen"></ul>
+      </section>
+      <section>
+        <h2>Stromen</h2>
+        <div class="grid" id="t_stromen"></div>
+      </section>
+    </div>
+    <section>
+      <div class="sechead">
+        <h2 id="flowtitle">Energiestroom — laatste 6 uur</h2>
+        <label class="pick">Grafiekperiode
+          <select id="flowperiod">
+            <option value="6h">Laatste 6 uur</option>
+            <option value="12h">Laatste 12 uur</option>
+            <option value="24h">Laatste 24 uur</option>
+            <option value="gisteren">Gisteren</option>
+            <option value="7d">Laatste 7 dagen</option>
+          </select>
+        </label>
+      </div>
+      <div id="c_flow"></div>
+    </section>
+    <section>
+      <div class="sechead">
+        <h2 id="fctitle">Zon &amp; prijs — vandaag</h2>
+        <label class="pick">Voorspellingsperiode
+          <select id="fcperiod">
+            <option value="vandaag">Vandaag</option>
+            <option value="morgen">Vandaag + morgen</option>
+            <option value="nu12">Nu ±12u</option>
+          </select>
+        </label>
+      </div>
+      <p class="note">Vooruitblik: <b>PV-forecast</b> vs werkelijke productie op de kW-as, <b>day-ahead prijzen</b> (afname/injectie) op de €/kWh-as. Morgen verschijnt zodra de day-ahead publiceert (~14u).<span id="fcnote"></span></p>
+      <div id="c_fc"></div>
+    </section>
+    <section>
+      <h2>Bediening</h2>
+      <p class="note ro">{{READONLY}}</p>
+      <form class="controls" id="controls">{{CONTROLS}}</form>
+      <div class="msg"></div>
+    </section>
+    <div class="two">
+      <section><h2>Batterij</h2><div class="grid" id="t_batterij"></div></section>
+      <section><h2>Net &amp; fasebelasting — 3×32 A</h2><div class="grid" id="t_net"></div></section>
+      <section><h2>Zonnepanelen</h2><div class="grid" id="t_zon"></div></section>
+      <section><h2>EV's</h2><div class="grid" id="t_evs"></div></section>
+      <section><h2>Dagbalans (vandaag)</h2><div class="grid" id="t_dag"></div></section>
+      <section><h2>Nacht &amp; overig</h2><div class="grid" id="t_nacht"></div></section>
+      <section>
+        <h2>Aircos</h2>
+        <div class="grid" id="t_airco"></div>
+        <form class="entctl" id="airco_ctl">
+          <label class="row"><span>Airco beneden</span><input type="checkbox" data-entity="world_load_airco_beneden_on"></label>
+          <label class="row"><span>Airco zolder</span><input type="checkbox" data-entity="world_load_airco_zolder_on"></label>
+        </form>
+        <div class="msg"></div>
+        <p class="note" id="airco_note"></p>
+      </section>
+    </div>
+  </div>
+
+  <!-- ===================================================== Capaciteitstarief -->
+  <div class="view" data-view="capaciteit">
+    <div class="badges" id="b_capaciteit"></div>
+    <section>
+      <h2>Kwartierbudget (live)</h2>
+      <h3>Dit kwartier: gemiddelde vs target</h3>
+      <div id="c_quarter"></div>
+      <div class="grid" id="t_kwartier"></div>
+      <div class="md" id="md_kwartier"></div>
+      <h3>Laatste 12 u — % van target per kwartier</h3>
+      <div id="c_pct"></div>
+    </section>
+    <div class="two">
+      <section>
+        <h2>Deze maand</h2>
+        <div class="gaugebox"><div id="g_maandpiek"></div><div class="grid" id="t_maand"></div></div>
+        <h3>Piekhistoriek (12 maanden)</h3>
+        <div class="scroll"><table><thead><tr><th>Maand</th><th class="n">Piek</th><th class="n">Fluvius</th><th>Telt mee t.e.m.</th></tr></thead><tbody id="piekhist"></tbody></table></div>
+        <p class="md" id="piekgem"></p>
+        <p class="note">Bron: <code>capaciteit_piekhistoriek</code> (Fluvius-export, daarna elke maand automatisch aangevuld met de P1-piek).</p>
+        <div class="grid" id="t_maand2"></div>
+      </section>
+      <section>
+        <h2>Hoe lees je dit?</h2>
+        <div class="md">
+          <p><b>Capaciteitstarief (Fluvius):</b> de maandpiek is het hoogste kwartiergemiddelde van de netto afname (minimum <b>2,5 kW</b>). Je betaalt echter op het <b>gemiddelde van de laatste 12 maandpieken</b> — <i>Gefactureerde piek</i> — niet op de piek van deze maand alleen.</p>
+          <ul><li><b>Vastgelegd</b> = wat dit kwartier al zeker is (energie tot nu × 4).</li><li><b>Projectie</b> = vastgelegd + huidig vermogen voor de rest van het kwartier.</li></ul>
+          <p>Tarief Halle-Vilvoorde 2026: <b>€ 4,95/kW/maand</b> (incl. btw), minimum 2,5 kW = € 12,38/maand. Elke kW maandpiek boven 2,5 kost ± € 0,41/maand extra, <b>12 maanden lang</b> (± € 4,95 in totaal). <i>Maandpiek × tarief</i> is wat je zou betalen als alle 12 maanden zo laag waren als deze.</p>
+          <p><b>Dynamisch doel:</b> de maandpiek is een hoogwaterstand — eens gezet kun je hem die maand niet meer verlagen. Daarom volgt <i>Doel rest van maand</i> = max(2,5 kW, reeds gezette piek). Is de piek al boven 2,5 gezet (bv. een EV op 16 A), dan is verbruik tot dat niveau de rest van de maand <b>gratis</b> en grijpt de guard pas in als je erboven dreigt te gaan. Op de 1e van de maand reset alles naar 2,5 kW.</p>
+          <p>De rode badge <i>PIEKRISICO</i> verschijnt vlak onder het dynamische doel — dan eerst EV-laadstroom verlagen, dan batterij laten ontladen, dan warmtepomp pauzeren.</p>
+        </div>
+      </section>
+    </div>
+    <section>
+      <h2>Verloop</h2>
+      <h3>Kwartiervermogen — laatste 24 u</h3>
+      <div id="c_kw24"></div>
+      <h3>Dagpieken (14 d) — hoogste kwartier per dag</h3>
+      <div id="c_dagpiek"></div>
+    </section>
+    <section>
+      <h2>Fluvius-controle (officiële meterdata)</h2>
+      <div class="grid" id="t_fluvius"></div>
+      <div id="fluviusbox" class="hidden">
+        <h3>Maandpieken — Fluvius vs lokaal (12 maanden)</h3>
+        <div class="scroll"><table><thead><tr><th>Maand</th><th class="n">Fluvius</th><th class="n">Lokaal (P1)</th><th class="n">Verschil</th><th>Piekkwartier</th></tr></thead><tbody id="fluviusmaand"></tbody></table></div>
+      </div>
+      <p class="note"><b>Officiële Fluvius-data</b> (meter 1SAG…4808, dit adres). De maandpiek bevestigt de lokale meting — basis van het capaciteitstarief. Let op: Fluvius-data loopt <b>~1 dag achter</b> (portaal wordt 's nachts bijgewerkt).</p>
+    </section>
+  </div>
+
+  <!-- ===================================================== Prijzen -->
+  <div class="view" data-view="prijzen">
+    <section>
+      <h2>Day-ahead curve</h2>
+      <h3>Ecopower kwartierprijzen — vandaag &amp; morgen</h3>
+      <div id="c_prices"></div>
+    </section>
+    <div class="two">
+      <section><h2>Nu en vandaag</h2><div class="grid" id="t_prijs"></div></section>
+      <section><h2>Vaste kosten (niet in kWh-prijs)</h2><div class="grid" id="t_vast"></div></section>
+    </div>
+    <section>
+      <h2>Geldverbruik per kwartier</h2>
+      <div class="grid" id="t_geld"></div>
+      <h3>Geldverbruik per kwartier (verbruik × prijs)</h3>
+      <div id="c_geld"></div>
+      <h3>Energiekost per dag (laatste 14 d)</h3>
+      <div id="c_kostdag"></div>
+    </section>
+    <section>
+      <h2>Toelichting</h2>
+      <div class="md">
+        <p>Alle prijzen zijn <b>kwartierprijzen, all-in</b> volgens de Ecopower-tariefkaart (jan 2026) + Fluvius Halle-Vilvoorde:</p>
+        <p><b>Afname</b> = (1,02 × EPEX DA + 0,004 [opslag] + 0,011 [GSC] + 0,00392 [WKK] + 0,0531770 [afnametarief HV] + 0,0019261 [bijdrage energie] + 0,04748 [bijz. accijns]) × 1,06 btw — vaste opslag bovenop spot: <b>±0,129 €/kWh incl. btw</b>.</p>
+        <p><b>Injectie</b> = 0,98 × EPEX DA − 0,015 (geen btw). Niet inbegrepen: capaciteitstarief (per kW maandpiek → tab Capaciteitstarief), databeheer €17,85/j, abonnement €5/m.</p>
+        <p>Batterij-arbitrage loont pas als het prijsverschil tussen laden en ontladen groter is dan het rondrit-verlies (±15 %) — vergelijk altijd afname- met afnameprijs (verschuiven) of injectie- met afnameprijs (zelfverbruik).</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================================================== Batterij & Solis -->
+  <div class="view" data-view="batterij">
+    <div class="badges" id="b_batterij"></div>
+    <div class="two">
+      <section>
+        <h2>Status</h2>
+        <div class="gaugebox"><div id="g_soc"></div><div class="grid" id="t_bstatus"></div></div>
+      </section>
+      <section>
+        <h2>Besturing (omvormer, alleen-lezen)</h2>
+        <div class="grid" id="t_solis"></div>
+        <p class="note">De batterijsturing (dispatcher) schrijft deze registers; aan/uit via <i>Batterijsturing</i> in de Bediening.</p>
+      </section>
+    </div>
+    <section>
+      <h2>Verloop</h2>
+      <h3>Batterij — vermogen &amp; SOC (24 u)</h3>
+      <div id="c_batt"></div>
+      <h3>PV-productie (24 u)</h3>
+      <div id="c_pv"></div>
+    </section>
+  </div>
+
+  <!-- ===================================================== EV laden -->
+  <div class="view" data-view="ev">
+    <div class="badges" id="b_ev"></div>
+    <div class="two">
+      <section>
+        <h2>⚙️ Laadsturing</h2>
+        <div class="md">
+          <ul>
+            <li><b>Net (grid)</b> en <b>Batterij</b> — wat doet de EV als de zon <b>te zwak</b> is voor het 6 A-minimum: <i>Uit</i> = pauzeren · <i>6A-brug</i> = tekort van net of batterij tot 6 A · <i>Max tot piek</i> = net tot net onder de piek · <i>Ontlaad-budget</i> = batterij tot het budget op is.</li>
+            <li><b>Zonprioriteit</b> — bij <b>overschot</b>: wie krijgt de zon eerst, EV3, Buzz of batterij?</li>
+          </ul>
+          <p><i>Kort: niveaus = wat bij té weinig zon · zonprioriteit = wie bij té veel zon.</i></p>
+        </div>
+      </section>
+      <section>
+        <h2>Modus &amp; prioriteit</h2>
+        <p class="note ro">{{READONLY}}</p>
+        <form class="controls" id="controls_modus">{{CONTROLS_MODUS}}</form>
+        <div class="msg"></div>
+      </section>
+    </div>
+    <div class="two">
+      <section>
+        <h2>Kia EV3</h2>
+        <div class="grid" id="t_ev3"></div>
+        <form class="entctl hidden" id="ev3_ctl"></form>
+        <div class="msg"></div>
+      </section>
+      <section><h2>VW ID.Buzz</h2><div class="grid" id="t_buzz"></div></section>
+      <section>
+        <h2>Slimme laadkabel (1f, 6–16 A)</h2>
+        <div class="grid" id="t_kabel"></div>
+        <p class="note">🔌 De slimme laadkabel stuurt de <b>EV3</b>; de <b>SmartEVSE</b> stuurt de <b>Buzz</b>.</p>
+      </section>
+      <section>
+        <h2>SmartEVSE (1f, tot 32 A)</h2>
+        <div class="grid" id="t_evse"></div>
+        <p class="note">🔌 <b>SmartEVSE → altijd Buzz.</b> <i>Laadvermogen</i> is enkelfasig en wordt geschat uit de pilot-stroom × 230 V (geen CT-meting).</p>
+      </section>
+    </div>
+    <section>
+      <h2>Laadkosten &amp; vergelijking</h2>
+      <div class="grid" id="t_evactief"></div>
+      <h3>EV3</h3>
+      <div class="grid" id="t_ev3kost"></div>
+      <h3>Buzz</h3>
+      <div class="grid" id="t_buzzkost"></div>
+    </section>
+  </div>
+
+  <!-- ===================================================== Systeem -->
+  <div class="view" data-view="systeem">
+    <section id="control" class="hidden">
+      <h2>Sturing</h2>
+      <p><b id="ctlstate">–</b> <button type="button" id="ctlkill">Alles stoppen</button></p>
+      <form class="entctl" id="ctldevs"></form>
+      <p class="note" id="ctlnote"></p>
+      <div class="scroll"><table><thead><tr><th>Tijd</th><th>Apparaat</th><th>Commando</th><th>Schrijft</th><th>Terug gelezen</th><th>Resultaat</th></tr></thead><tbody id="ctlrows"></tbody></table></div>
+    </section>
+    <div class="two">
+      <section><h2>Commando's</h2><ul class="list" id="cmds"></ul></section>
+      <section><h2>Meldingen</h2><ul class="list" id="notes"></ul></section>
+    </div>
+    <section><h2>Bronnen &amp; opslag</h2><div class="grid" id="t_sys"></div></section>
+    <section id="devices" class="hidden">
+      <h2>Apparaten</h2>
+      <div class="scroll"><table><thead><tr><th>Apparaat</th><th>Waarde</th><th class="n">Nu</th></tr></thead><tbody id="devrows"></tbody></table></div>
+    </section>
+    <section id="shadow" class="hidden">
+      <h2>Shadow — overeenkomst met Home Assistant</h2>
+      <div class="grid">
+        <div class="tile"><div class="k">Sensoren</div><div class="v" id="shf">–</div><div class="s" id="shfs"></div></div>
+        <div class="tile"><div class="k">Acties</div><div class="v" id="shc">–</div><div class="s" id="shcs"></div></div>
+      </div>
+      <h2 style="margin-top:14px">Acties</h2>
+      <div class="scroll"><table><thead><tr><th>Sleutel</th><th class="n">Rust</th><th class="n">HA</th><th class="n">%</th><th>Laatste verschil</th></tr></thead><tbody id="shcmd"></tbody></table></div>
+      <h2 style="margin-top:14px">Sensoren (slechtste eerst)</h2>
+      <div class="scroll"><table><thead><tr><th>Veld</th><th class="n">%</th><th class="n">Max fout</th><th>Laatste verschil (Rust / HA)</th></tr></thead><tbody id="shfld"></tbody></table></div>
+    </section>
+  </div>
+</main>
+<footer style="padding:12px 16px;font-size:12px;color:var(--muted);text-align:center">
+  <a href="https://github.com/jeroentrappers/energie" style="color:inherit">energie</a> ·
+  free software under the <a href="https://www.gnu.org/licenses/agpl-3.0.html" style="color:inherit">AGPL-3.0</a> ·
+  <a href="https://github.com/jeroentrappers/energie" style="color:inherit">source code</a>
+</footer>
+<script id="initial" type="application/json">{{STATE}}</script>
+<script src="/assets/charts.js"></script>
+<script src="/assets/app.js"></script>
+</body>
+</html>

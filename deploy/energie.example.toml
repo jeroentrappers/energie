@@ -1,0 +1,290 @@
+# energie — example configuration.
+# Copy to /etc/energie/energie.toml and adjust. Check it with:
+#   energie --check-config /etc/energie/energie.toml
+
+# shadow   : read everything from HA, decide, never actuate, compare with HA.
+# control  : actuate through the selected actuators.
+# simulate : closed loop against the built-in house model, on a virtual clock.
+mode = "shadow"
+
+# The dashboard and API. Keep it on loopback, or set web_password_file (docs/INSTALL.md).
+listen = "127.0.0.1:8080"
+# web_password_file = "/run/credentials/energie.service/web-password"
+
+# Settings and Memory live here as JSON (written atomically, at most once a minute plus
+# immediately on a settings change). systemd's StateDirectory=energie provides it.
+state_dir = "/var/lib/energie"
+
+# Tick period in ms (the engine runs once per tick).
+tick_ms = 1000
+
+# Persist Settings/Memory at most this often (seconds).
+persist_interval_s = 60
+
+# Who owns Settings and Memory: "ha" (the default in shadow mode: HA's helpers are adopted
+# every tick, the dashboard controls are read only) or "local" (the default otherwise: the
+# state dir, changed from the dashboard, the API and MQTT). Standalone, without HA:
+# deploy/energie.standalone.example.toml.
+# settings_source = "ha"
+
+# Your location, for the sun position and the solar forecast.
+[site]
+latitude = 50.85
+longitude = 4.35
+
+[ha]
+# http:// or ws:// (no TLS); /api/websocket is added when missing.
+url = "http://192.168.1.10:8123"
+# A file that holds only the long-lived access token. Keep it 0600, owned by root; systemd
+# hands it to the service with LoadCredential (see energie.service).
+token_file = "/run/credentials/energie.service/ha-token"
+# Seed Settings and Memory from the HA helpers on first start (empty state dir).
+seed = true
+# How long to wait for HA's first snapshot at start.
+start_wait_s = 30
+
+# The devices: one [[device]] table per instance. `kind` is the driver (see docs/PLUGINS.md
+# for the list and how to add one), `role` the slot(s) of the control logic it fills:
+#   grid_meter  battery_inverter  pv (several are summed)  charger:buzz  charger:ev3
+#   car:buzz  car:ev3  load:airco  load:vriezer  price_feed  solar_forecast  capacity_peak
+# A bare role is enough when the kind fills one slot of it (role = "charger" for a SmartEVSE).
+# `control` lists the slots whose commands the device carries out; it needs read_only = false
+# (the default is true) and is ignored in shadow mode, which never actuates.
+# A slot no device reads comes from Home Assistant (the house model in simulate mode); a
+# device whose commands no one carries out gets the log actuator (the model in simulate mode).
+#
+# Common keys: id (a-z0-9_, also the entity group: <id>_<key>), kind, role, control,
+# read_only, poll_ms (default per kind), grace_polls (3: failed polls that keep the last
+# reading before it goes unavailable), name. Everything else belongs to the kind.
+# Secrets are files (systemd LoadCredential), never inline. Addresses are IPs ("ip" or "ip:port").
+
+# Home Assistant for every slot no other device reads. In control mode, add
+# control = "*" and read_only = false to carry out the remaining commands as HA service calls.
+[[device]]
+id = "ha"
+kind = "ha"
+role = "*"
+
+# [[device]]
+# id = "p1"
+# kind = "homewizard"                 # HomeWizard P1, local API v2 (HTTPS)
+# role = "grid_meter"
+# address = "192.168.1.30"          # port 443
+# serial = "aabbccddeeff"
+# token_file = "/run/credentials/energie.service/homewizard-token"
+# # ca_file = "/etc/energie/homewizard-ca.pem"   # default: HomeWizard's built-in CA
+#
+# [[device]]
+# id = "solis"
+# kind = "solis_modbus"               # Solis hybrid over the Modbus TCP gateway
+# role = "battery_inverter"
+# address = "192.168.1.20:502"
+# slave = 1
+# # poll_ms = 15000                   # HA's fast group; settings_every = 4 → settings every 60 s
+# # frame_gap_ms = 310                # as solis_modbus; the gateway wants one paced master
+# # rc_keepalive_s = 300              # a held RC mode: only a 43135 keepalive this often; 0 = as HA
+# # control = "battery_inverter"
+# # read_only = false
+#
+# [[device]]
+# id = "omnik"
+# kind = "omnik"                      # AC-coupled string inverter (js/status.js)
+# role = "pv"
+# base_url = "http://192.168.1.40"
+# poll_ms = 30000
+#
+# [[device]]
+# id = "pv_garage"
+# kind = "http_json"                  # any JSON endpoint with a power value; summed with the Omnik
+# role = "pv"
+# url = "http://192.168.1.70/status"
+# pointer = "/meters/0/power"
+# scale = 1.0
+#
+# [[device]]
+# id = "evse"
+# kind = "smartevse_mqtt"             # SmartEVSE (Buzz) over MQTT
+# role = "charger"                    # = charger:buzz
+# host = "192.168.1.10"
+# port = 1883
+# prefix = "SmartEVSE/1234"
+# username = "energie"
+# password_file = "/run/credentials/energie.service/mqtt-password"
+# client_id = "energie-smartevse"
+#
+# [[device]]
+# id = "cable"
+# kind = "tuya_cable"                 # Kolanky cable (EV3), Tuya local protocol 3.4
+# role = "charger"                    # = charger:ev3
+# address = "192.168.1.60"           # port 6668
+# device_id = "your-tuya-device-id"
+# local_key_file = "/run/credentials/energie.service/cable-local-key"
+#
+# [[device]]
+# id = "prices"
+# kind = "energy_charts"              # day-ahead prices, ENTSO-E fallback
+# role = "price_feed"
+# entsoe_token_file = "/run/credentials/energie.service/entsoe-token"   # optional fallback
+# poll_ms = 10000
+#
+# [[device]]
+# id = "vriezer"
+# kind = "static"                     # fixed values: a stand-in until a driver exists
+# role = "load:vriezer"
+# values = { power_w = 80.0, switch_on = true }
+
+# The cloud services (crates/cloud). Credentials files hold the HA config entry's `data` as
+# JSON and are only read; rotated tokens go to `state_dir` (not under /etc; one dir per
+# account). The app polls every minute, each client fetches at its own interval.
+# Kia and VW log in with the password by themselves when a token or session is rejected. New
+# credentials, on the host while the service runs (asked here, the password without echo; kept
+# in <state_dir>/credentials/<id>.json, which wins over credentials_file):
+#   sudo energie credentials set ev3       (or buzz; --url when listen is not 127.0.0.1:8080)
+#   energie credentials status
+# [[device]]
+# id = "ev3"
+# kind = "kia_connect"                # Kia Connect EU, the cached state (the car is never woken)
+# role = "car:ev3"
+# credentials_file = "/etc/energie/cloud-kia.json"
+# state_dir = "/var/lib/energie"      # kia-token.json
+# vehicle = "EV3"                     # nickname or VIN; default the first vehicle
+# poll_interval_s = 1800              # at least 30 min
+# # read_only = false                 # lets /api/entities/ev3_ac_limit set the AC charging limit
+#
+# [[device]]
+# id = "buzz"
+# kind = "cupra_data_act"             # VW Group EU Data Act portal (ID.Buzz)
+# role = "car:buzz"
+# credentials_file = "/etc/energie/cloud-cupra.json"
+# poll_interval_s = 900
+#
+# [[device]]
+# id = "airco"
+# kind = "lg_thinq"                   # LG ThinQ Connect, personal access token
+# role = "load:airco"
+# credentials_file = "/etc/energie/cloud-lgthinq.json"
+# beneden = "Airco beneden"           # device aliases
+# zolder = "Airco zolder"
+# # control = "load:airco"            # carry out the airco dump's on/off
+# # read_only = false
+#
+# [[device]]
+# id = "fluvius"
+# kind = "fluvius"                    # Mijn Fluvius: this month's peak and the monthly peaks
+# role = "capacity_peak"
+# credentials_file = "/etc/energie/cloud-fluvius.json"
+# state_dir = "/var/lib/energie"      # fluvius-token.json
+# poll_interval_s = 21600
+#
+# [[device]]
+# id = "forecast"
+# kind = "forecast_solar"             # forecast.solar public API; feeds the "Zon & prijs" forecast
+# role = "solar_forecast"
+# # describe your own panels; without these keys a placeholder plane is used
+# # declination = 30
+# # azimuth = 0                       # API convention: 0 = south, -90 = east
+# # kwp = 8.8
+# # api_key_file = "/run/credentials/energie.service/forecast-solar-key"
+
+# Which entities a publisher (MQTT) sends and how often: glob on the entity id, later rules win.
+# [[publish]]
+# match = "world_grid_meter_*"
+# min_interval_s = 5
+# deadband = 10
+# [[publish]]
+# match = "derived_kwartier_index"
+# enabled = false
+
+# Deprecated, still accepted (with a warning and the equivalent [[device]] tables printed by
+# --check-config): [sources] p1 = "driver", [actuators] evse = "driver", [devices.homewizard] ...
+# Use either these or [[device]], not both.
+
+[shadow]
+# Adopt HA's Settings and Memory every tick, so the comparison isolates the decision logic.
+# The dashboard controls are read-only while this is on.
+lockstep = true
+# A derived value matches if HA showed it within ±this many seconds.
+time_tolerance_s = 5
+# A command matches an HA actuation within ±this many seconds.
+command_window_s = 40
+# JSONL mismatch log (onsets only), rotated to .1 past log_max_bytes.
+# log_file = "/var/lib/energie/shadow-mismatches.jsonl"
+log_max_bytes = 262144
+
+# Per-field tolerance overrides, by Derived field name: |rust − ha| <= max(abs, rel·|ha|).
+[shadow.tolerances]
+# batterij_setpoint_w = { abs = 25 }
+# kwartiervermogen_projectie_w = { abs = 20, rel = 0.0 }
+
+# Optional: passively subscribe to the SmartEVSE set topics to see HA's MQTT commands.
+# Subscribe only; energie never publishes.
+# [mqtt]
+# host = "192.168.1.10"
+# port = 1883
+# username = "energie"
+# password_file = "/run/credentials/energie.service/mqtt-password"
+# topic = "SmartEVSE/1234/Set/#"
+# client_id = "energie-shadow"
+
+# The MQTT bridge (docs/MQTT.md): every entity on <prefix>/<group>/<key> (retained), a summary
+# for small displays, /set for settable entities, Home Assistant discovery (off in shadow mode
+# unless discovery = true). Nothing is published while enabled = false.
+# [mqtt_publish]
+# enabled = true
+# broker = "192.168.1.10"
+# port = 1883
+# username = "energie"
+# password_file = "/run/credentials/energie.service/mqtt-password"
+# prefix = "energie"
+# discovery = false
+# include = ["*"]
+# exclude = []
+# summary_interval_s = 5
+#
+# Control mode only: how commands reach the devices (docs/CONTROL.md). The kill switch and the
+# per-device switches are on the dashboard (Systeem → Sturing), at POST /api/control and as the
+# entities control_enabled / control_<device>; they persist in <state_dir>/control.json.
+# [control]
+# dry_run = true                      # work out and log every write, send none
+# enabled = true
+# devices = { solis = true, cable = true, evse = true, airco = true, prices = true }
+# verify_s = 60                       # a write must read back within this
+# max_commands_per_min = 30           # per device
+# startup_wait_s = 60                 # first readings before the first tick
+# release_on_shutdown = ["solis"]     # RC mode None at a clean stop
+
+# Push notifications (control mode). Shadow mode only logs them: HA still sends the real ones.
+[notify]
+kind = "log"
+# kind = "ntfy"
+# url = "https://ntfy.sh/your-secret-topic"
+# token_file = "/run/credentials/energie.service/ntfy-token"
+
+# The history store behind the dashboard charts (<state_dir>/history; ~0.5 MB a day on disk,
+# one append a minute, ~18 MB RAM at the default retention).
+[history]
+enabled = true
+# dir = "/var/lib/energie/history"
+minute_days = 14       # 1-minute mean/min/max/last
+quarter_days = 430     # quarter-hours (13+ months, for the capacity tariff)
+day_days = 1100        # daily totals
+# Seed an empty store from HA's recorder statistics at first start (read-only, needs [ha]).
+seed_from_ha = false
+# Entities recorded besides the curated series: globs on entity ids (see /api/entities), each
+# numeric (or on/off) entity under its own id, kept at 10 s, 1 min and per day.
+# extra_series = ["fluvius_month_*", "ev3_soc", "buzz_soc"]
+
+# The house model (simulate mode, or any "sim" selection).
+[sim]
+seed = 1
+speed = 1.0
+# start = "2026-06-21T06:00:00+02:00"
+solis_pv_peak_w = 5000.0
+omnik_pv_peak_w = 3000.0
+cloudiness = 0.3
+battery_kwh = 10.0
+battery_soc = 50.0
+buzz_plugged = true
+buzz_soc = 40.0
+ev3_plugged = true
+ev3_soc = 55.0

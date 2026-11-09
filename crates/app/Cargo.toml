@@ -1,0 +1,36 @@
+[package]
+name = "energie"
+description = "Home energy controller: runtime, Home Assistant bridge, shadow comparison and dashboard"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+energie-core = { path = "../core" }
+energie-drivers = { path = "../drivers" }
+energie-cloud = { path = "../cloud" }
+axum.workspace = true
+base64.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+flate2.workspace = true
+futures-util.workspace = true
+reqwest.workspace = true
+rpassword.workspace = true
+rumqttc.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tokio-tungstenite.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+http-body-util.workspace = true
+rumqttc.workspace = true
+tempfile.workspace = true
+tower.workspace = true

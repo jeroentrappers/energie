@@ -1,0 +1,27 @@
+name: Device support
+description: Report that a device works, or ask for a new one
+labels: [device]
+body:
+  - type: input
+    id: device
+    attributes:
+      label: Device, model and firmware
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Request type
+      options: [It works, It partly works, New driver wanted]
+    validations:
+      required: true
+  - type: input
+    id: role
+    attributes:
+      label: Role
+      placeholder: battery_inverter, grid_meter, charger...
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: The protocol, a link to its documentation, and what you've tested

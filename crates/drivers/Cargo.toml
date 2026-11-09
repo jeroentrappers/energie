@@ -1,0 +1,39 @@
+[package]
+name = "energie-drivers"
+description = "Device protocols and protocol-level simulators for the home energy stack"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+energie-core = { path = "../core" }
+aes.workspace = true
+async-trait.workspace = true
+axum.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+ecb.workspace = true
+hmac.workspace = true
+hyper.workspace = true
+hyper-util.workspace = true
+quick-xml.workspace = true
+rand.workspace = true
+rcgen.workspace = true
+reqwest.workspace = true
+rumqttc.workspace = true
+rumqttd.workspace = true
+rustls.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-modbus.workspace = true
+tokio-rustls.workspace = true
+tower.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

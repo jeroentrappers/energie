@@ -1,0 +1,17 @@
+[package]
+name = "energie-core"
+description = "Pure control logic of the home energy stack: derived sensors, meters and controllers"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+chrono.workspace = true
+chrono-tz.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
