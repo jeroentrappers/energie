@@ -1,12 +1,13 @@
 // The dashboard: live tiles and the power flow from the SSE stream, charts from /api/history
 // and /api/prices. Views, labels and colours follow the HA dashboard "energie-beheer".
 "use strict";
+const T = I18N.T, LOCALE = I18N.locale;
 const $ = (id) => document.getElementById(id);
 const nil = (v) => v === null || v === undefined || Number.isNaN(v);
 const num = (v, d = 0) => {
   if (nil(v)) return "–";
   const x = Math.round(Number(v) * 10 ** d) === 0 ? 0 : Number(v); // no "-0"
-  return x.toLocaleString("nl-BE", { minimumFractionDigits: d, maximumFractionDigits: d });
+  return x.toLocaleString(LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d });
 };
 const W = (v) => nil(v) ? "–" : (Math.abs(v) >= 1000 ? num(v / 1000, 2) + " kW" : num(v) + " W");
 const Wf = (v) => nil(v) ? "–" : num(v) + " W";
@@ -18,8 +19,8 @@ const amp = (v, d = 1) => nil(v) ? "–" : num(v, d) + " A";
 const km = (v) => nil(v) ? "–" : num(v, 1) + " km";
 const onoff = (b) => nil(b) ? "–" : (b ? "aan" : "uit");
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const hhmm = (t) => nil(t) ? "–" : new Date(t).toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
-const time = (iso) => iso ? new Date(iso).toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
+const hhmm = (t) => nil(t) ? "–" : new Date(t).toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" });
+const time = (iso) => iso ? new Date(iso).toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
 const val = (v) => nil(v) ? "–" : (typeof v === "number" ? num(v, Math.abs(v) < 10 ? 3 : 0) : esc(v));
 const RC = { None: "zelfverbruik", ForceCharge: "geforceerd laden", ForceDischarge: "geforceerd ontladen" };
 const HOUR = 3600000, DAY = 86400000;
@@ -40,47 +41,53 @@ let entities = [];
 const entity = (id) => entities.find((e) => e.id === id);
 const devOf = (s, section) => { const src = (s.sources || {})[section] || ""; return /^driver:[a-z0-9_]+$/.test(src) ? src.slice(7) : null; };
 const devVal = (dev, key) => { const e = dev && entity(dev + "_" + key); return e ? e.value : null; };
-const when = (iso) => nil(iso) ? "–" : new Date(iso).toLocaleString("nl-BE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const when = (iso) => nil(iso) ? "–" : new Date(iso).toLocaleString(LOCALE, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 // ------------------------------------------------------------------ tiles
 function tile(k, v, s = "", cls = "") {
-  return `<div class="tile ${cls}"><div class="k">${esc(k)}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  return `<div class="tile ${cls}"><div class="k">${esc(T(k))}</div><div class="v">${T(v)}</div><div class="s">${T(s)}</div></div>`;
 }
 const fill = (id, html) => { const e = $(id); if (e) e.innerHTML = html; };
-const pill = (k, v, cls = "") => `<span class="pill ${cls}">${esc(k)} <b>${v}</b></span>`;
+const pill = (k, v, cls = "") => `<span class="pill ${cls}">${esc(T(k))} <b>${T(v)}</b></span>`;
 
+// A device slot nothing reads stays out of the page.
+const hasDevice = (s, section) => !["unavailable", "none", undefined].includes((s.sources || {})[section]);
 function kmSince(odo, start) { return nil(odo) ? null : odo - start; }
 
 function renderTiles(s) {
   const w = s.world, d = s.derived, m = s.memory, st = s.settings;
   const p1 = w.p1.power_w, batW = w.solis.battery_power_w;
   const risk = d.capaciteitspiek_risico;
+  const nb = !!w.no_battery, ev3Here = hasDevice(s, "cable"), buzzHere = hasDevice(s, "evse");
+  document.body.classList.toggle("no-battery", nb);
+  document.body.classList.toggle("no-ev3", !ev3Here);
+  document.body.classList.toggle("no-buzz", !buzzHere);
   const next = m.steering_volgende_update ? hhmm(Date.parse(m.steering_volgende_update)) : "–";
 
   fill("b_overzicht", [
     pill("Prijs nu", eurkwh(d.stroomprijs_nu)), pill("Niveau", esc(d.stroomprijs_niveau || "–")),
-    pill("Batterij", pct(w.solis.soc)), pill("Volgende sturing", next), pill("Kwartier", W(d.kwartiervermogen_projectie_w)),
+    nb ? "" : pill("Batterij", pct(w.solis.soc)), nb ? "" : pill("Volgende sturing", next), pill("Kwartier", W(d.kwartiervermogen_projectie_w)),
     pill("Maandpiek", W(w.p1.month_peak_w)), risk ? pill("PIEKRISICO", "aan", "risk") : "",
   ].join(""));
   fill("b_capaciteit", [pill("Projectie", W(d.kwartiervermogen_projectie_w)), pill("Vastgelegd", num(d.kwartiervermogen_vastgelegd_kw, 3) + " kW"), pill("Net nu", W(p1))].join(""));
   fill("b_batterij", [pill("SOC", pct(w.solis.soc)), pill("Beschikbaar", kWh(d.batterij_beschikbare_energie_kwh)), pill("Modus", RC[w.solis.rc_mode] || "–")].join(""));
-  fill("b_ev", [pill("EV3", pct(w.ev3.soc)), pill("ID.Buzz", pct(w.buzz.soc)), pill("Prijs", esc(d.stroomprijs_niveau || "–"))].join(""));
+  fill("b_ev", [ev3Here ? pill("EV3", pct(w.ev3.soc)) : "", buzzHere ? pill("ID.Buzz", pct(w.buzz.soc)) : "", pill("Prijs", esc(d.stroomprijs_niveau || "–"))].join(""));
 
   const pv = d.pv_vermogen_totaal_w;
   fill("t_stromen", [
     tile("Net (P1)", `<span class="${p1 > 0 ? "pos" : "neg"}">${W(p1)}</span>`, nil(p1) ? "" : (p1 > 0 ? "afname" : "injectie")),
     tile("Zon", W(pv), "Solis " + W(w.solis.pv_power_w) + " · Omnik " + W(w.omnik.power_w)),
-    tile("Huis", W(d.huisverbruik_vermogen_w), "basis " + W(d.huisverbruik_excl_stuurbaar_w)),
-    tile("Batterij", W(batW), nil(batW) ? "" : (batW > 0 ? "ontlaadt" : batW < 0 ? "laadt" : "rust") + " · " + pct(w.solis.soc)),
-    tile("Kia EV3 (laadkabel)", W(d.ev_laadkabel_vermogen_w), esc(w.cable.status || "–")),
-    tile("VW ID.Buzz (SmartEVSE)", W(d.ev_laadvermogen_smartevse_w), esc(w.evse.state || "–")),
+    tile("Huis", W(d.huisverbruik_vermogen_w), T("basis") + " " + W(d.huisverbruik_excl_stuurbaar_w)),
+    nb ? "" : tile("Batterij", W(batW), nil(batW) ? "" : T(batW > 0 ? "ontlaadt" : batW < 0 ? "laadt" : "rust") + " · " + pct(w.solis.soc)),
+    !ev3Here ? "" : tile("Kia EV3 (laadkabel)", W(d.ev_laadkabel_vermogen_w), esc(w.cable.status || "–")),
+    !buzzHere ? "" : tile("VW ID.Buzz (SmartEVSE)", W(d.ev_laadvermogen_smartevse_w), esc(w.evse.state || "–")),
   ].join(""));
 
   const sp = d.batterij_setpoint_w;
-  const doel = sp < 0 ? "laden " + num(-sp) + " W" : sp > 0 ? "ontladen " + num(sp) + " W" : "vasthouden";
-  const ev3 = ["charging", "waiting"].includes(w.cable.status) ? `doel ${num((w.cable.set_current_a || 0) * 230)} W (${num(w.cable.set_current_a || 0, 1)} A)` : "—";
-  const buzz = w.evse.state === "Charging" ? `doel ${num((w.evse.override_a || 0) * 230)} W (${num(w.evse.override_a || 0, 1)} A)` : "—";
-  fill("laaddoelen", `<li>🔋 <b>Batterij:</b> ${doel}</li><li>🚗 <b>Kia EV3:</b> ${ev3}</li><li>🚐 <b>VW ID.Buzz:</b> ${buzz}</li>`);
+  const doel = sp < 0 ? T("laden") + " " + num(-sp) + " W" : sp > 0 ? T("ontladen") + " " + num(sp) + " W" : T("vasthouden");
+  const ev3 = ["charging", "waiting"].includes(w.cable.status) ? `${T("doel")} ${num((w.cable.set_current_a || 0) * 230)} W (${num(w.cable.set_current_a || 0, 1)} A)` : "—";
+  const buzz = w.evse.state === "Charging" ? `${T("doel")} ${num((w.evse.override_a || 0) * 230)} W (${num(w.evse.override_a || 0, 1)} A)` : "—";
+  fill("laaddoelen", [nb ? "" : `<li>🔋 <b>${T("Batterij")}:</b> ${doel}</li>`, ev3Here ? `<li>🚗 <b>Kia EV3:</b> ${ev3}</li>` : "", buzzHere ? `<li>🚐 <b>VW ID.Buzz:</b> ${buzz}</li>` : ""].join(""));
 
   fill("t_batterij", [
     tile("SoC", pct(w.solis.soc)), tile("Doel (batt + P1)", W(sp)), tile("Werkelijk", W(batW)),
@@ -115,17 +122,17 @@ function renderTiles(s) {
   ].join(""));
   const aircoCtl = entity("world_load_airco_beneden_on");
   $("airco_note").textContent = aircoCtl && aircoCtl.control
-    ? "Let op: de airco-dump en de piekwacht schakelen de aircos ook."
-    : "Schakelen kan als een apparaat de aircos bestuurt (control = \"load:airco\", read_only = false) en niet in shadow-modus.";
+    ? T("Let op: de airco-dump en de piekwacht schakelen de aircos ook.")
+    : T("Schakelen kan als een apparaat de aircos bestuurt (control = \"load:airco\", read_only = false) en niet in shadow-modus.");
   fill("t_dag", [
     tile("Zelfverbruik (van PV)", pct(d.zelfverbruik_vandaag_pct)), tile("Zelfvoorziening (van verbruik)", pct(d.zelfvoorziening_vandaag_pct)),
     tile("Verbruik", kWh(d.huisverbruik_dag_kwh)), tile("PV productie", kWh(d.pv_energie_dag_kwh)), tile("PV zelf gebruikt", kWh(d.zelfverbruik_vandaag_kwh)),
     tile("Injectie", kWh(d.injectie_dag_kwh)), tile("Netimport", kWh(d.netimport_dag_kwh)),
-    tile("Batterij geladen", kWh(d.batterij_geladen_dag_kwh)), tile("Batterij ontladen", kWh(d.batterij_ontladen_dag_kwh)),
+    ...(nb ? [] : [tile("Batterij geladen", kWh(d.batterij_geladen_dag_kwh)), tile("Batterij ontladen", kWh(d.batterij_ontladen_dag_kwh))]),
   ].join(""));
   fill("t_nacht", [
-    tile("Nachtdekking", pct(m.nachtdekking)), tile("Duur donkere periode", num(m.nacht_duur_uren, 1) + " u"),
-    tile("Nacht uit batterij", kWh(m.nacht_batterij_kwh)), tile("Nacht uit net", kWh(m.nacht_import_kwh)),
+    ...(nb ? [] : [tile("Nachtdekking", pct(m.nachtdekking))]), tile("Duur donkere periode", num(m.nacht_duur_uren, 1) + " u"),
+    ...(nb ? [] : [tile("Nacht uit batterij", kWh(m.nacht_batterij_kwh))]), tile("Nacht uit net", kWh(m.nacht_import_kwh)),
     tile("Airco beneden", onoff(w.airco.beneden_on), "", w.airco.beneden_on ? "on" : ""), tile("Airco zolder", onoff(w.airco.zolder_on), "", w.airco.zolder_on ? "on" : ""),
     tile("Dump bezig", onoff(m.airco_dump_sessie_bezig)), tile("Vriezer", W(w.vriezer.power_w), w.vriezer.switch_on === null ? "" : onoff(w.vriezer.switch_on)),
   ].join(""));
@@ -190,17 +197,17 @@ function renderTiles(s) {
   const ev3dev = devOf(s, "ev3"), buzzdev = devOf(s, "buzz");
   fill("t_ev3", [
     tile("Batterij", pct(w.ev3.soc)), tile("Stekker", nil(w.ev3.plugged) ? "–" : (w.ev3.plugged ? "verbonden" : "los")),
-    tile("AC-limiet", pct(w.ev3.ac_limit)), tile("Kilometerstand", km(w.ev3.odometer_km), "sinds start " + km(ev3km)),
-    tile("Laadvermogen", num(d.ev3_laadvermogen_totaal_kw, 2) + " kW", "zon " + num(d.ev3_laadvermogen_zon_kw, 2) + " · net " + num(d.ev3_laadvermogen_net_kw, 2)),
-    tile("Geladen vandaag", kWh(d.ev3_laadenergie_dag_kwh), "maand " + kWh(d.ev3_laadenergie_maand_kwh, 1)),
+    tile("AC-limiet", pct(w.ev3.ac_limit)), tile("Kilometerstand", km(w.ev3.odometer_km), T("sinds start") + " " + km(ev3km)),
+    tile("Laadvermogen", num(d.ev3_laadvermogen_totaal_kw, 2) + " kW", T("zon") + " " + num(d.ev3_laadvermogen_zon_kw, 2) + " · " + T("net") + " " + num(d.ev3_laadvermogen_net_kw, 2)),
+    tile("Geladen vandaag", kWh(d.ev3_laadenergie_dag_kwh), T("maand") + " " + kWh(d.ev3_laadenergie_maand_kwh, 1)),
     ...(ev3dev ? [tile("Laadt", onoff(devVal(ev3dev, "charging"))), tile("DC-limiet", pct(devVal(ev3dev, "dc_limit"))),
       tile("Laatste update", when(devVal(ev3dev, "last_updated")), "Kia Connect · " + esc(ev3dev))] : []),
   ].join(""));
   fill("t_buzz", [
     tile("Batterij", pct(w.buzz.soc)), tile("Doel-SOC", pct(w.buzz.target_soc)), tile("Kabel", esc(w.evse.plug || "–")),
-    tile("Kilometerstand", km(w.buzz.odometer_km), "sinds start " + km(buzzkm)),
-    tile("Laadvermogen", num(d.buzz_laadvermogen_totaal_kw, 2) + " kW", "zon " + num(d.buzz_laadvermogen_zon_kw, 2) + " · net " + num(d.buzz_laadvermogen_net_kw, 2)),
-    tile("Geladen vandaag", kWh(d.buzz_laadenergie_dag_kwh), "maand " + kWh(d.buzz_laadenergie_maand_kwh, 1)),
+    tile("Kilometerstand", km(w.buzz.odometer_km), T("sinds start") + " " + km(buzzkm)),
+    tile("Laadvermogen", num(d.buzz_laadvermogen_totaal_kw, 2) + " kW", T("zon") + " " + num(d.buzz_laadvermogen_zon_kw, 2) + " · " + T("net") + " " + num(d.buzz_laadvermogen_net_kw, 2)),
+    tile("Geladen vandaag", kWh(d.buzz_laadenergie_dag_kwh), T("maand") + " " + kWh(d.buzz_laadenergie_maand_kwh, 1)),
     ...(buzzdev ? [tile("Laatste voertuigupdate", when(devVal(buzzdev, "captured_at")), "EU Data Act · " + esc(buzzdev))] : []),
   ].join(""));
   renderEv3Control(s);
@@ -222,10 +229,10 @@ function renderTiles(s) {
   const carCost = (c) => [
     tile("Zon geladen (kWh)", kWh(d[c + "_laadenergie_zon_kwh"], 1)), tile("Net geladen (kWh)", kWh(d[c + "_laadenergie_net_kwh"], 1)),
     tile("Zon-aandeel", pct(d[c + "_laad_zonaandeel_pct"])), tile("Netkost totaal", eur(d[c + "_laadkost_net_eur"])),
-    tile("Netkost deze maand", eur(d[c + "_laadkost_maand_eur"]), "vandaag " + eur(d[c + "_laadkost_dag_eur"])),
+    tile("Netkost deze maand", eur(d[c + "_laadkost_maand_eur"]), T("vandaag") + " " + eur(d[c + "_laadkost_dag_eur"])),
     tile("Kost/100km (EV)", eur(d[c + "_laadkost_per_100km_eur"])), tile("Kost/100km (ICE)", eur(d[c + "_ice_kost_per_100km_eur"])),
     tile("Besparing/100km", eur(d[c + "_besparing_per_100km_eur"])), tile("Verbruik/100km", kWh(d[c + "_verbruik_per_100km_kwh"], 1)),
-    tile("Kost-snelheid nu", eur(d[c + "_laadkost_per_uur_eur"], 3) + "/u"),
+    tile("Kost-snelheid nu", eur(d[c + "_laadkost_per_uur_eur"], 3) + T("/u")),
   ].join("");
   fill("t_ev3kost", carCost("ev3"));
   fill("t_buzzkost", carCost("buzz"));
@@ -233,20 +240,20 @@ function renderTiles(s) {
   // Systeem
   const h = S.hist;
   fill("t_sys", [
-    tile("Home Assistant", s.ha ? (s.ha.connected ? "verbonden" : "niet verbonden") : "niet gebruikt", s.ha ? s.ha.entities + " entiteiten" : ""),
-    tile("MQTT", s.mqtt ? (s.mqtt.connected ? "verbonden" : "niet verbonden") : "niet gebruikt", s.mqtt ? s.mqtt.events + " berichten" : ""),
+    tile("Home Assistant", s.ha ? (s.ha.connected ? "verbonden" : "niet verbonden") : "niet gebruikt", s.ha ? s.ha.entities + " " + T("entiteiten") : ""),
+    tile("MQTT", s.mqtt ? (s.mqtt.connected ? "verbonden" : "niet verbonden") : "niet gebruikt", s.mqtt ? s.mqtt.events + " " + T("berichten") : ""),
     tile("Bronnen", esc([...new Set(Object.values(s.sources))].join(", ") || "–")),
     tile("Actuatoren", esc([...new Set(Object.values(s.actuators))].join(", ") || "–")),
-    tile("Statusbestanden", num(s.persist_writes) + " keer geschreven"),
+    tile("Statusbestanden", num(s.persist_writes) + " " + T("keer geschreven")),
     ...Object.entries(s.drivers || {}).map(([k, v]) => {
       // A device that signs in shows its sign-in state while that is not ok ("aanmelden nodig":
       // `energie credentials set <id>` on the host).
       const a = v.auth && v.auth.state !== "ok" ? v.auth : null;
-      const sub = a ? esc(a.state + (a.last_result ? ": " + a.last_result : "")) : (v.last_error ? esc(v.last_error) : v.reads_ok + " metingen");
+      const sub = a ? esc(a.state + (a.last_result ? ": " + a.last_result : "")) : (v.last_error ? esc(v.last_error) : v.reads_ok + " " + T("metingen"));
       return tile(k, a ? "aanmelden" : (v.available ? "ok" : "onbereikbaar"), sub, a || !v.available ? "alarm" : "");
     }),
-    ...(h ? h.tiers.map((t) => tile("Historiek " + t.name, num(t.rows) + " rijen", t.first ? "sinds " + new Date(t.first * 1000).toLocaleDateString("nl-BE") : "leeg"))
-      .concat([tile("Historiek geschreven", num(h.stats.bytes_written / 1024, 1) + " kB", h.stats.write_errors ? h.stats.write_errors + " fouten" : num(h.stats.rows_written) + " rijen")]) : [tile("Historiek", "uit")]),
+    ...(h ? h.tiers.map((t) => tile(T("Historiek") + " " + t.name, num(t.rows) + " " + T("rijen"), t.first ? T("sinds") + " " + new Date(t.first * 1000).toLocaleDateString(LOCALE) : "leeg"))
+      .concat([tile("Historiek geschreven", num(h.stats.bytes_written / 1024, 1) + " kB", h.stats.write_errors ? h.stats.write_errors + " " + T("fouten") : num(h.stats.rows_written) + " " + T("rijen"))]) : [tile("Historiek", "uit")]),
   ].join(""));
 
   for (const o of document.querySelectorAll("output[data-d]")) {
@@ -264,13 +271,22 @@ function renderQuarterText(s) {
   const elapsed = 900 - rem, proj = d.kwartiervermogen_projectie_w || 0, allowed = d.kwartier_toegestaan_vermogen_w || 0;
   const expected = budget * elapsed / 900, pace = expected > 0.002 ? used / expected * 100 : 100;
   const mm = Math.floor(elapsed / 60), ss = String(Math.floor(elapsed % 60)).padStart(2, "0");
-  const tempo = pace > 105
-    ? `🔴 <b>Tempo ${num(pace)}%</b> — sneller dan de klok: ${num((used - expected) * 1000)} Wh te veel, dus de regelaar neemt terug naar ${num(allowed)} W om het kwartiergemiddelde nog op ${num(tgt)} W te laten landen.`
-    : pace < 95
-      ? `🟢 <b>Tempo ${num(pace)}%</b> — trager dan de klok: ${num((expected - used) * 1000)} Wh krediet opgebouwd, daarom mag er nu ${num(allowed - tgt)} W méér dan het target.`
-      : `🟡 <b>Tempo ${num(pace)}%</b> — op schema.`;
-  fill("md_kwartier", `<h3>⏱️ Kwartier ${mm}:${ss} / 15:00</h3>
-    <p><b>Budget</b> ${num(budget, 3)} kWh · <b>verbruikt</b> ${num(used, 3)} kWh · <b>rest</b> ${num(Math.max(budget - used, 0), 3)} kWh in ${num(rem / 60, 1)} min</p>
+  const over = num((used - expected) * 1000), krediet = num((expected - used) * 1000), rest = num(Math.max(budget - used, 0), 3), remMin = num(rem / 60, 1);
+  const tempo = I18N.en
+    ? (pace > 105 ? `🔴 <b>Pace ${num(pace)}%</b>: ahead of the clock by ${over} Wh, so the controller reduces to ${num(allowed)} W to land the quarter average on ${num(tgt)} W.`
+      : pace < 95 ? `🟢 <b>Pace ${num(pace)}%</b>: behind the clock with ${krediet} Wh of credit, so ${num(allowed - tgt)} W more than the target is allowed right now.`
+      : `🟡 <b>Pace ${num(pace)}%</b>: on schedule.`)
+    : (pace > 105 ? `🔴 <b>Tempo ${num(pace)}%</b> — sneller dan de klok: ${over} Wh te veel, dus de regelaar neemt terug naar ${num(allowed)} W om het kwartiergemiddelde nog op ${num(tgt)} W te laten landen.`
+      : pace < 95 ? `🟢 <b>Tempo ${num(pace)}%</b> — trager dan de klok: ${krediet} Wh krediet opgebouwd, daarom mag er nu ${num(allowed - tgt)} W méér dan het target.`
+      : `🟡 <b>Tempo ${num(pace)}%</b> — op schema.`);
+  fill("md_kwartier", I18N.en
+    ? `<h3>⏱️ Quarter ${mm}:${ss} / 15:00</h3>
+    <p><b>Budget</b> ${num(budget, 3)} kWh · <b>used</b> ${num(used, 3)} kWh · <b>left</b> ${rest} kWh in ${remMin} min</p>
+    <p><b>Allowed now</b> ${num(allowed)} W · <b>projection</b> ${num(proj)} W of ${num(tgt)} W</p>
+    <p>${tempo}</p>
+    <p class="note">The controller aims for ${num(tgt - 100)} W · the peak guard steps in above ${num(tgt - 25)} W · Fluvius bills at ${num(tgt)} W</p>`
+    : `<h3>⏱️ Kwartier ${mm}:${ss} / 15:00</h3>
+    <p><b>Budget</b> ${num(budget, 3)} kWh · <b>verbruikt</b> ${num(used, 3)} kWh · <b>rest</b> ${rest} kWh in ${remMin} min</p>
     <p><b>Mag nu</b> ${num(allowed)} W · <b>projectie</b> ${num(proj)} W van ${num(tgt)} W</p>
     <p>${tempo}</p>
     <p class="note">Regelaar mikt op ${num(tgt - 100)} W · piekwacht grijpt in boven ${num(tgt - 25)} W · Fluvius rekent af op ${num(tgt)} W</p>`);
@@ -287,11 +303,11 @@ function renderPeakHistory(s) {
     const [k, v] = e.split(":");
     const idx = parseInt(k.slice(0, 4), 10) * 12 + parseInt(k.slice(5, 7), 10) - 1, kw = parseFloat(v);
     if (!(nu - idx >= 1 && nu - idx <= 11)) continue;
-    rows.push(`<tr><td>${esc(k)}</td><td class="n">${num(kw, 3)} kW${kw < 2.5 ? " (→ 2,5)" : ""}</td><td class="n">${fkw(ym(idx))}</td><td>${ym(idx + 11)}</td></tr>`);
+    rows.push(`<tr><td>${esc(k)}</td><td class="n">${num(kw, 3)} kW${kw < 2.5 ? ` (→ ${num(2.5, 1)})` : ""}</td><td class="n">${fkw(ym(idx))}</td><td>${ym(idx + 11)}</td></tr>`);
   }
-  rows.push(`<tr><td><b>${ym(nu)}</b> (lopend)</td><td class="n"><b>${num(deze, 3)} kW</b></td><td class="n">${fkw(ym(nu))}</td><td>${ym(nu + 11)}</td></tr>`);
+  rows.push(`<tr><td><b>${ym(nu)}</b> (${T("lopend")})</td><td class="n"><b>${num(deze, 3)} kW</b></td><td class="n">${fkw(ym(nu))}</td><td>${ym(nu + 11)}</td></tr>`);
   fill("piekhist", rows.join(""));
-  fill("piekgem", `<b>Gemiddelde = ${num(s.derived.gefactureerde_piek_kw, 3)} kW</b> → ${eur(s.derived.capaciteitstarief_factuur_deze_maand_eur)} incl. btw op de factuur van deze maand.`);
+  fill("piekgem", I18N.en ? `<b>Average = ${num(s.derived.gefactureerde_piek_kw, 3)} kW</b> → ${eur(s.derived.capaciteitstarief_factuur_deze_maand_eur)} incl. VAT on this month's bill.` : `<b>Gemiddelde = ${num(s.derived.gefactureerde_piek_kw, 3)} kW</b> → ${eur(s.derived.capaciteitstarief_factuur_deze_maand_eur)} incl. btw op de factuur van deze maand.`);
 }
 
 // The monthly peaks of the `capacity_peak` device (`month_MM_peak_kw`, named "Piek YYYY-MM"),
@@ -334,7 +350,7 @@ function renderEv3Control(s) {
   if (!e || !e.control || form.dataset.for === e.id) return;
   const c = e.control, opts = [];
   for (let v = c.min ?? 0; v <= (c.max ?? 100); v += c.step || 1) opts.push(`<option value="${v}">${num(v)} %</option>`);
-  form.innerHTML = `<label class="row"><span>AC-laadlimiet instellen</span><select data-entity="${esc(e.id)}">${opts.join("")}</select></label>`;
+  form.innerHTML = `<label class="row"><span>${T("AC-laadlimiet instellen")}</span><select data-entity="${esc(e.id)}">${opts.join("")}</select></label>`;
   form.dataset.for = e.id;
 }
 
@@ -344,7 +360,7 @@ function syncEntityControls() {
   for (const el of document.querySelectorAll("form.entctl [data-entity]")) {
     if (el.form.contains(document.activeElement)) continue;
     const e = entity(el.dataset.entity);
-    el.disabled = !(e && e.control);
+    el.disabled = S.demo || !(e && e.control);
     if (!e || nil(e.value)) continue;
     if (el.type === "checkbox") el.checked = !!e.value;
     else el.value = String(e.value);
@@ -356,7 +372,7 @@ for (const form of document.querySelectorAll("form.entctl")) {
     const value = el.type === "checkbox" ? el.checked : Number(el.value);
     const r = await fetch("/api/entities/" + encodeURIComponent(el.dataset.entity), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value }) });
     const msg = form.nextElementSibling;
-    if (msg) msg.textContent = r.ok ? "Verstuurd." : "Niet verstuurd: " + await r.text();
+    if (msg) msg.textContent = r.ok ? T("Verstuurd.") : T("Niet verstuurd:") + " " + await r.text();
   });
 }
 
@@ -396,15 +412,15 @@ function renderFlow(s) {
     return `<g class="node${off ? " off" : ""}"><circle cx="${x}" cy="${y}" r="${r}" stroke="${color}"/>` +
       `<text x="${x}" y="${y + 5}" text-anchor="middle">${value}</text>` +
       (sub ? `<text class="sub" x="${x}" y="${y + 18}" text-anchor="middle">${sub}</text>` : "") +
-      name.split("\n").map((n, i) => `<text class="name" x="${x}" y="${y + above + i * 13}" text-anchor="middle">${esc(n)}</text>`).join("") + "</g>";
+      name.split("\n").map((n, i) => `<text class="name" x="${x}" y="${y + above + i * 13}" text-anchor="middle">${esc(T(n))}</text>`).join("") + "</g>";
   };
   const sp = d.batterij_setpoint_w;
-  const doel = sp < 0 ? "doel laden " + num(-sp) + " W" : sp > 0 ? "doel ontladen " + num(sp) + " W" : "doel vasthouden";
+  const doel = sp < 0 ? T("doel laden") + " " + num(-sp) + " W" : sp > 0 ? T("doel ontladen") + " " + num(sp) + " W" : T("doel vasthouden");
   const gridTxt = imp > 0 ? "← " + Wf(imp) : exp > 0 ? "→ " + Wf(exp) : "0 W";
-  const airco = [w.airco.beneden_on ? "beneden" : null, w.airco.zolder_on ? "zolder" : null].filter(Boolean);
+  const airco = [w.airco.beneden_on ? T("beneden") : null, w.airco.zolder_on ? T("zolder") : null].filter(Boolean);
   // The paths stay in the DOM: replacing them would restart every dot's animation on each update.
   if (!host.querySelector("svg")) {
-    host.innerHTML = `<svg viewBox="0 0 400 345" role="img" aria-label="Energiestroom"><g transform="translate(20,0)">
+    host.innerHTML = `<svg viewBox="0 0 400 345" role="img" aria-label="${T("Energiestroom")}"><g transform="translate(20,0)">
       ${flows.map(([p]) => `<path class="track" d="${p}"/>`).join("")}
       ${flows.map(([p, , c]) => `<path class="dot" d="${p}" stroke="${c}"/>`).join("")}
       <g class="nodes"></g>
@@ -413,16 +429,19 @@ function renderFlow(s) {
   host.querySelectorAll("path.dot").forEach((el, i) => {
     const v = flows[i][1];
     el.style.visibility = v > 10 ? "visible" : "hidden";
+    if (s.world.no_battery && flows[i][0].includes("180,238")) host.querySelectorAll("path.track")[i].style.display = "none";
+    if (!hasDevice(s, "cable") && i === 7) host.querySelectorAll("path.track")[i].style.display = "none";
+    if (!hasDevice(s, "evse") && i === 8) host.querySelectorAll("path.track")[i].style.display = "none";
     // The playback rate changes the speed without moving the dots; the CSS duration would.
     for (const a of el.getAnimations()) a.updatePlaybackRate(FLOW_BASE_S / dur(v));
   });
   host.querySelector("g.nodes").innerHTML = `
     ${node("solar", 34, "#ff9800", "PV (Solis + Omnik)", Wf(pv), "", pv <= 0)}
     ${node("grid", 34, "#488fc2", "Net", gridTxt, "", false)}
-    ${node("home", 34, "#5B8DEF", "Huis", Wf(homeNet), airco.length ? "airco " + airco.join(", ") : "", false)}
-    ${node("battery", 34, "#3FC9A0", "Soluna 2×5K\n" + doel, pct(w.solis.soc), Wf(Math.abs(batt)) + (batt > 0 ? " ↑" : batt < 0 ? " ↓" : ""), false)}
-    ${node("ev3", 26, "#9B78F5", "Kia EV3 (laadkabel)", Wf(ev3), "", ev3 <= 0)}
-    ${node("buzz", 26, "#26c6da", "VW ID.Buzz (SmartEVSE)", Wf(buzz), "", buzz <= 0)}`;
+    ${node("home", 34, "#5B8DEF", "Huis", Wf(homeNet), airco.length ? T("airco") + " " + airco.join(", ") : "", false)}
+    ${w.no_battery ? "" : node("battery", 34, "#3FC9A0", T("Batterij") + "\n" + doel, pct(w.solis.soc), Wf(Math.abs(batt)) + (batt > 0 ? " ↑" : batt < 0 ? " ↓" : ""), false)}
+    ${hasDevice(s, "cable") ? node("ev3", 26, "#9B78F5", "Kia EV3 (laadkabel)", Wf(ev3), "", ev3 <= 0) : ""}
+    ${hasDevice(s, "evse") ? node("buzz", 26, "#26c6da", "VW ID.Buzz (SmartEVSE)", Wf(buzz), "", buzz <= 0) : ""}`;
 }
 
 // ------------------------------------------------------------------ data
@@ -472,22 +491,23 @@ function fcSpan(sel) {
 const CHARTS = {
   c_flow: { tab: "overzicht", every: 60, async load() {
     const sp = flowSpan($("flowperiod").value);
-    $("flowtitle").textContent = "Energiestroom — " + sp.title;
+    $("flowtitle").textContent = T("Energiestroom") + " — " + T(sp.title);
     const h = await hist(["pv_w", "batterij_w", "p1_w", "huis_basis_w", "ev3_w", "buzz_w"], sp.from, sp.to, sp.step);
     const L = (id, name, color, type = "line", opacity) => ({ name, color, type, opacity, data: kw(h[id]), unit: "kW", dec: 1 });
+    const snap = S.snap, nb = snap.world.no_battery;
     return { from: sp.from, to: sp.to, now: S.now, bucket: sp.step * 1000, axes: [{ dec: 1, title: "kW" }], series: [
-      L("pv_w", "Zon", "#ff9800", "area", 0.3), L("batterij_w", "Batterij (+ontl/−laad)", "#3FC9A0"), L("p1_w", "Net (+afn/−inj)", "#9e9e9e"),
-      L("huis_basis_w", "Huis (basis)", "#5B8DEF"), L("ev3_w", "EV3", "#9B78F5"), L("buzz_w", "Buzz", "#26c6da")] };
+      L("pv_w", "Zon", "#ff9800", "area", 0.3), nb ? null : L("batterij_w", "Batterij (+ontl/−laad)", "#3FC9A0"), L("p1_w", "Net (+afn/−inj)", "#9e9e9e"),
+      L("huis_basis_w", "Huis (basis)", "#5B8DEF"), hasDevice(snap, "cable") ? L("ev3_w", "EV3", "#9B78F5") : null, hasDevice(snap, "evse") ? L("buzz_w", "Buzz", "#26c6da") : null].filter(Boolean) };
   } },
   c_fc: { tab: "overzicht", every: 60, async load() {
     const sp = fcSpan($("fcperiod").value);
-    $("fctitle").textContent = "Zon & prijs — " + sp.title;
+    $("fctitle").textContent = T("Zon & prijs") + " — " + T(sp.title);
     const h = await hist(["pv_w", "pv_forecast_w"], sp.from, sp.to, 900);
     const p = priceSeries();
     const hasFc = h.pv_forecast_w.some(([, v]) => !nil(v));
     const nowFc = h.pv_forecast_w.find(([t]) => t <= S.now && S.now < t + 900000);
     S.forecastNow = hasFc && nowFc && !nil(nowFc[1]) ? nowFc[1] : undefined;
-    $("fcnote").textContent = hasFc ? "" : " Er is nog geen PV-forecastbron: de forecastlijn verschijnt zodra er een is.";
+    $("fcnote").textContent = hasFc ? "" : T(" Er is nog geen PV-forecastbron: de forecastlijn verschijnt zodra er een is.");
     const series = [{ name: "PV werkelijk", color: "#ff9800", type: "area", opacity: 0.3, data: kw(h.pv_w), unit: "kW", dec: 1 }];
     if (hasFc) series.push({ name: "PV forecast", color: "#1976d2", data: kw(h.pv_forecast_w), unit: "kW", dec: 1 });
     series.push({ name: "Afname", color: "#e53935", type: "step", axis: 1, data: p.afname, unit: "€/kWh", dec: 3 },
@@ -521,13 +541,15 @@ const CHARTS = {
   c_dagpiek: { tab: "capaciteit", every: 300, async load() {
     const to = startOfDay(S.now, 1), from = startOfDay(S.now, -13);
     const h = await hist(["kwartier_vastgelegd_kw:max"], from, to, 86400);
-    return { from, to, bucket: DAY, states: false, axes: [{ min: 0, dec: 1, title: "kW" }], annotations: [{ y: 2.5, color: "#f44336", label: "2,5 kW" }],
+    return { from, to, bucket: DAY, states: false, axes: [{ min: 0, dec: 1, title: "kW" }], annotations: [{ y: 2.5, color: "#f44336", label: num(2.5, 1) + " kW" }],
       series: [{ name: "Dagpiek", color: "#3f51b5", type: "column", data: h["kwartier_vastgelegd_kw:max"], unit: "kW", dec: 3 }] };
   } },
   c_prices: { tab: "prijzen", every: 60, async load() {
     await loadPrices();
     const from = startOfDay(S.now), to = startOfDay(S.now, 2), p = priceSeries();
-    return { from, to, now: S.now, bucket: 900000, axes: [{ dec: 2, title: "€/kWh" }], series: [
+    const limit = S.snap.settings.goedkoop_laden_prijs_drempel;
+    return { from, to, now: S.now, bucket: 900000, onselect: choosePriceHours, axes: [{ dec: 2, title: "€/kWh" }],
+      annotations: [{ y: limit, color: "#1f9d55", label: T("Laadlimiet") + " " + num(limit, 2) }], series: [
       { name: "Afname (all-in)", color: "#e53935", type: "column", data: p.afname, unit: "€/kWh", dec: 3, extremas: true, header: false,
         thresholds: [{ value: -1, color: "#1b5e20" }, { value: 0.21, color: "#7cb342" }, { value: 0.26, color: "#f9a825" }, { value: 0.32, color: "#e53935" }] },
       { name: "Injectie", color: "#607d8b", type: "step", data: p.injectie, unit: "€/kWh", dec: 3, header: false }] };
@@ -562,6 +584,34 @@ const CHARTS = {
   } },
 };
 
+// A range dragged on the price chart becomes the price limit: charging runs whenever the price
+// is below it, so the limit is just above the dearest quarter of the range.
+function choosePriceHours(from, to) {
+  const box = $("priceselect");
+  const slots = (S.prices ? S.prices.afname : []).map(([t, v]) => [t * 1000, v]);
+  const picked = slots.filter(([t]) => t + 900000 > from && t < to);
+  if (!picked.length) { box.textContent = ""; return; }
+  const max = Math.max(...picked.map(([, v]) => v));
+  const limit = Math.min(0.6, Math.max(0.05, (Math.floor(max * 100 + 1e-9) + 1) / 100));
+  const others = slots.filter(([t, v]) => v < limit && t + 900000 > S.now && !(t + 900000 > from && t < to)).length;
+  const span = hhmm(picked[0][0]) + "–" + hhmm(picked[picked.length - 1][0] + 900000);
+  const what = I18N.en
+    ? `<b>${span}</b>: the dearest quarter costs ${eurkwh(max)}. Charging from the grid then runs whenever the price is below <b>${eurkwh(limit)}</b>${others ? `, which also includes ${others} other upcoming quarters` : ""}.`
+    : `<b>${span}</b>: het duurste kwartier kost ${eurkwh(max)}. Laden van het net loopt dan zolang de prijs onder <b>${eurkwh(limit)}</b> ligt${others ? `, ook tijdens ${others} andere komende kwartieren` : ""}.`;
+  box.innerHTML = what + `<br><button type="button" id="ps_ok">${T("Toepassen")}</button><button type="button" id="ps_no">${T("Annuleren")}</button>`;
+  const done = () => { box.textContent = ""; S.fetched.c_prices = 0; refreshCharts(false); };
+  $("ps_no").onclick = done;
+  $("ps_ok").disabled = S.demo;
+  $("ps_ok").onclick = async () => {
+    const net = document.querySelector('select[name="ev_net_niveau"]');
+    const max2peak = net && [...net.options].find((o) => o.textContent === T("Max tot piek"));
+    const body = { goedkoop_laden_prijs_drempel: limit };
+    if (max2peak) body.ev_net_niveau = JSON.parse(max2peak.value);
+    const r = await fetch("/api/settings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    if (r.ok) done(); else box.append(" " + T("Niet opgeslagen:") + " " + await r.text());
+  };
+}
+
 function draw(id) {
   const cfg = S.cache[id], host = $(id);
   if (cfg && host && host.offsetParent !== null) Charts.chart(host, cfg);
@@ -578,14 +628,14 @@ async function refreshCharts(force) {
       S.cache[id] = await c.load();
       draw(id);
     } catch (e) {
-      $(id).innerHTML = `<p class="note">Geen historiek: ${esc(e.message)}</p>`;
+      $(id).innerHTML = `<p class="note">${T("Geen historiek:")} ${esc(e.message)}</p>`;
     }
   }
 }
 
 // ------------------------------------------------------------------ tabs
 function showTab(name) {
-  if (!document.querySelector(`.view[data-view="${name}"]`)) name = "overzicht";
+  if (!document.querySelector(`.view[data-view="${name}"]`) || (name === "batterij" && S.snap && S.snap.world.no_battery)) name = "overzicht";
   S.tab = name;
   for (const v of document.querySelectorAll(".view")) v.classList.toggle("on", v.dataset.view === name);
   for (const a of document.querySelectorAll("#tabs a")) a.classList.toggle("on", a.dataset.tab === name);
@@ -601,7 +651,11 @@ for (const [sel, key] of [["flowperiod", "c_flow"], ["fcperiod", "c_fc"]]) {
 }
 
 // ------------------------------------------------------------------ controls
+const BATTERY_SETTINGS = new Set(["ev_batterij_niveau", "batterij_naar_auto_budget", "soluna_absorptie_actief", "batterij_reservering_actief", "batterij_reservering_w", "batterij_reserve_soc"]);
 function syncControls(settings, editable) {
+  const nb = !!(S.snap && S.snap.world.no_battery);
+  for (const el of document.querySelectorAll("form.controls [name]")) if (BATTERY_SETTINGS.has(el.name)) el.closest(".row").classList.toggle("hidden", nb);
+  for (const o of document.querySelectorAll('output[data-d^="batterij_"]')) o.closest(".row").classList.toggle("hidden", nb);
   for (const form of document.querySelectorAll("form.controls")) {
     if (document.activeElement && form.contains(document.activeElement)) continue;
     for (const el of form.elements) {
@@ -613,7 +667,10 @@ function syncControls(settings, editable) {
       el.disabled = !editable;
     }
   }
-  for (const r of document.querySelectorAll(".ro")) r.classList.toggle("hidden", editable);
+  for (const r of document.querySelectorAll(".ro")) {
+    r.classList.toggle("hidden", editable);
+    if (S.demo) r.textContent = T("Deze demo is alleen-lezen.");
+  }
 }
 for (const form of document.querySelectorAll("form.controls")) {
   form.addEventListener("change", async (e) => {
@@ -621,7 +678,7 @@ for (const form of document.querySelectorAll("form.controls")) {
     const value = el.type === "checkbox" ? el.checked : el.tagName === "SELECT" ? JSON.parse(el.value) : Number(el.value);
     const r = await fetch("/api/settings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ [el.name]: value }) });
     const msg = form.nextElementSibling;
-    if (msg) msg.textContent = r.ok ? "Opgeslagen." : "Niet opgeslagen: " + await r.text();
+    if (msg) msg.textContent = r.ok ? T("Opgeslagen.") : T("Niet opgeslagen:") + " " + await r.text();
   });
 }
 
@@ -632,15 +689,15 @@ function cmdText(c) {
   return k + " " + (typeof v === "object" ? JSON.stringify(v) : v);
 }
 function renderSystem(s) {
-  fill("cmds", s.commands.slice(0, 15).map((c) => `<li><time>${time(c.at)}</time>${esc(cmdText(c.command))}${c.actuated ? "" : " <span class=note>(niet uitgevoerd)</span>"}${c.error ? " <span class=pos>" + esc(c.error) + "</span>" : ""}</li>`).join("") || "<li class=note>nog geen</li>");
-  fill("notes", s.notifications.slice(0, 10).map((n) => `<li><time>${time(n.at)}</time><b>${esc(n.title)}</b> ${esc(n.message)}</li>`).join("") || "<li class=note>geen</li>");
+  fill("cmds", s.commands.slice(0, 15).map((c) => `<li><time>${time(c.at)}</time>${esc(cmdText(c.command))}${c.actuated ? "" : " <span class=note>" + T("(niet uitgevoerd)") + "</span>"}${c.error ? " <span class=pos>" + esc(c.error) + "</span>" : ""}</li>`).join("") || "<li class=note>" + T("nog geen") + "</li>");
+  fill("notes", s.notifications.slice(0, 10).map((n) => `<li><time>${time(n.at)}</time><b>${esc(n.title)}</b> ${esc(n.message)}</li>`).join("") || "<li class=note>" + T("geen") + "</li>");
   const sh = s.shadow;
   $("shadow").classList.toggle("hidden", !sh);
   if (sh) {
     $("shf").textContent = sh.field_agreement_pct === null ? "–" : num(sh.field_agreement_pct, 1) + " %";
-    $("shfs").textContent = "sinds " + time(sh.since) + " · " + sh.ticks + " ticks · " + sh.log_lines + " logregels";
+    $("shfs").textContent = T("sinds") + " " + time(sh.since) + " · " + sh.ticks + " ticks · " + sh.log_lines + " " + T("logregels");
     $("shc").textContent = sh.command_agreement_pct === null ? "–" : num(sh.command_agreement_pct, 1) + " %";
-    $("shcs").textContent = sh.commands.reduce((a, k) => a + k.rust + k.ha, 0) + " acties vergeleken";
+    $("shcs").textContent = sh.commands.reduce((a, k) => a + k.rust + k.ha, 0) + " " + T("acties vergeleken");
     $("shcmd").innerHTML = sh.commands.map((k) => `<tr><td>${esc(k.key)}</td><td class=n>${k.rust_matched}/${k.rust}</td><td class=n>${k.ha_matched}/${k.ha}</td><td class=n>${k.agreement_pct === null ? "–" : num(k.agreement_pct, 1)}</td><td>${k.last_mismatch ? time(k.last_mismatch.at) + " " + esc(k.last_mismatch.side) + " " + val(k.last_mismatch.val) : ""}</td></tr>`).join("");
     $("shfld").innerHTML = sh.fields.filter((f) => f.samples > 0).slice(0, 40).map((f) => `<tr><td title="${esc(f.entity)}">${esc(f.field)}</td><td class=n>${num(f.agreement_pct, 1)}</td><td class=n>${f.max_err === null ? "–" : val(f.max_err)}</td><td>${f.last_mismatch ? time(f.last_mismatch.at) + " " + val(f.last_mismatch.rust) + " / " + val(f.last_mismatch.ha) : ""}</td></tr>`).join("");
   }
@@ -651,24 +708,24 @@ const DEVNAME = { evse: "SmartEVSE (Buzz)", cable: "Laadkabel (EV3)", solis: "So
 const writeText = (w) => esc(w.target) + " = " + esc(JSON.stringify(w.value)) + (w.before === undefined ? "" : " <span class=note>(was " + esc(JSON.stringify(w.before)) + ")</span>");
 async function postControl(body) {
   const r = await fetch("/api/control", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-  $("ctlnote").textContent = r.ok ? "" : "Niet gelukt: " + await r.text();
+  $("ctlnote").textContent = r.ok ? "" : T("Niet gelukt:") + " " + await r.text();
 }
 function renderControl(s) {
   const c = s.control;
   $("control").classList.toggle("hidden", !c);
   $("ctl").classList.toggle("hidden", !c);
   if (!c) return;
-  const state = c.dry_run ? "proefdraaien: er wordt niets geschreven" : c.enabled ? "sturing aan" : "sturing UIT";
-  $("ctl").textContent = c.dry_run ? "dry run" : c.enabled ? "sturing aan" : "sturing uit";
+  const state = T(c.dry_run ? "proefdraaien: er wordt niets geschreven" : c.enabled ? "sturing aan" : "sturing UIT");
+  $("ctl").textContent = c.dry_run ? "dry run" : T(c.enabled ? "sturing aan" : "sturing uit");
   $("ctl").className = "badge " + (c.dry_run ? "" : c.enabled ? "ok" : "bad");
-  $("ctlstate").textContent = state + " · " + c.stats.sent + " verstuurd, " + c.stats.verified + " bevestigd, " + c.stats.failed + " niet bevestigd, " + c.stats.blocked + " tegengehouden, " + c.stats.dry_run + " proef";
-  $("ctlkill").textContent = c.enabled ? "Alles stoppen" : "Sturing weer aan";
+  $("ctlstate").textContent = state + " · " + [[c.stats.sent, "verstuurd"], [c.stats.verified, "bevestigd"], [c.stats.failed, "niet bevestigd"], [c.stats.blocked, "tegengehouden"], [c.stats.dry_run, "proef"]].map(([n, k]) => n + " " + T(k)).join(", ");
+  $("ctlkill").textContent = T(c.enabled ? "Alles stoppen" : "Sturing weer aan");
   $("ctlkill").onclick = () => postControl({ enabled: !c.enabled });
   const form = $("ctldevs");
-  form.innerHTML = Object.entries(c.devices).map(([d, on]) => `<label><input type=checkbox data-dev="${esc(d)}"${on ? " checked" : ""}> ${esc(DEVNAME[d] || d)}</label>`).join(" ");
+  form.innerHTML = Object.entries(c.devices).map(([d, on]) => `<label><input type=checkbox data-dev="${esc(d)}"${on ? " checked" : ""}> ${esc(T(DEVNAME[d] || d))}</label>`).join(" ");
   form.onchange = (e) => postControl({ device: e.target.dataset.dev, enabled: e.target.checked });
   $("ctlnote").textContent = "Log: " + c.log_file;
-  $("ctlrows").innerHTML = c.recent.slice(0, 25).map((a) => `<tr><td>${time(a.at)}</td><td>${esc(a.device)}</td><td>${esc(cmdText(a.command))}</td><td>${a.writes.map(writeText).join("<br>") || "<span class=note>niets</span>"}</td><td>${a.field ? esc(a.field) + ": " + val(a.before) + " → " + val(a.after) : ""}</td><td${a.result === "failed" || a.result === "error" ? " class=pos" : ""}>${esc(a.result)}${a.detail ? " " + esc(a.detail) : ""}</td></tr>`).join("") || "<tr><td colspan=6 class=note>nog geen</td></tr>";
+  $("ctlrows").innerHTML = c.recent.slice(0, 25).map((a) => `<tr><td>${time(a.at)}</td><td>${esc(a.device)}</td><td>${esc(cmdText(a.command))}</td><td>${a.writes.map(writeText).join("<br>") || "<span class=note>" + T("niets") + "</span>"}</td><td>${a.field ? esc(a.field) + ": " + val(a.before) + " → " + val(a.after) : ""}</td><td${a.result === "failed" || a.result === "error" ? " class=pos" : ""}>${esc(a.result)}${a.detail ? " " + esc(a.detail) : ""}</td></tr>`).join("") || "<tr><td colspan=6 class=note>" + T("nog geen") + "</td></tr>";
 }
 
 // Every device instance's entities (groups other than the logic's own).
@@ -676,7 +733,7 @@ const LOGIC = new Set(["world", "derived", "setting", "control"]);
 function renderDevices() {
   const rows = entities.filter((e) => !LOGIC.has(e.group));
   $("devices").classList.toggle("hidden", rows.length === 0);
-  $("devrows").innerHTML = rows.map((e) => `<tr><td>${esc(e.group)}</td><td>${esc(e.name)}</td><td class=n>${val(e.value)}${e.unit ? " " + esc(e.unit) : ""}</td></tr>`).join("");
+  $("devrows").innerHTML = rows.map((e) => `<tr><td>${esc(e.group)}</td><td>${esc(T(e.name))}</td><td class=n>${val(e.value)}${e.unit ? " " + esc(e.unit) : ""}</td></tr>`).join("");
 }
 function applyEntities(changed) {
   if (!entities.length || !changed || !Object.keys(changed).length) return;
@@ -688,18 +745,20 @@ function applyEntities(changed) {
 function render(s) {
   S.snap = s;
   if (s.now) S.now = Date.parse(s.now);
-  $("now").textContent = s.now ? new Date(s.now).toLocaleString("nl-BE") + " · tick " + s.tick : "wacht op eerste tick…";
+  $("now").textContent = s.now ? new Date(s.now).toLocaleString(LOCALE) + " · tick " + s.tick : T("wacht op eerste tick…");
   const ha = $("ha");
-  if (s.ha) { ha.textContent = s.ha.connected ? "HA verbonden" : "HA niet verbonden"; ha.className = "badge " + (s.ha.connected ? "ok" : "bad"); }
-  else { ha.textContent = "zonder HA"; ha.className = "badge"; }
+  if (s.ha) { ha.textContent = T(s.ha.connected ? "HA verbonden" : "HA niet verbonden"); ha.className = "badge " + (s.ha.connected ? "ok" : "bad"); }
+  else { ha.textContent = T("zonder HA"); ha.className = "badge"; }
   renderTiles(s);
   renderFlow(s);
   renderSystem(s);
   renderControl(s);
-  syncControls(s.settings, s.settings_editable);
+  syncControls(s.settings, s.settings_editable && !S.demo);
   syncEntityControls();
 }
 
+I18N.apply(document.body);
+I18N.button($("lang"));
 render(JSON.parse($("initial").textContent));
 showTab(location.hash.slice(1) || "overzicht");
 loadPrices().then(() => render(S.snap));
@@ -707,6 +766,15 @@ loadHistMeta();
 fetch("/api/entities").then((r) => r.json()).then((list) => { entities = list; renderDevices(); render(S.snap); }).catch(() => {});
 setInterval(() => { refreshCharts(false); }, 5000);
 setInterval(() => { loadPrices(); loadHistMeta(); }, 60000);
+// A public demo says so and keeps its controls off. The server refuses writes either way.
+fetch("/api/demo").then((r) => {
+  if (!r.ok) return;
+  S.demo = true;
+  $("demotext").textContent = T("Demo: een gesimuleerd huis waarin de tijd sneller loopt. Niets hier is echt en de bediening staat uit.");
+  $("demolink").textContent = T("Broncode");
+  $("demo").classList.remove("hidden");
+  render(S.snap);
+}).catch(() => {});
 // With a sign-in session: who is signed in, and a way out.
 fetch("/auth/me").then((r) => (r.ok ? r.json() : null)).then((me) => {
   if (!me || !me.logout) return;
@@ -715,7 +783,7 @@ fetch("/auth/me").then((r) => (r.ok ? r.json() : null)).then((me) => {
   form.action = "/auth/logout";
   form.style.display = "inline";
   const button = document.createElement("button");
-  button.textContent = "Afmelden (" + me.user + ")";
+  button.textContent = T("Afmelden") + " (" + me.user + ")";
   form.append(" · ", button);
   $("signout").append(form);
 }).catch(() => {});
@@ -728,4 +796,4 @@ es.addEventListener("state", (e) => {
 es.onerror = () => {
   // The session has ended: back through the sign-in.
   fetch("/api/entities", { method: "HEAD" }).then((r) => { if (r.status === 401) location.reload(); }).catch(() => {});
-  $("ha").textContent = "verbinding met energie verbroken"; $("ha").className = "badge bad"; };
+  $("ha").textContent = T("verbinding met energie verbroken"); $("ha").className = "badge bad"; };

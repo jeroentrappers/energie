@@ -52,7 +52,7 @@ impl Automation for SolunaDispatcher {
 
     fn step(&mut self, cx: &mut Cx) {
         let crossed = self.crossed(cx);
-        if !(cx.every(30) || crossed) || !cx.s.soluna_absorptie_actief {
+        if !(cx.every(30) || crossed) || !cx.s.soluna_absorptie_actief || cx.w.no_battery {
             return;
         }
         let sp = cx.d.batterij_setpoint_w;

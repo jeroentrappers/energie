@@ -471,6 +471,9 @@ pub struct Config {
     pub mode: Mode,
     #[serde(default = "default_listen")]
     pub listen: String,
+    /// A public demonstration: only with `mode = "simulate"`; the web API refuses every write.
+    #[serde(default)]
+    pub demo: bool,
     /// The loopback address of the `energie credentials` command. Default: `listen`'s port + 1.
     #[serde(default)]
     pub cli_listen: Option<String>,
@@ -654,6 +657,13 @@ impl Config {
             || self.plan().is_ok_and(|p| p.uses(&Provider::Ha, self.mode))
     }
 
+    /// Whether this installation runs without a home battery: nothing reads the battery
+    /// inverter, or the simulated house has no capacity.
+    pub fn no_battery(&self) -> bool {
+        (self.mode == Mode::Simulate && self.sim.battery_kwh <= 0.0)
+            || self.plan().is_ok_and(|p| p.unread().contains(&Section::Solis))
+    }
+
     /// Where the `energie credentials` command connects: always on this machine.
     pub fn cli_listen(&self) -> String {
         self.cli_listen.clone().unwrap_or_else(|| {
@@ -674,6 +684,9 @@ impl Config {
     }
 
     fn validate(&self) -> Result<()> {
+        if self.demo && self.mode != Mode::Simulate {
+            return Err(Error::new("demo = true needs mode = \"simulate\""));
+        }
         if self.cli_listen.as_deref().is_some_and(|l| !listen_is_loopback(l)) {
             return Err(Error::new("cli_listen must be a loopback address"));
         }
@@ -843,6 +856,24 @@ mod tests {
         assert!(err("mode = \"simulate\"\n[history]\nminute_days = 0\n").contains("minute_days"));
         assert!(err("mode = \"simulate\"\n[history]\nseed_from_ha = true\n").contains("[ha]"));
         assert!(err("mode = \"simulate\"\n[history]\nextra_series = [\"\"]\n").contains("extra_series"));
+    }
+
+    /// No device reading the inverter means no battery; Home Assistant or the simulator
+    /// providing it means there is one, unless the simulated battery has no capacity.
+    #[test]
+    fn a_missing_battery_is_recognised() {
+        let meter = "[[device]]\nid = \"p1\"\nkind = \"homewizard\"\nrole = \"grid_meter\"\naddress = \"192.0.2.1\"\nserial = \"a\"\ntoken_file = \"/t\"\n";
+        assert!(Config::parse(&format!("mode = \"control\"\n{meter}")).unwrap().no_battery());
+        assert!(!Config::parse("mode = \"simulate\"\n").unwrap().no_battery());
+        assert!(Config::parse("mode = \"simulate\"\n[sim]\nbattery_kwh = 0.0\n").unwrap().no_battery());
+    }
+
+    /// A demo never runs against real devices.
+    #[test]
+    fn demo_needs_the_simulator() {
+        assert!(Config::parse("mode = \"simulate\"\ndemo = true\n").unwrap().demo);
+        let e = Config::parse("mode = \"control\"\ndemo = true\n[sources]\ndefault = \"sim\"\n").unwrap_err();
+        assert!(e.0.contains("simulate"), "{e}");
     }
 
     /// The command port derives from `listen` and can never leave this machine.

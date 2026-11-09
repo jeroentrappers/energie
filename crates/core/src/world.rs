@@ -200,6 +200,9 @@ pub struct Fluvius {
 /// Everything read from the outside world at one instant.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct World {
+    /// The installation has no home battery. Set by [`World::without_battery`].
+    #[serde(default)]
+    pub no_battery: bool,
     pub p1: P1,
     pub solis: Solis,
     pub omnik: Omnik,
@@ -211,6 +214,16 @@ pub struct World {
     pub airco: Airco,
     pub vriezer: Vriezer,
     pub fluvius: Fluvius,
+}
+
+impl World {
+    /// An installation without a home battery reads as a battery that is full and idle: it wants
+    /// no charge, so the surplus cascade passes straight on to the cars and nothing waits for it.
+    pub fn without_battery(&mut self) {
+        self.no_battery = true;
+        self.solis.soc = Some(100.0);
+        self.solis.battery_power_w = Some(0.0);
+    }
 }
 
 #[cfg(test)]

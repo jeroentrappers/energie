@@ -57,7 +57,7 @@ jobs:
           name="energie-${GITHUB_REF_NAME}-${{ matrix.target }}"
           mkdir -p "dist/${name}/deploy"
           cp LICENSE NOTICE.md README.md CHANGELOG.md "dist/${name}/"
-          cp deploy/energie.service deploy/energie.example.toml deploy/energie.standalone.example.toml "dist/${name}/deploy/"
+          cp deploy/energie.service deploy/energie.example.toml deploy/energie.standalone.example.toml deploy/energie.solar-ev.example.toml "dist/${name}/deploy/"
           if [[ "${{ matrix.target }}" == *windows* ]]; then
             cp "target/${{ matrix.target }}/release/energie.exe" "dist/${name}/"
             (cd dist && 7z a "${name}.zip" "${name}" > /dev/null)

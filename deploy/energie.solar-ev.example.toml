@@ -1,0 +1,50 @@
+# energie: solar panels and one EV charger, no home battery, no Home Assistant.
+# THIS IS AN EXAMPLE. It writes to your charger once the addresses are right: keep
+# [control] dry_run = true until you have checked its plans (docs/INSTALL.md).
+#
+# Leaving out a device with role = "battery_inverter" is what makes this a setup without a
+# battery: the solar surplus goes straight to the car. --check-config lists every role nothing
+# fills, which here is expected for the battery, the second charger and the optional devices.
+#   energie --check-config /etc/energie/energie.toml
+
+mode = "control"
+listen = "127.0.0.1:8080"
+state_dir = "/var/lib/energie"
+tick_ms = 1000
+settings_source = "local"
+
+[site]
+latitude = 50.85
+longitude = 4.35
+
+[control]
+dry_run = true
+
+[[device]]
+id = "p1"
+kind = "homewizard"
+role = "grid_meter"
+address = "192.168.1.30"
+serial = "aabbccddeeff"
+token_file = "/run/credentials/energie.service/homewizard-token"
+
+# Your solar inverter. Omnik-style web status here; see docs/HARDWARE.md for the other kinds,
+# including generic HTTP JSON.
+[[device]]
+id = "pv"
+kind = "omnik"
+role = "pv"
+base_url = "http://192.168.1.40"
+poll_ms = 30000
+
+[[device]]
+id = "evse"
+kind = "smartevse_mqtt"
+role = "charger:buzz"
+control = "charger:buzz"
+read_only = false
+host = "192.168.1.10"
+port = 1883
+prefix = "SmartEVSE/1234"
+username = "energie"
+password_file = "/run/credentials/energie.service/mqtt-password"

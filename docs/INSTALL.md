@@ -104,6 +104,7 @@ Move through these stages in order. Don't skip the first two on real hardware.
 Start from one of the samples and read the [configuration reference](CONFIGURATION.md):
 
 - `deploy/energie.standalone.example.toml`: energie talks to the devices itself.
+- `deploy/energie.solar-ev.example.toml`: solar panels and an EV charger, no home battery.
 - `deploy/energie.example.toml`: reads from Home Assistant, compares, never writes.
 
 At a minimum, set your `[site]` coordinates and your device addresses. Check the result:

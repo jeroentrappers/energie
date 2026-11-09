@@ -220,8 +220,8 @@ pub fn law(v: &ChargerView, now: Ts, w: &World, d: &Derived, s: &Settings, m: &M
     // Price gate and the two levels (LOGIC.md "EV charging — two orthogonal levels").
     let grid_max = cascade::grid_max(w, d, s);
     let grid_bridge = cascade::grid_bridge(w, d, s);
-    let batt_bridge = s.ev_batterij_niveau == BatterijNiveau::Brug6A;
-    let batt_dump = s.ev_batterij_niveau == BatterijNiveau::OntlaadBudget;
+    let batt_bridge = !w.no_battery && s.ev_batterij_niveau == BatterijNiveau::Brug6A;
+    let batt_dump = !w.no_battery && s.ev_batterij_niveau == BatterijNiveau::OntlaadBudget;
     let master = s.pv_overschot_laden_actief;
     let risk = d.capaciteitspiek_risico;
     let risk_long = risk_long(d, m, now);
@@ -450,6 +450,34 @@ mod tests {
         w.cable.current_a = Some(8.0);
         w.cable.voltage_v = Some(230.0);
         w.cable.power_kw = Some(1.84);
+    }
+
+    // ---- no home battery --------------------------------------------------------------------
+
+    /// With the battery ranked first and no battery there, the sun still reaches the car. A
+    /// battery that merely stopped answering keeps the car waiting, as before.
+    #[test]
+    fn without_a_battery_the_surplus_goes_to_the_car() {
+        let (mut w, d, mut s, m) = sunny();
+        s.zonprioriteit = Zonprioriteit([Batterij, Buzz, Ev3]);
+        w.solis.soc = None;
+        w.solis.battery_power_w = None;
+        assert_eq!(buzz(&w, &d, &s, &m).target, 0.0, "battery first and unknown: wait");
+        w.without_battery();
+        assert!(buzz(&w, &d, &s, &m).target >= 6.0);
+    }
+
+    /// The battery levels mean nothing without one.
+    #[test]
+    fn without_a_battery_its_levels_do_nothing() {
+        let (mut w, mut d, mut s, m) = sunny();
+        w.without_battery();
+        d.pv_overschot_beschikbaar_w = -3000.0;
+        d.pv_bruto_overschot_w = 0.0;
+        for level in [BatterijNiveau::Brug6A, BatterijNiveau::OntlaadBudget] {
+            s.ev_batterij_niveau = level;
+            assert_eq!(buzz(&w, &d, &s, &m).target, 0.0, "{level:?}");
+        }
     }
 
     // ---- the views -------------------------------------------------------------------------

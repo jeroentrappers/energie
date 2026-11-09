@@ -3,6 +3,16 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## Unreleased
+
+- The dashboard is available in English as well as Dutch, following the browser's language, with
+  a button to switch.
+- Installations without a home battery: leave out the `battery_inverter` device, and the solar
+  surplus goes to the cars and the battery controls disappear. See
+  `deploy/energie.solar-ev.example.toml`. Charger slots without a device are hidden too.
+- Drag across the price chart to choose the hours for grid charging.
+- `demo = true`, a read-only mode for a public demonstration of the simulator.
+
 ## 0.2.0 - 2026-11-09
 
 - `energie credentials` now uses its own loopback-only port (`cli_listen`, default `listen` + 1).

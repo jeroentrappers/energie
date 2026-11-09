@@ -8,8 +8,14 @@ nav#tabs { display: flex; gap: 4px; overflow-x: auto; padding: 0 12px; scrollbar
 nav#tabs a { padding: 8px 10px; color: var(--muted); text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; font-size: 14px; }
 nav#tabs a.on { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
 .badge { font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+button.badge { background: none; cursor: pointer; font: inherit; font-size: 12px; }
 .badge.ok { color: var(--good); border-color: var(--good); }
 .badge.bad { color: var(--bad); border-color: var(--bad); }
+.no-battery .needs-battery, .no-ev3 .needs-ev3, .no-buzz .needs-buzz { display: none; }
+#priceselect:not(:empty) { margin-top: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
+#priceselect button { margin: 8px 8px 0 0; }
+.demo { padding: 8px 16px; text-align: center; font-size: 14px; background: var(--accent); color: #fff; }
+.demo a { color: inherit; font-weight: 600; }
 main { max-width: 1200px; margin: 0 auto; padding: 16px; }
 .view { display: none; gap: 16px; }
 .view.on { display: grid; }

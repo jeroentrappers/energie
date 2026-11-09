@@ -76,7 +76,7 @@ fn shed_one(cx: &mut Cx) {
         cx.send(Command::CableSetCurrent(jinja::max2(6.0, cur - 3.0) as u8));
     } else if cable_kw > 0.3 {
         cx.send(Command::CableStop);
-    } else if w.solis.rc_mode != Some(RcMode::ForceDischarge) && w.solis.soc.unwrap_or(0.0) > 25.0 {
+    } else if !w.no_battery && w.solis.rc_mode != Some(RcMode::ForceDischarge) && w.solis.soc.unwrap_or(0.0) > 25.0 {
         cx.send(Command::SolisRcTimeoutMin(10));
         cx.send(Command::SolisRcDischargeW(2500));
         cx.send(Command::SolisRcMode(RcMode::ForceDischarge));

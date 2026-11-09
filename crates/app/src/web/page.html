@@ -26,18 +26,20 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
     <span class="badge" id="ha">HA</span>
     <span class="badge hidden" id="ctl">sturing</span>
     <span class="note" id="now"></span>
+    <button type="button" class="badge" id="lang"></button>
   </div>
   <nav id="tabs">
     <a href="#overzicht" data-tab="overzicht">Overzicht</a>
     <a href="#capaciteit" data-tab="capaciteit">Capaciteitstarief</a>
     <a href="#prijzen" data-tab="prijzen">Prijzen</a>
-    <a href="#batterij" data-tab="batterij">Batterij &amp; Solis</a>
+    <a href="#batterij" data-tab="batterij" class="needs-battery">Batterij &amp; Solis</a>
     <a href="#ev" data-tab="ev">EV laden</a>
     <a href="#systeem" data-tab="systeem">Systeem</a>
   </nav>
 </header>
+<div id="demo" class="demo hidden"><span id="demotext"></span> <a href="https://github.com/jeroentrappers/energie" id="demolink"></a></div>
 <main>
-  <noscript><section>Deze pagina heeft JavaScript nodig voor live waarden. De API staat op <a href="/api/state">/api/state</a>.</section></noscript>
+  <noscript><section>This page needs JavaScript for live values. The API is at <a href="/api/state">/api/state</a>.</section></noscript>
 
   <!-- ===================================================== Overzicht -->
   <div class="view" data-view="overzicht">
@@ -80,7 +82,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
           </select>
         </label>
       </div>
-      <p class="note">Vooruitblik: <b>PV-forecast</b> vs werkelijke productie op de kW-as, <b>day-ahead prijzen</b> (afname/injectie) op de €/kWh-as. Morgen verschijnt zodra de day-ahead publiceert (~14u).<span id="fcnote"></span></p>
+      <p class="note" data-i18n="fc_note">Vooruitblik: <b>PV-forecast</b> vs werkelijke productie op de kW-as, <b>day-ahead prijzen</b> (afname/injectie) op de €/kWh-as. Morgen verschijnt zodra de day-ahead publiceert (~14u).<span id="fcnote"></span></p>
       <div id="c_fc"></div>
     </section>
     <section>
@@ -90,7 +92,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
       <div class="msg"></div>
     </section>
     <div class="two">
-      <section><h2>Batterij</h2><div class="grid" id="t_batterij"></div></section>
+      <section class="needs-battery"><h2>Batterij</h2><div class="grid" id="t_batterij"></div></section>
       <section><h2>Net &amp; fasebelasting — 3×32 A</h2><div class="grid" id="t_net"></div></section>
       <section><h2>Zonnepanelen</h2><div class="grid" id="t_zon"></div></section>
       <section><h2>EV's</h2><div class="grid" id="t_evs"></div></section>
@@ -128,12 +130,12 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
         <h3>Piekhistoriek (12 maanden)</h3>
         <div class="scroll"><table><thead><tr><th>Maand</th><th class="n">Piek</th><th class="n">Fluvius</th><th>Telt mee t.e.m.</th></tr></thead><tbody id="piekhist"></tbody></table></div>
         <p class="md" id="piekgem"></p>
-        <p class="note">Bron: <code>capaciteit_piekhistoriek</code> (Fluvius-export, daarna elke maand automatisch aangevuld met de P1-piek).</p>
+        <p class="note" data-i18n="peak_source">Bron: <code>capaciteit_piekhistoriek</code> (Fluvius-export, daarna elke maand automatisch aangevuld met de P1-piek).</p>
         <div class="grid" id="t_maand2"></div>
       </section>
       <section>
         <h2>Hoe lees je dit?</h2>
-        <div class="md">
+        <div class="md" data-i18n="cap_how">
           <p><b>Capaciteitstarief (Fluvius):</b> de maandpiek is het hoogste kwartiergemiddelde van de netto afname (minimum <b>2,5 kW</b>). Je betaalt echter op het <b>gemiddelde van de laatste 12 maandpieken</b> — <i>Gefactureerde piek</i> — niet op de piek van deze maand alleen.</p>
           <ul><li><b>Vastgelegd</b> = wat dit kwartier al zeker is (energie tot nu × 4).</li><li><b>Projectie</b> = vastgelegd + huidig vermogen voor de rest van het kwartier.</li></ul>
           <p>Tarief Halle-Vilvoorde 2026: <b>€ 4,95/kW/maand</b> (incl. btw), minimum 2,5 kW = € 12,38/maand. Elke kW maandpiek boven 2,5 kost ± € 0,41/maand extra, <b>12 maanden lang</b> (± € 4,95 in totaal). <i>Maandpiek × tarief</i> is wat je zou betalen als alle 12 maanden zo laag waren als deze.</p>
@@ -156,7 +158,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
         <h3>Maandpieken — Fluvius vs lokaal (12 maanden)</h3>
         <div class="scroll"><table><thead><tr><th>Maand</th><th class="n">Fluvius</th><th class="n">Lokaal (P1)</th><th class="n">Verschil</th><th>Piekkwartier</th></tr></thead><tbody id="fluviusmaand"></tbody></table></div>
       </div>
-      <p class="note"><b>Officiële Fluvius-data</b>. De maandpiek bevestigt de lokale meting — basis van het capaciteitstarief. Let op: Fluvius-data loopt <b>~1 dag achter</b> (portaal wordt 's nachts bijgewerkt).</p>
+      <p class="note" data-i18n="fluvius_note"><b>Officiële Fluvius-data</b>. De maandpiek bevestigt de lokale meting — basis van het capaciteitstarief. Let op: Fluvius-data loopt <b>~1 dag achter</b> (portaal wordt 's nachts bijgewerkt).</p>
     </section>
   </div>
 
@@ -166,6 +168,8 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
       <h2>Day-ahead curve</h2>
       <h3>Ecopower kwartierprijzen — vandaag &amp; morgen</h3>
       <div id="c_prices"></div>
+      <p class="note">Sleep over de grafiek om de uren te kiezen waarin mag geladen worden.</p>
+      <div id="priceselect"></div>
     </section>
     <div class="two">
       <section><h2>Nu en vandaag</h2><div class="grid" id="t_prijs"></div></section>
@@ -181,7 +185,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
     </section>
     <section>
       <h2>Toelichting</h2>
-      <div class="md">
+      <div class="md" data-i18n="price_how">
         <p>Alle prijzen zijn <b>kwartierprijzen, all-in</b> volgens de Ecopower-tariefkaart (jan 2026) + Fluvius Halle-Vilvoorde:</p>
         <p><b>Afname</b> = (1,02 × EPEX DA + 0,004 [opslag] + 0,011 [GSC] + 0,00392 [WKK] + 0,0531770 [afnametarief HV] + 0,0019261 [bijdrage energie] + 0,04748 [bijz. accijns]) × 1,06 btw — vaste opslag bovenop spot: <b>±0,129 €/kWh incl. btw</b>.</p>
         <p><b>Injectie</b> = 0,98 × EPEX DA − 0,015 (geen btw). Niet inbegrepen: capaciteitstarief (per kW maandpiek → tab Capaciteitstarief), databeheer €17,85/j, abonnement €5/m.</p>
@@ -201,7 +205,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
       <section>
         <h2>Besturing (omvormer, alleen-lezen)</h2>
         <div class="grid" id="t_solis"></div>
-        <p class="note">De batterijsturing (dispatcher) schrijft deze registers; aan/uit via <i>Batterijsturing</i> in de Bediening.</p>
+        <p class="note" data-i18n="batt_note">De batterijsturing (dispatcher) schrijft deze registers; aan/uit via <i>Batterijsturing</i> in de Bediening.</p>
       </section>
     </div>
     <section>
@@ -219,7 +223,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
     <div class="two">
       <section>
         <h2>⚙️ Laadsturing</h2>
-        <div class="md">
+        <div class="md" data-i18n="ev_how">
           <ul>
             <li><b>Net (grid)</b> en <b>Batterij</b> — wat doet de EV als de zon <b>te zwak</b> is voor het 6 A-minimum: <i>Uit</i> = pauzeren · <i>6A-brug</i> = tekort van net of batterij tot 6 A · <i>Max tot piek</i> = net tot net onder de piek · <i>Ontlaad-budget</i> = batterij tot het budget op is.</li>
             <li><b>Zonprioriteit</b> — bij <b>overschot</b>: wie krijgt de zon eerst, EV3, Buzz of batterij?</li>
@@ -235,31 +239,31 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
       </section>
     </div>
     <div class="two">
-      <section>
+      <section class="needs-ev3">
         <h2>Kia EV3</h2>
         <div class="grid" id="t_ev3"></div>
         <form class="entctl hidden" id="ev3_ctl"></form>
         <div class="msg"></div>
       </section>
-      <section><h2>VW ID.Buzz</h2><div class="grid" id="t_buzz"></div></section>
-      <section>
+      <section class="needs-buzz"><h2>VW ID.Buzz</h2><div class="grid" id="t_buzz"></div></section>
+      <section class="needs-ev3">
         <h2>Slimme laadkabel (1f, 6–16 A)</h2>
         <div class="grid" id="t_kabel"></div>
-        <p class="note">🔌 De slimme laadkabel stuurt de <b>EV3</b>; de <b>SmartEVSE</b> stuurt de <b>Buzz</b>.</p>
+        <p class="note" data-i18n="cable_note">🔌 De slimme laadkabel stuurt de <b>EV3</b>; de <b>SmartEVSE</b> stuurt de <b>Buzz</b>.</p>
       </section>
-      <section>
+      <section class="needs-buzz">
         <h2>SmartEVSE (1f, tot 32 A)</h2>
         <div class="grid" id="t_evse"></div>
-        <p class="note">🔌 <b>SmartEVSE → altijd Buzz.</b> <i>Laadvermogen</i> is enkelfasig en wordt geschat uit de pilot-stroom × 230 V (geen CT-meting).</p>
+        <p class="note" data-i18n="evse_note">🔌 <b>SmartEVSE → altijd Buzz.</b> <i>Laadvermogen</i> is enkelfasig en wordt geschat uit de pilot-stroom × 230 V (geen CT-meting).</p>
       </section>
     </div>
     <section>
       <h2>Laadkosten &amp; vergelijking</h2>
       <div class="grid" id="t_evactief"></div>
-      <h3>EV3</h3>
-      <div class="grid" id="t_ev3kost"></div>
-      <h3>Buzz</h3>
-      <div class="grid" id="t_buzzkost"></div>
+      <h3 class="needs-ev3">EV3</h3>
+      <div class="grid needs-ev3" id="t_ev3kost"></div>
+      <h3 class="needs-buzz">Buzz</h3>
+      <div class="grid needs-buzz" id="t_buzzkost"></div>
     </section>
   </div>
 
@@ -301,6 +305,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); }
   <span id="signout"></span>
 </footer>
 <script id="initial" type="application/json">{{STATE}}</script>
+<script src="/assets/i18n.js"></script>
 <script src="/assets/charts.js"></script>
 <script src="/assets/app.js"></script>
 </body>

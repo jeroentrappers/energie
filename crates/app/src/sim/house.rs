@@ -234,8 +234,12 @@ impl House {
         if self.soc >= 100.0 {
             target = target.max(0.0);
         }
-        self.battery_w += (target - self.battery_w) * (dt / 3.0).min(1.0);
-        self.soc = (self.soc - self.battery_w * dt / 3.6e6 / self.cfg.battery_kwh * 100.0).clamp(0.0, 100.0);
+        if self.cfg.battery_kwh > 0.0 {
+            self.battery_w += (target - self.battery_w) * (dt / 3.0).min(1.0);
+            self.soc = (self.soc - self.battery_w * dt / 3.6e6 / self.cfg.battery_kwh * 100.0).clamp(0.0, 100.0);
+        } else {
+            self.battery_w = 0.0;
+        }
 
         // Export limit: the hybrid curtails its own strings.
         let export = -(consumers - solis_pv - self.omnik_w - self.battery_w);
@@ -357,6 +361,7 @@ impl House {
             "plugged_in"
         };
         World {
+            no_battery: false,
             p1: P1 {
                 power_w: Some(self.p1_w),
                 phase_a: [

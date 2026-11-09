@@ -136,6 +136,8 @@ pub struct Snapshot {
 }
 
 pub struct Runtime {
+    /// No home battery in this installation ([`crate::config::Config::no_battery`]).
+    pub no_battery: bool,
     pub mode: Mode,
     pub engine: Engine,
     pub sources: Sources,
@@ -190,6 +192,7 @@ impl Runtime {
     pub fn new(p: Parts) -> (Self, watch::Receiver<Arc<Snapshot>>) {
         let (tx, rx) = watch::channel(Arc::new(Snapshot::default()));
         let rt = Runtime {
+            no_battery: false,
             mode: p.mode,
             engine: p.engine,
             sources: p.sources,
@@ -232,7 +235,10 @@ impl Runtime {
 
     /// One control step at `now`.
     pub fn step(&mut self, now: Ts) {
-        let world = self.sources.assemble(now);
+        let mut world = self.sources.assemble(now);
+        if self.no_battery {
+            world.without_battery();
+        }
         if (self.settings_from_ha || self.lockstep) && self.ha_ready() {
             let store = self.ha.as_ref().expect("ha_ready").lock().expect("store lock");
             if self.settings_from_ha {

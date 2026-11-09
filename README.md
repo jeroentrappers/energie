@@ -17,7 +17,7 @@ memory and 0.4 % of one CPU core. It can run on its own, or next to Home Assista
   <img src="docs/images/overview-dark.png" alt="The energie dashboard: live power flows between solar panels, grid, battery, house and an electric van, with a chart of the last six hours.">
 </picture>
 
-<sub>A simulated house at mid-morning. The dashboard is in Dutch.</sub>
+<sub>A simulated house at mid-morning.</sub>
 
 > **Read this first.** energie writes to inverters and EV chargers. Wrong settings can
 > overload a circuit, drain a battery or leave a car uncharged. Start in `shadow` or
@@ -55,9 +55,9 @@ check that your setup fits:
 | | Today |
 | --- | --- |
 | Location | Belgium. Local time is fixed to Europe/Brussels and the tariff logic follows Fluvius. |
-| Battery | The Solis remote-control model. Other inverters need a driver that maps onto it. |
+| Battery | Optional. Controlling one uses the Solis remote-control model; other inverters need a driver that maps onto it. Solar with an EV and no battery works out of the box. |
 | Chargers and cars | Exactly two named slots, `buzz` (SmartEVSE-style) and `ev3` (cable-style). Another brand can fill a slot with a new driver; a third charger needs logic changes. |
-| Interface language | The dashboard and notifications are in Dutch. Logs and docs are in English. |
+| Interface language | The dashboard is in English and Dutch, following the browser. Phone notifications are in Dutch. |
 | Maturity | Version 0.x. About 920 automated tests, including a simulated-day comparison, but real-world control experience comes from a single installation. |
 
 See [supported hardware](docs/HARDWARE.md) for each device. Contributions that make it more

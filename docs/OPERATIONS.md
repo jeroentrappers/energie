@@ -11,9 +11,16 @@
 
 ## The dashboard
 
-Open the `listen` address in a browser. The interface is in Dutch: *Overzicht* (overview),
-*Capaciteitstarief* (capacity tariff), *Prijzen* (prices), *Batterij & Solis*, *EV laden* (EV
-charging) and *Systeem* (system health, commands and device states).
+Open the `listen` address in a browser. The interface follows the browser's language, English or
+Dutch, and the button next to the clock switches it. The tabs are Overview, Capacity tariff,
+Prices, Battery & Solis, EV charging and System (system health, commands and device states).
+Without a home battery the battery tab and controls are hidden, and a charger slot nothing
+reads is hidden too.
+
+To charge from the grid in cheap hours, drag across the hours you want on the price chart. energie
+shows the limit that covers them, and applying it sets *Cheap charging: price limit* and turns
+the grid level to *Max to peak*. The limit is a price, not a timetable: every quarter hour below it counts,
+on any day, and the preview says how many others that includes.
 
 ## The kill switch
 

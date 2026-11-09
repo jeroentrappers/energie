@@ -85,6 +85,41 @@ impl Engine {
 }
 
 #[cfg(test)]
+mod no_battery_tests {
+    use chrono::TimeZone;
+
+    use super::*;
+
+    /// A day without a home battery asks nothing of an inverter, also under peak pressure, and
+    /// raises no alarm about a battery that was never there.
+    #[test]
+    fn nothing_is_sent_to_a_battery_that_does_not_exist() {
+        let mut e = Engine::new(Settings::default(), Memory::default());
+        let start = crate::time::TZ.with_ymd_and_hms(2026, 6, 21, 12, 0, 0).unwrap();
+        let mut sent = vec![];
+        for i in 0..3600 {
+            let mut w = World::default();
+            w.p1.power_w = Some(if i < 1800 { -3000.0 } else { 9000.0 });
+            w.p1.phase_a = [Some(10.0); 3];
+            w.prices.afname_now = Some(0.2);
+            w.evse.plug = Some("Connected".into());
+            w.evse.state = Some("Charging".into());
+            w.evse.state_id = Some("C".into());
+            w.evse.override_a = Some(10.0);
+            w.evse.charge_current_a = Some(10.0);
+            w.without_battery();
+            sent.extend(e.tick(start + chrono::Duration::seconds(i), &w).commands);
+        }
+        let solis = |c: &&Command| format!("{c:?}").starts_with("Solis");
+        assert_eq!(sent.iter().filter(solis).count(), 0, "{:?}", sent.iter().filter(solis).take(3).collect::<Vec<_>>());
+        let alarm =
+            |c: &&Command| format!("{c:?}").contains("Solis-watchdog") || format!("{c:?}").contains("Dispatcher");
+        assert_eq!(sent.iter().filter(alarm).count(), 0);
+        assert!(!sent.is_empty(), "the charger was still being steered");
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::time::at;

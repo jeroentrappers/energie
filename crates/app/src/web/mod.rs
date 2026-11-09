@@ -78,9 +78,23 @@ pub fn router(st: AppState) -> Router {
         .route("/api/cloud", get(cloud_get))
         .route("/assets/app.css", get(|| asset("text/css; charset=utf-8", include_str!("assets/app.css"))))
         .route("/assets/app.js", get(|| asset("text/javascript; charset=utf-8", include_str!("assets/app.js"))))
+        .route("/assets/i18n.js", get(|| asset("text/javascript; charset=utf-8", include_str!("assets/i18n.js"))))
         .route("/assets/charts.js", get(|| asset("text/javascript; charset=utf-8", include_str!("assets/charts.js"))))
         .route("/healthz", get(healthz))
         .with_state(st)
+}
+
+/// A public demonstration: reading works for everyone, and any write is refused here, before a
+/// handler sees it. `/api/demo` tells the page to show the banner and keep its controls off.
+pub fn demo(router: Router) -> Router {
+    router.route("/api/demo", get(|| async { Json(json!({"demo": true})) })).layer(axum::middleware::from_fn(
+        |req: axum::extract::Request, next: axum::middleware::Next| async move {
+            if req.method() == axum::http::Method::GET || req.method() == axum::http::Method::HEAD {
+                return next.run(req).await;
+            }
+            (StatusCode::FORBIDDEN, "this demo is read-only\n").into_response()
+        },
+    ))
 }
 
 /// Put the configured sign-in in front of the router. The config guarantees that nothing reachable
@@ -1048,6 +1062,96 @@ mod tests {
         let mut signed_in = from(post(url, body), lo);
         signed_in.headers_mut().insert(header::AUTHORIZATION, basic("u:s3cret"));
         assert_eq!(call(&app, signed_in).await.0, StatusCode::NOT_FOUND);
+    }
+
+    /// In a demo reading works and every write is refused, whatever it would have changed.
+    #[tokio::test]
+    async fn a_demo_refuses_every_write() {
+        let (app, rt) = app(Mode::Simulate, false);
+        rt.lock().unwrap().step(t0());
+        let app = demo(app);
+        let before = call(&app, get("/api/settings")).await.1;
+        for (url, body) in [
+            ("/api/settings", r#"{"peak_guard_actief":false}"#),
+            ("/api/control", r#"{"enabled":false}"#),
+            ("/api/entities/world_charger_buzz_override_a", r#"{"value":10}"#),
+        ] {
+            assert_eq!(call(&app, post(url, body)).await.0, StatusCode::FORBIDDEN, "{url}");
+        }
+        assert_eq!(call(&app, get("/api/settings")).await.1, before);
+        assert_eq!(call(&app, get("/api/state")).await.0, StatusCode::OK);
+        assert_eq!(call(&app, get("/")).await.0, StatusCode::OK);
+        assert_eq!(call(&app, get("/api/demo")).await.0, StatusCode::OK);
+    }
+
+    /// Outside a demo the page finds no `/api/demo`.
+    #[tokio::test]
+    async fn only_a_demo_has_the_demo_route() {
+        let (app, _rt) = app(Mode::Simulate, false);
+        assert_eq!(call(&app, get("/api/demo")).await.0, StatusCode::NOT_FOUND);
+    }
+
+    /// Every piece of Dutch in the page and every setting has its English text in `i18n.js`.
+    #[test]
+    fn the_dashboard_is_translated() {
+        let dict = include_str!("assets/i18n.js");
+        let known = |s: &str| dict.contains(&format!("\"{}\":", s.replace('"', "\\\"")));
+        let mut missing: Vec<String> = vec![];
+        // Everything between `open` and the next `close` goes.
+        fn cut(mut s: String, open: &str, close: &str) -> String {
+            while let Some(a) = s.find(open) {
+                let end = s[a..].find(close).expect("closed") + a + close.len();
+                s.replace_range(a..end, "<x>");
+            }
+            s
+        }
+        let mut text = include_str!("page.html").to_string();
+        for (open, close) in [
+            ("<style>", "</style>"),
+            ("<script", "</script>"),
+            ("<noscript>", "</noscript>"),
+            ("<footer", "</footer>"),
+            ("<title>", "</title>"),
+            ("<code>", "</code>"),
+        ] {
+            text = cut(text, open, close);
+        }
+        // The long passages, translated as a whole.
+        while let Some(at) = text.find("data-i18n") {
+            let a = text[..at].rfind('<').unwrap();
+            let name: String = text[a + 1..].chars().take_while(|c| c.is_alphanumeric()).collect();
+            let close = format!("</{name}>");
+            let end = text[a..].find(&close).unwrap() + a + close.len();
+            text.replace_range(a..end, "<x>");
+        }
+        const NAMES: [&str; 11] =
+            ["Energie", "HA", "Kia EV3", "VW ID.Buzz", "EV3", "Buzz", "Rust", "%", "Fluvius", "Solis", "Peak guard"];
+        for piece in text.split('>').filter_map(|p| p.split('<').next()) {
+            let s = piece.trim().replace("&amp;", "&");
+            if !s.is_empty() && !s.contains('{') && s != "–" && !NAMES.contains(&s.as_str()) && !known(&s) {
+                missing.push(s);
+            }
+        }
+        for f in fields::fields() {
+            for s in [f.label, f.group] {
+                if !NAMES.contains(&s) && !known(s) {
+                    missing.push(s.to_string());
+                }
+            }
+            for o in &f.options {
+                for part in o.label.split(" → ") {
+                    if !NAMES.contains(&part) && !known(part) {
+                        missing.push(part.to_string());
+                    }
+                }
+            }
+        }
+        for r in fields::readouts() {
+            if !known(r.label) {
+                missing.push(r.label.to_string());
+            }
+        }
+        assert!(missing.is_empty(), "no English text for: {missing:#?}");
     }
 
     /// A device that takes no credentials says so.

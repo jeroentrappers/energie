@@ -598,7 +598,7 @@ mod tests {
         }
         // Every `Option` field of the World, plus the price-slot count and two flags.
         let json = serde_json::to_value(World::default()).unwrap();
-        let n: usize = json.as_object().unwrap().values().map(|v| v.as_object().unwrap().len()).sum();
+        let n: usize = json.as_object().unwrap().values().filter_map(|v| v.as_object()).map(|v| v.len()).sum();
         assert_eq!(es.len(), n + 2, "phase_a is three entities");
         assert!(es.iter().all(|e| e.control.is_none()), "nothing settable without a controller");
         assert!(es.iter().all(|e| e.value == Value::Null || e.key.starts_with("price_feed")));

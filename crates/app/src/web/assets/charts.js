@@ -5,7 +5,7 @@
 const Charts = (() => {
   const NS = "http://www.w3.org/2000/svg";
   const fmt = (v, d) => v === null || v === undefined || Number.isNaN(v) ? "–"
-    : (Math.round(Number(v) * 10 ** d) === 0 ? 0 : Number(v)).toLocaleString("nl-BE", { minimumFractionDigits: d, maximumFractionDigits: d });
+    : (Math.round(Number(v) * 10 ** d) === 0 ? 0 : Number(v)).toLocaleString(I18N.locale, { minimumFractionDigits: d, maximumFractionDigits: d });
   const el = (name, attrs, parent) => {
     const e = document.createElementNS(NS, name);
     for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
@@ -55,8 +55,8 @@ const Charts = (() => {
     return { ticks: out, days: iv >= 86400000 };
   }
   const tlabel = (t, days) => days
-    ? new Date(t).toLocaleDateString("nl-BE", { day: "numeric", month: "numeric" })
-    : new Date(t).toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
+    ? new Date(t).toLocaleDateString(I18N.locale, { day: "numeric", month: "numeric" })
+    : new Date(t).toLocaleTimeString(I18N.locale, { hour: "2-digit", minute: "2-digit" });
 
   function colorFor(s, v) {
     if (!s.thresholds) return s.color;
@@ -74,7 +74,12 @@ const Charts = (() => {
   //   series: [{name, color, type: line|area|step|column, axis, data: [[ms, v]], opacity, width,
   //   thresholds: [{value, color}], extremas, dec, unit, header: false}], annotations: [{y, axis,
   //   color, label}], states: true }
-  function chart(host, cfg) {
+  function chart(host, source) {
+    const cfg = Object.assign({}, source, {
+      series: source.series.map((s) => Object.assign({}, s, { name: I18N.T(s.name) })),
+      axes: source.axes.map((a) => Object.assign({}, a, { title: I18N.T(a.title) })),
+      annotations: (source.annotations || []).map((a) => Object.assign({}, a, { label: I18N.T(a.label) })),
+    });
     host.innerHTML = "";
     host.classList.add("chart");
     if (cfg.states !== false) {
@@ -181,7 +186,7 @@ const Charts = (() => {
     }
     if (cfg.now && cfg.now >= from && cfg.now <= to) {
       el("line", { x1: X(cfg.now), x2: X(cfg.now), y1: m.t, y2: H - m.b, class: "now" }, svg);
-      text(svg, X(cfg.now) + 3, m.t + 10, "nu", { class: "nowlab" });
+      text(svg, X(cfg.now) + 3, m.t + 10, I18N.T("nu"), { class: "nowlab" });
     }
 
     // Hover readout.
@@ -208,7 +213,7 @@ const Charts = (() => {
       cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
       if (!rows.length) { tip.classList.add("hidden"); return; }
       const when = new Date(at ?? t);
-      tip.innerHTML = `<div>${when.toLocaleString("nl-BE", { weekday: "short", hour: "2-digit", minute: "2-digit" })}</div>` + rows.join("<br>");
+      tip.innerHTML = `<div>${when.toLocaleString(I18N.locale, { weekday: "short", hour: "2-digit", minute: "2-digit" })}</div>` + rows.join("<br>");
       tip.classList.remove("hidden");
       const px = (ev.clientX - r.left);
       tip.style.left = Math.min(px + 12, r.width - tip.offsetWidth - 4) + "px";
@@ -217,6 +222,34 @@ const Charts = (() => {
     svg.addEventListener("pointermove", move);
     svg.addEventListener("pointerdown", move);
     svg.addEventListener("pointerleave", () => { tip.classList.add("hidden"); cross.setAttribute("visibility", "hidden"); });
+
+    // Dragging across the chart selects a time range (`cfg.onselect(fromMs, toMs)`).
+    if (cfg.onselect) {
+      svg.style.touchAction = "pan-y";
+      svg.style.cursor = "crosshair";
+      const band = el("rect", { y: m.t, height: H - m.t - m.b, fill: "var(--accent)", opacity: 0.2, visibility: "hidden" }, svg);
+      const px = (ev) => { const r = svg.getBoundingClientRect(); return Math.min(W - m.r, Math.max(m.l, (ev.clientX - r.left) * W / r.width)); };
+      const at = (x) => from + (x - m.l) / (W - m.l - m.r) * (to - from);
+      let start = null;
+      svg.addEventListener("pointerdown", (ev) => {
+        start = px(ev);
+        svg.setPointerCapture(ev.pointerId);
+        band.setAttribute("x", start); band.setAttribute("width", 0); band.setAttribute("visibility", "visible");
+      });
+      svg.addEventListener("pointermove", (ev) => {
+        if (start === null) return;
+        const x = px(ev);
+        band.setAttribute("x", Math.min(start, x)); band.setAttribute("width", Math.abs(x - start));
+      });
+      svg.addEventListener("pointerup", (ev) => {
+        if (start === null) return;
+        const a = Math.min(start, px(ev)), b = Math.max(start, px(ev));
+        start = null;
+        tip.classList.add("hidden");
+        if (b - a < 6) { band.setAttribute("visibility", "hidden"); return; }
+        cfg.onselect(at(a), at(b));
+      });
+    }
   }
 
   // { value, min, max, unit, dec, label, severity: [{from, color}] }
@@ -240,7 +273,7 @@ const Charts = (() => {
     text(svg, cx, cy - 22, fmt(g.value, g.dec ?? 0) + (g.unit ? " " + g.unit : ""), { class: "gval", "text-anchor": "middle" });
     text(svg, cx - r, cy + 16, fmt(g.min, 0), { class: "glab", "text-anchor": "middle" });
     text(svg, cx + r, cy + 16, fmt(g.max, 0), { class: "glab", "text-anchor": "middle" });
-    if (g.label) text(svg, cx, cy + 20, g.label, { class: "glabel", "text-anchor": "middle" });
+    if (g.label) text(svg, cx, cy + 20, I18N.T(g.label), { class: "glabel", "text-anchor": "middle" });
   }
 
   return { chart, gauge, fmt };

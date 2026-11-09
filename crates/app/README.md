@@ -1,7 +1,7 @@
 # energie — the binary
 
 The application layer around `energie-core`: a 1 s tick loop, the Home Assistant bridge, the
-shadow comparator, the Dutch dashboard, notifications and a simulated house.
+shadow comparator, the English and Dutch dashboard, notifications and a simulated house.
 
 ```
 energie --config /etc/energie/energie.toml        run
@@ -228,7 +228,7 @@ case-insensitively, booleans exactly.
 
 | Route | |
 | --- | --- |
-| `GET /` | dashboard (Dutch, mobile-friendly, light/dark), the views of HA's `energie-beheer` dashboard: Overzicht, Capaciteitstarief, Prijzen, Batterij & Solis, EV laden, plus Systeem (commands, notifications, shadow parity) |
+| `GET /` | dashboard (English and Dutch, mobile-friendly, light/dark), the views of HA's `energie-beheer` dashboard: Overzicht, Capaciteitstarief, Prijzen, Batterij & Solis, EV laden, plus Systeem (commands, notifications, shadow parity) |
 | `GET /assets/app.css`, `app.js`, `charts.js` | the page's stylesheet and scripts, compiled in (no CDN, works offline; the charts are hand-rolled SVG) |
 | `GET /api/state` | the latest snapshot: world, derived, settings, memory summary, commands, notifications, HA/MQTT link, sources, actuators, shadow stats |
 | `GET /api/settings` | `{editable, values, fields}` — `fields` is the control metadata (label, kind, unit, options) |

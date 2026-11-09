@@ -340,6 +340,8 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
         history: history.clone(),
         control: (cfg.mode == Mode::Control).then(|| Control::new(cfg.control.clone(), &cfg.state_dir)),
     });
+    let mut rt = rt;
+    rt.no_battery = cfg.no_battery();
     let rt = Arc::new(Mutex::new(rt));
     start_bridge(&cfg, &plan, &rt, ready_rx, &stop_rx, &mut tasks)?;
 
@@ -371,6 +373,7 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
         }
         None => None,
     };
+    let demo = cfg.demo;
     // The command port stays optional: without it the service still runs, only `energie
     // credentials` cannot reach it.
     let cli_addr = cfg.cli_listen();
@@ -391,6 +394,7 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
     }
     tasks.push(tokio::spawn(async move {
         let app = web::router(state);
+        let app = if demo { web::demo(app) } else { app };
         let app = web::protect(app, web_password, oidc);
         let shutdown = async move {
             let _ = web_stop.wait_for(|s| *s).await;
