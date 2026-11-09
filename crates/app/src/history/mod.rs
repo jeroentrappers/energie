@@ -24,8 +24,9 @@
 pub mod seed;
 pub mod series;
 pub mod tier;
+pub mod vm;
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap, VecDeque};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -42,6 +43,8 @@ pub type SharedHistory = Arc<Mutex<History>>;
 /// At most this many buckets per query.
 pub const MAX_BUCKETS: usize = 5000;
 const RECENT_KEEP_S: i64 = 2 * 3600;
+/// Minutes kept for a database that is out of reach: three days, a few MB.
+const OUTBOX_ROWS: usize = 3 * 1440;
 
 /// What a series is, for the store and the API.
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -81,6 +84,13 @@ pub struct Stats {
     pub files_deleted: usize,
     pub rows_loaded: usize,
     pub rows_imported: usize,
+    /// Off-device export (`[history.victoriametrics]`).
+    pub vm_enabled: bool,
+    pub vm_rows_sent: u64,
+    pub vm_rows_queued: usize,
+    pub vm_rows_dropped: u64,
+    pub vm_errors: u64,
+    pub vm_last_error: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -133,6 +143,9 @@ pub struct History {
     /// The `extra_series` globs, and how many series precede the extra ones.
     extra: Vec<String>,
     base: usize,
+    /// Off-device history: the connection, and the closed minutes not sent yet.
+    vm: Option<Arc<vm::Vm>>,
+    outbox: VecDeque<Row>,
     pub stats: Stats,
 }
 
@@ -180,6 +193,8 @@ impl History {
             forecasts: HashMap::new(),
             extra: Vec::new(),
             base: n,
+            vm: None,
+            outbox: VecDeque::new(),
             stats: Stats::default(),
         };
         for which in [Res::Minute, Res::Quarter, Res::Day] {
@@ -357,6 +372,7 @@ impl History {
             return;
         }
         self.write(Res::Minute, &[&row]);
+        self.queue_for_export(&row);
         self.minute.put(row);
         self.minute.prune(next);
         if !self.caught_up || Res::Quarter.bucket(start) != Res::Quarter.bucket(next) {
@@ -425,6 +441,57 @@ impl History {
             }
             tier.prune(upto);
         }
+    }
+
+    /// Send every closed minute to `vm` from now on.
+    pub fn export_to(&mut self, vm: Arc<vm::Vm>) {
+        self.vm = Some(vm);
+        self.stats.vm_enabled = true;
+    }
+
+    /// The connection charts read older data from.
+    pub fn vm(&self) -> Option<Arc<vm::Vm>> {
+        self.vm.clone()
+    }
+
+    fn queue_for_export(&mut self, row: &Row) {
+        if self.vm.is_none() {
+            return;
+        }
+        self.outbox.push_back(row.clone());
+        if self.outbox.len() > OUTBOX_ROWS {
+            self.outbox.pop_front();
+            self.stats.vm_rows_dropped += 1;
+        }
+        self.stats.vm_rows_queued = self.outbox.len();
+    }
+
+    /// The oldest queued minutes, at most `max`.
+    pub fn export_batch(&self, max: usize) -> Vec<vm::Point> {
+        let named = |row: &Row| {
+            let cols = self.minute.cols.iter().zip(&row.v);
+            (row.t, cols.map(|(&s, a)| (self.ids[s].clone(), *a)).collect())
+        };
+        self.outbox.iter().take(max).map(named).collect()
+    }
+
+    /// Everything up to `last` has arrived. By time, because the queue may have dropped rows
+    /// from its front while the request was under way.
+    pub fn export_done(&mut self, last: i64) {
+        while self.outbox.front().is_some_and(|r| r.t <= last) {
+            self.outbox.pop_front();
+            self.stats.vm_rows_sent += 1;
+        }
+        self.stats.vm_rows_queued = self.outbox.len();
+        self.stats.vm_last_error = None;
+    }
+
+    pub fn export_failed(&mut self, error: String) {
+        if self.stats.vm_last_error.is_none() {
+            tracing::warn!(%error, queued = self.outbox.len(), "victoriametrics: sending failed; keeping the data queued");
+        }
+        self.stats.vm_errors += 1;
+        self.stats.vm_last_error = Some(error);
     }
 
     /// Close the open minute (at shutdown), so its samples are not lost.
@@ -801,6 +868,40 @@ mod tests {
         assert_eq!(h.stats.write_errors, 2);
         assert!(h.stats.last_error.as_deref().unwrap().contains("minute"));
         assert_eq!(h.tiers()[1].rows, 2);
+    }
+
+    /// The export queue: closed minutes only, acknowledged by time, bounded.
+    #[test]
+    fn the_export_queue_holds_closed_minutes() {
+        let m = |id: &str| Meta {
+            id: id.into(),
+            label: id.into(),
+            unit: "W".into(),
+            decimals: 0,
+            sampled: true,
+            quarter: true,
+            day: true,
+        };
+        let mut h = History::open(vec![m("a")], &ret(None), 0).unwrap();
+        let vm = vm::Vm::new("http://127.0.0.1:1", "home", vm::Auth::None, true).unwrap();
+        h.export_to(Arc::new(vm));
+        for t in 0..185 {
+            h.record(t, &[Some(t as f64)]);
+        }
+        let batch = h.export_batch(10);
+        assert_eq!(batch.iter().map(|(t, _)| *t).collect::<Vec<_>>(), vec![0, 60, 120]);
+        assert_eq!(batch[0].1[0].0, "a");
+        assert_eq!(batch[0].1[0].1.mean, 29.5);
+        h.export_failed("HTTP 500".into());
+        assert_eq!((h.stats.vm_rows_queued, h.stats.vm_errors), (3, 1));
+        h.export_done(60);
+        assert_eq!(h.export_batch(10).len(), 1);
+        assert_eq!((h.stats.vm_rows_sent, h.stats.vm_last_error.as_deref()), (2, None));
+        for i in 0..(OUTBOX_ROWS as i64 + 5) {
+            h.record(240 + i * 60, &[Some(1.0)]);
+        }
+        assert_eq!(h.export_batch(usize::MAX).len(), OUTBOX_ROWS);
+        assert!(h.stats.vm_rows_dropped > 0);
     }
 
     /// Duplicate ids and unreadable directories fail at open.

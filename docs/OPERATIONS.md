@@ -37,6 +37,46 @@ to the server. Away from home that means a VPN or a public HTTPS address with si
 is the better sign-in for an installed app, because the password dialog isn't available in every
 installed-app window.
 
+## Running without writing to an SD card
+
+energie writes little on its own: settings and counters only when they changed, at most once per
+`persist_interval_s`, and one small history line a minute. To write less, or nothing:
+
+```toml
+require_state = true             # control stays off if the saved state is gone
+persist_interval_s = 3600
+state_dir = "/run/energie"       # a tmpfs, or a small partition that survives a reboot
+
+[history]
+storage = "memory"
+
+[history.victoriametrics]
+url = "http://192.168.1.20:8428"
+username = "energie"
+password_file = "/run/credentials/energie.service/vm-password"
+```
+
+Storage in RAM is lost at every reboot, and that matters. The kill switch, settings, sign-in tokens for
+cloud accounts and the 12 monthly peaks behind the capacity tariff are all in `state_dir`. If you
+can, keep `state_dir` on something that survives a reboot, such as a small partition, USB stick or
+network share. If it really is RAM, `require_state` makes energie start with control off after
+each reboot, until someone switches it on again on the System tab.
+
+In memory, history keeps 2 days at 1-minute detail and the quarter-hour and daily rows until a
+restart. With `[history.victoriametrics]` every closed minute is also sent to the database, up to
+three days are queued in memory while it's out of reach, and the charts read older data
+back from it. Run the database on another machine:
+
+```sh
+docker run -d --name victoriametrics --restart unless-stopped -p 8428:8428 \
+  -v vm-data:/victoria-metrics-data victoriametrics/victoria-metrics \
+  -retentionPeriod=5y -httpAuth.username=energie -httpAuth.password=CHANGE_ME
+```
+
+The data is stored as `energie_<series>_mean`, `_min`, `_max` and `_last` with a `site` label, ready
+to use from Grafana. Any database that accepts InfluxDB line protocol on `/write` can receive it,
+with `read = false` if it can't answer the chart queries.
+
 ## The kill switch
 
 Any of these immediately stops all writes to devices. Queued commands are dropped.

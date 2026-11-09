@@ -360,6 +360,70 @@ pub struct HistoryConfig {
     /// Globs on entity ids (`fluvius_month_*`, `ev3_*`) whose numeric values are recorded too,
     /// besides the curated series.
     pub extra_series: Vec<String>,
+    /// `disk`, or `memory` for a device that should not write history to its storage.
+    pub storage: HistoryStorage,
+    /// Keep the history in VictoriaMetrics as well.
+    pub victoriametrics: Option<VictoriaMetrics>,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum HistoryStorage {
+    #[default]
+    Disk,
+    Memory,
+}
+
+/// In-memory history keeps at most this many days of 1-minute rows.
+const MEMORY_MINUTE_DAYS: u32 = 2;
+
+/// `[history.victoriametrics]`: off-device history.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VictoriaMetrics {
+    /// For example `http://192.168.1.20:8428`.
+    pub url: String,
+    /// The `site` label, to tell installations apart in one database.
+    #[serde(default = "default_vm_site")]
+    pub site: String,
+    pub username: Option<String>,
+    pub password_file: Option<PathBuf>,
+    pub bearer_token_file: Option<PathBuf>,
+    /// Let the dashboard read back what the device doesn't hold itself.
+    #[serde(default = "default_true")]
+    pub read: bool,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_vm_site() -> String {
+    "home".into()
+}
+
+impl VictoriaMetrics {
+    fn validate(&self) -> Result<()> {
+        let bad = |m: &str| Err(Error::new(format!("history.victoriametrics: {m}")));
+        let Ok(url) = url::Url::parse(&self.url) else { return bad("url is not a URL") };
+        if !matches!(url.scheme(), "http" | "https") || url.host_str().is_none() {
+            return bad("url must be http or https");
+        }
+        if self.site.is_empty() || !self.site.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
+            return bad("site may hold letters, digits, - and _");
+        }
+        if self.username.is_some() != self.password_file.is_some() {
+            return bad("username and password_file go together");
+        }
+        let basic = self.username.is_some();
+        if basic && self.bearer_token_file.is_some() {
+            return bad("use either username and password_file, or bearer_token_file");
+        }
+        if !is_loopback_host(url.host_str().expect("checked")) && !basic && self.bearer_token_file.is_none() {
+            return bad("a database on the network needs username and password_file, or bearer_token_file");
+        }
+        Ok(())
+    }
 }
 
 impl Default for HistoryConfig {
@@ -372,6 +436,8 @@ impl Default for HistoryConfig {
             day_days: 1100,
             seed_from_ha: false,
             extra_series: Vec::new(),
+            storage: HistoryStorage::Disk,
+            victoriametrics: None,
         }
     }
 }
@@ -380,8 +446,14 @@ impl HistoryConfig {
     pub fn retention(&self, state_dir: &Path) -> crate::history::Retention {
         let d = |n: u32| i64::from(n) * 86_400;
         crate::history::Retention {
-            dir: Some(self.dir.clone().unwrap_or_else(|| state_dir.join("history"))),
-            minute_s: d(self.minute_days),
+            dir: match self.storage {
+                HistoryStorage::Disk => Some(self.dir.clone().unwrap_or_else(|| state_dir.join("history"))),
+                HistoryStorage::Memory => None,
+            },
+            minute_s: d(match self.storage {
+                HistoryStorage::Disk => self.minute_days,
+                HistoryStorage::Memory => self.minute_days.min(MEMORY_MINUTE_DAYS),
+            }),
             quarter_s: d(self.quarter_days),
             day_s: d(self.day_days),
         }
@@ -471,6 +543,9 @@ pub struct Config {
     pub mode: Mode,
     #[serde(default = "default_listen")]
     pub listen: String,
+    /// Start with control off when the saved state is gone, as on a device that keeps it in RAM.
+    #[serde(default)]
+    pub require_state: bool,
     /// A public demonstration: only with `mode = "simulate"`; the web API refuses every write.
     #[serde(default)]
     pub demo: bool,
@@ -684,6 +759,9 @@ impl Config {
     }
 
     fn validate(&self) -> Result<()> {
+        if let Some(vm) = &self.history.victoriametrics {
+            vm.validate()?;
+        }
         if self.demo && self.mode != Mode::Simulate {
             return Err(Error::new("demo = true needs mode = \"simulate\""));
         }
@@ -866,6 +944,28 @@ mod tests {
         assert!(Config::parse(&format!("mode = \"control\"\n{meter}")).unwrap().no_battery());
         assert!(!Config::parse("mode = \"simulate\"\n").unwrap().no_battery());
         assert!(Config::parse("mode = \"simulate\"\n[sim]\nbattery_kwh = 0.0\n").unwrap().no_battery());
+    }
+
+    /// RAM-only history has no directory and a short 1-minute tier.
+    #[test]
+    fn history_can_stay_in_memory() {
+        let c = Config::parse("mode = \"simulate\"\n[history]\nstorage = \"memory\"\n").unwrap();
+        let r = c.history.retention(Path::new("/s"));
+        assert_eq!((r.dir, r.minute_s, r.quarter_s), (None, 2 * 86_400, 430 * 86_400));
+    }
+
+    /// The same rule as for an MQTT broker: a database on the network needs a login.
+    #[test]
+    fn a_network_database_needs_credentials() {
+        let parse = |t: &str| Config::parse(&format!("mode = \"simulate\"\n[history.victoriametrics]\n{t}\n"));
+        assert!(parse("url = \"http://127.0.0.1:8428\"").unwrap().history.victoriametrics.unwrap().read);
+        let e = parse("url = \"http://192.168.1.20:8428\"").unwrap_err();
+        assert!(e.0.contains("needs username"), "{e}");
+        parse("url = \"http://192.168.1.20:8428\"\nusername = \"u\"\npassword_file = \"/p\"").unwrap();
+        parse("url = \"https://vm.example.org\"\nbearer_token_file = \"/t\"").unwrap();
+        assert!(parse("url = \"http://127.0.0.1:8428\"\nusername = \"u\"").is_err());
+        assert!(parse("url = \"ftp://127.0.0.1\"").is_err());
+        assert!(parse("url = \"http://127.0.0.1:8428\"\nsite = \"a b\"").is_err());
     }
 
     /// A demo never runs against real devices.

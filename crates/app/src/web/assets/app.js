@@ -253,7 +253,8 @@ function renderTiles(s) {
       return tile(k, a ? "aanmelden" : (v.available ? "ok" : "onbereikbaar"), sub, a || !v.available ? "alarm" : "");
     }),
     ...(h ? h.tiers.map((t) => tile(T("Historiek") + " " + t.name, num(t.rows) + " " + T("rijen"), t.first ? T("sinds") + " " + new Date(t.first * 1000).toLocaleDateString(LOCALE) : "leeg"))
-      .concat([tile("Historiek geschreven", num(h.stats.bytes_written / 1024, 1) + " kB", h.stats.write_errors ? h.stats.write_errors + " " + T("fouten") : num(h.stats.rows_written) + " " + T("rijen"))]) : [tile("Historiek", "uit")]),
+      .concat([tile("Historiek geschreven", num(h.stats.bytes_written / 1024, 1) + " kB", h.stats.write_errors ? h.stats.write_errors + " " + T("fouten") : num(h.stats.rows_written) + " " + T("rijen"))])
+      .concat(h.stats.vm_enabled ? [tile("VictoriaMetrics", h.stats.vm_last_error ? "fout" : "ok", h.stats.vm_last_error ? esc(h.stats.vm_last_error) + " · " + num(h.stats.vm_rows_queued) + " " + T("wachtend") : num(h.stats.vm_rows_sent) + " " + T("rijen"), h.stats.vm_last_error ? "alarm" : "")] : []) : [tile("Historiek", "uit")]),
   ].join(""));
 
   for (const o of document.querySelectorAll("output[data-d]")) {

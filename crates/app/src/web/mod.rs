@@ -280,18 +280,31 @@ fn parse_series(s: &str) -> Result<Vec<(String, Pick)>, String> {
 }
 
 async fn history(State(st): State<AppState>, Query(q): Query<HistoryParams>) -> Response {
+    let (mut out, vm, picks, now) = match local_history(&st, q) {
+        Ok(found) => found,
+        Err(answer) => return answer,
+    };
+    if let Some(vm) = vm {
+        vm.fill(&mut out, &picks, now).await;
+    }
+    Json(out).into_response()
+}
+
+type LocalHistory = (crate::history::QueryOut, Option<Arc<crate::history::vm::Vm>>, Vec<Pick>, i64);
+
+/// The query as far as this device can answer it. A separate function so that the store's lock
+/// is gone before the database is asked. `Err` is a finished answer.
+#[allow(clippy::result_large_err)]
+fn local_history(st: &AppState, q: HistoryParams) -> Result<LocalHistory, Response> {
     let Some(h) = &st.history else {
-        return (StatusCode::NOT_FOUND, "geen historiek (history.enabled = false)").into_response();
+        return Err((StatusCode::NOT_FOUND, "geen historiek (history.enabled = false)").into_response());
     };
     let h = h.lock().expect("history lock");
     let Some(series) = q.series else {
-        return Json(json!({"series": h.meta(), "tiers": h.tiers(), "stats": h.stats})).into_response();
+        return Err(Json(json!({"series": h.meta(), "tiers": h.tiers(), "stats": h.stats})).into_response());
     };
     let bad = |m: String| (StatusCode::BAD_REQUEST, m).into_response();
-    let want = match parse_series(&series) {
-        Ok(w) => w,
-        Err(e) => return bad(e),
-    };
+    let want = parse_series(&series).map_err(bad)?;
     // The tick clock's now: virtual in simulate mode.
     let now = st.snap.borrow().now.as_deref().and_then(crate::ha::entity::parse_time).map(|t| t.timestamp());
     let now = now.unwrap_or_else(|| chrono::Utc::now().timestamp());
@@ -299,18 +312,10 @@ async fn history(State(st): State<AppState>, Query(q): Query<HistoryParams>) -> 
         None => Ok(default),
         Some(s) => param_time(s).ok_or_else(|| format!("ongeldige tijd: {s}")),
     };
-    let to = match time(&q.to, now) {
-        Ok(t) => t,
-        Err(e) => return bad(e),
-    };
-    let from = match time(&q.from, to - 86_400) {
-        Ok(t) => t,
-        Err(e) => return bad(e),
-    };
-    match h.query(&want, from, to, q.step.unwrap_or(300)) {
-        Ok(out) => Json(out).into_response(),
-        Err(e) => bad(e.0),
-    }
+    let to = time(&q.to, now).map_err(bad)?;
+    let from = time(&q.from, to - 86_400).map_err(bad)?;
+    let out = h.query(&want, from, to, q.step.unwrap_or(300)).map_err(|e| bad(e.0))?;
+    Ok((out, h.vm(), want.iter().map(|(_, p)| *p).collect(), now))
 }
 
 async fn prices_get(State(st): State<AppState>) -> Json<prices::Curve> {

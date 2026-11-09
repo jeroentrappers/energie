@@ -3,6 +3,14 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## Unreleased
+
+- Optional off-device history in VictoriaMetrics, or any database that accepts InfluxDB line
+  protocol (`[history.victoriametrics]`), with the dashboard reading back what the device doesn't
+  hold.
+- `[history] storage = "memory"` keeps the history off the device's storage.
+- `require_state = true` starts with control off when the saved state is gone.
+
 ## 0.3.0 - 2026-11-09
 
 - The dashboard is available in English as well as Dutch, following the browser's language, with

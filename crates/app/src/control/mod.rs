@@ -308,6 +308,14 @@ impl Control {
         c
     }
 
+    /// Start switched off, whatever was configured or saved (`require_state`): the state this
+    /// controller works from is gone, so someone has to look before it writes to anything.
+    pub fn off_until_enabled(&mut self) {
+        self.flags.enabled = false;
+        self.sync_live();
+        tracing::warn!("no saved state and require_state is set: control is off until switched on");
+    }
+
     pub fn config(&self) -> &ControlConfig {
         &self.cfg
     }

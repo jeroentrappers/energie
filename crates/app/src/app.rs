@@ -245,6 +245,7 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
         None => None,
     };
     std::fs::create_dir_all(&cfg.state_dir).map_err(|e| Error::new(format!("{}: {e}", cfg.state_dir.display())))?;
+    let state_missing = cfg.require_state && !cfg.state_dir.join(crate::persist::MEMORY_FILE).exists();
     let mut persister = Persister::new(cfg.state_dir.clone(), cfg.persist_interval_s);
     let (file_settings, file_memory) = persister.load()?;
     let (stop, stop_rx) = watch::channel(false);
@@ -338,7 +339,13 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
         devices: drivers.devices(),
         publish: cfg.publish.clone(),
         history: history.clone(),
-        control: (cfg.mode == Mode::Control).then(|| Control::new(cfg.control.clone(), &cfg.state_dir)),
+        control: (cfg.mode == Mode::Control).then(|| {
+            let mut control = Control::new(cfg.control.clone(), &cfg.state_dir);
+            if state_missing {
+                control.off_until_enabled();
+            }
+            control
+        }),
     });
     let mut rt = rt;
     rt.no_battery = cfg.no_battery();
@@ -451,15 +458,33 @@ fn open_history(
         return Ok(None);
     }
     let ret = cfg.history.retention(&cfg.state_dir);
-    let h = History::open_with(history::series::meta(), &cfg.history.extra_series, &ret, now.timestamp())?;
+    let mut h = History::open_with(history::series::meta(), &cfg.history.extra_series, &ret, now.timestamp())?;
+    let exporter = cfg.history.victoriametrics.as_ref().map(open_vm).transpose()?;
+    if let Some(vm) = &exporter {
+        h.export_to(vm.clone());
+    }
     let seed = cfg.history.seed_from_ha && h.is_empty();
     let h: SharedHistory = Arc::new(Mutex::new(h));
+    if let Some(vm) = exporter {
+        tasks.push(tokio::spawn(history::vm::run(vm, h.clone(), stop.clone())));
+    }
     if seed {
         let ha = cfg.ha.as_ref().expect("validated: seed_from_ha needs [ha]");
         let client = ClientConfig::new(ha.ws_url()?, read_secret(&ha.token_file)?);
         tasks.push(tokio::spawn(history::seed::run(client, h.clone(), now, Duration::from_secs(300), stop.clone())));
     }
     Ok(Some(h))
+}
+
+/// The connection described by `[history.victoriametrics]`, with its secrets read.
+fn open_vm(c: &crate::config::VictoriaMetrics) -> Result<Arc<history::vm::Vm>> {
+    use history::vm::Auth;
+    let auth = match (&c.username, &c.password_file, &c.bearer_token_file) {
+        (Some(user), Some(file), _) => Auth::Basic(user.clone(), read_secret(file)?),
+        (_, _, Some(file)) => Auth::Bearer(read_secret(file)?),
+        _ => Auth::None,
+    };
+    Ok(Arc::new(history::vm::Vm::new(&c.url, &c.site, auth, c.read)?))
 }
 
 async fn tick_loop(rt: Arc<Mutex<Runtime>>, clock: Arc<TickClock>, period: Duration, mut stop: watch::Receiver<bool>) {

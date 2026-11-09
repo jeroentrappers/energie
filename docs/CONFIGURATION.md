@@ -20,6 +20,7 @@ These must appear before the first `[section]`.
 | `mode` | required | `simulate`, `shadow` or `control`. See [modes](OPERATIONS.md#modes). |
 | `listen` | `127.0.0.1:8080` | Address of the dashboard and API. |
 | `demo` | `false` | Public read-only demonstration. Needs `mode = "simulate"`; the web API refuses every write. |
+| `require_state` | `false` | In `control` mode, start with control switched off when no saved state is found. For devices that keep their state in RAM. |
 | `cli_listen` | `listen` port + 1 on `127.0.0.1` | Loopback-only address for the `energie credentials` command. A different port needs `--url` on that command. |
 | `web_password_file` | none | File holding the dashboard password, at least 12 characters (HTTP Basic, any user name). If `listen` can be reached from another machine, energie needs this or [`[oidc]`](#oidc) to start. |
 | `state_dir` | `/var/lib/energie` | Settings, memory, logs and history. |
