@@ -434,13 +434,24 @@ struct EventStream {
     rx: watch::Receiver<Arc<Snapshot>>,
     stop: watch::Receiver<bool>,
     sent: std::collections::BTreeMap<String, energie_drivers::entity::Value>,
+    last: Option<tokio::time::Instant>,
 }
+
+/// The shortest time between two updates of one event stream.
+const MIN_EVENT_GAP: Duration = Duration::from_millis(900);
 
 async fn events(State(st): State<AppState>) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let mut rx = st.snap.clone();
     rx.mark_changed();
-    let start = EventStream { rx, stop: st.stop.clone(), sent: Default::default() };
+    let start = EventStream { rx, stop: st.stop.clone(), sent: Default::default(), last: None };
     let stream = futures_util::stream::unfold(start, |mut s| async move {
+        // A faster-than-real simulation ticks many times a second; a browser needs one update.
+        if let Some(wait) = s.last.map(|at: tokio::time::Instant| MIN_EVENT_GAP.saturating_sub(at.elapsed())) {
+            tokio::select! {
+                _ = tokio::time::sleep(wait) => {}
+                _ = s.stop.wait_for(|s| *s) => return None,
+            }
+        }
         tokio::select! {
             r = s.rx.changed() => r.ok()?,
             _ = s.stop.wait_for(|s| *s) => return None,
@@ -450,6 +461,7 @@ async fn events(State(st): State<AppState>) -> Sse<impl Stream<Item = Result<Eve
         let mut data = live_json(&snap);
         data["entities"] = json!(changes(&s.sent, &now));
         s.sent = now;
+        s.last = Some(tokio::time::Instant::now());
         Some((Ok(Event::default().event("state").data(data.to_string())), s))
     });
     Sse::new(stream).keep_alive(KeepAlive::default())
