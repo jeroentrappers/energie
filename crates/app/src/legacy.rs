@@ -254,7 +254,7 @@ mod tests {
             "mode = \"control\"\n[ha]\nurl = \"http://h:8123\"\ntoken_file = \"t\"\n[sources]\np1 = \"driver\"\nevse = \"driver\"\n\
              [actuators]\ndefault = \"ha\"\nevse = \"driver\"\nprices = \"log\"\n\
              [devices.homewizard]\naddress = \"192.168.1.30\"\nserial = \"s\"\ntoken_file = \"t\"\npoll_ms = 500\n\
-             [devices.smartevse]\nhost = \"192.168.1.10\"\nread_only = false\ngrace_polls = 1\n",
+             [devices.smartevse]\nhost = \"127.0.0.1\"\nread_only = false\ngrace_polls = 1\n",
         );
         let d = translate(&c, true).unwrap();
         let ids: Vec<_> = d.iter().map(|d| d.id.as_str()).collect();
@@ -265,7 +265,7 @@ mod tests {
             "{text}"
         );
         assert!(text.contains("id = \"homewizard\"\nkind = \"homewizard\"\nrole = \"grid_meter\"\npoll_ms = 500\naddress = \"192.168.1.30\""), "{text}");
-        assert!(text.contains("role = \"charger:buzz\"\ncontrol = \"charger:buzz\"\nread_only = false\ngrace_polls = 1\nhost = \"192.168.1.10\""), "{text}");
+        assert!(text.contains("role = \"charger:buzz\"\ncontrol = \"charger:buzz\"\nread_only = false\ngrace_polls = 1\nhost = \"127.0.0.1\""), "{text}");
         let p = Plan::resolve(c.mode, &d, Registry::builtin(), true).unwrap();
         assert_eq!(p.readers[&Slot::GridMeter], [Provider::Device("homewizard".into())]);
         assert_eq!(p.readers[&Slot::PriceFeed], [Provider::Ha]);
@@ -302,14 +302,14 @@ mod tests {
     /// A typical shadow-mode config: HA for everything but
     /// the P1 meter, the Omnik, the SmartEVSE and the prices, which come from native drivers.
     /// After the upgrade it starts the same instances under the same driver names.
-    const DEPLOYED: &str = "mode = \"shadow\"\nlisten = \"0.0.0.0:8080\"\nstate_dir = \"/var/lib/energie\"\n\
+    const DEPLOYED: &str = "mode = \"shadow\"\nlisten = \"127.0.0.1:8080\"\nstate_dir = \"/var/lib/energie\"\n\
         [ha]\nurl = \"http://192.168.1.10:8123\"\ntoken_file = \"/run/credentials/energie.service/ha-token\"\nstart_wait_s = 60\n\
         [sources]\ndefault = \"ha\"\np1 = \"driver\"\nomnik = \"driver\"\nevse = \"driver\"\nprices = \"driver\"\n\
         [actuators]\ndefault = \"log\"\n\
-        [mqtt]\nhost = \"192.168.1.10\"\nusername = \"homeassistant\"\npassword_file = \"/run/credentials/energie.service/mqtt-password\"\nclient_id = \"energie-shadow-2\"\n\
+        [mqtt]\nhost = \"127.0.0.1\"\nusername = \"homeassistant\"\npassword_file = \"/run/credentials/energie.service/mqtt-password\"\nclient_id = \"energie-shadow-2\"\n\
         [devices.homewizard]\naddress = \"192.168.1.30\"\nserial = \"aabbccddeeff\"\ntoken_file = \"/run/credentials/energie.service/homewizard-token\"\npoll_ms = 1000\n\
         [devices.omnik]\nbase_url = \"http://192.168.1.40\"\npoll_ms = 4000\n\
-        [devices.smartevse]\nhost = \"192.168.1.10\"\nport = 1883\nprefix = \"SmartEVSE/1234\"\nusername = \"homeassistant\"\npassword_file = \"/run/credentials/energie.service/mqtt-password\"\nclient_id = \"energie-smartevse-2\"\npoll_ms = 1000\nread_only = true\n\
+        [devices.smartevse]\nhost = \"127.0.0.1\"\nport = 1883\nprefix = \"SmartEVSE/1234\"\nusername = \"homeassistant\"\npassword_file = \"/run/credentials/energie.service/mqtt-password\"\nclient_id = \"energie-smartevse-2\"\npoll_ms = 1000\nread_only = true\n\
         [devices.prices]\nentsoe_token_file = \"/run/credentials/energie.service/entsoe-token\"\npoll_ms = 10000\nread_only = true\n";
 
     #[test]

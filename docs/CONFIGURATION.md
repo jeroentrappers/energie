@@ -19,7 +19,7 @@ These must appear before the first `[section]`.
 | --- | --- | --- |
 | `mode` | required | `simulate`, `shadow` or `control`. See [modes](OPERATIONS.md#modes). |
 | `listen` | `127.0.0.1:8080` | Address of the dashboard and API. |
-| `web_password_file` | none | File holding the dashboard password (HTTP Basic, any user name). Strongly recommended if `listen` is not loopback. |
+| `web_password_file` | none | File holding the dashboard password, at least 12 characters (HTTP Basic, any user name). **Required** if `listen` can be reached from another machine: energie won't start without it. |
 | `state_dir` | `/var/lib/energie` | Settings, memory, logs and history. |
 | `tick_ms` | `1000` | How often the control logic runs. |
 | `persist_interval_s` | `60` | The most often that state is written to disk. |
@@ -108,13 +108,14 @@ The MQTT bridge, off by default. Details are in [`MQTT.md`](MQTT.md).
 | --- | --- | --- |
 | `enabled` | `false` | Turn the bridge on. |
 | `broker`, `port` | none, `1883` | The broker. |
-| `username`, `password_file` | none | Broker login. |
+| `username`, `password_file` | none | Broker login. **Required** unless the broker is on this machine. |
 | `client_id` | `energie` | MQTT client id. |
 | `prefix` | `energie` | Topic prefix. |
 | `discovery` | on outside shadow | Home Assistant discovery. |
 | `discovery_prefix` | `homeassistant` | Discovery topic prefix. |
 | `include`, `exclude` | `["*"]`, `[]` | Globs on entity ids. |
 | `summary_interval_s` | `5` | How often `<prefix>/summary` is sent. |
+| `allow_set` | `false` | Accept `<prefix>/<group>/<key>/set` messages and offer controls in HA discovery. Off means publish only. |
 
 `[[publish]]` tables tune individual entities. Later rules win:
 

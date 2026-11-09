@@ -25,3 +25,9 @@ pub mod runtime;
 pub mod shadow;
 pub mod sim;
 pub mod web;
+
+/// A path as text inside TOML in a test: a Windows backslash would start an escape.
+#[cfg(test)]
+pub(crate) fn toml_path(p: impl AsRef<std::path::Path>) -> String {
+    p.as_ref().display().to_string().replace('\\', "/")
+}

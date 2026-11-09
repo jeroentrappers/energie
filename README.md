@@ -117,8 +117,9 @@ build provenance.
   self-use on its own within 10 minutes if energie stops or loses its connection.
 - **EV chargers keep their last setting** if energie stops. See
   [what happens when it stops](docs/OPERATIONS.md#what-happens-when-energie-stops).
-- **Password protect the dashboard.** Anyone who can reach it can change settings unless you
-  set `web_password_file`. See [SECURITY.md](SECURITY.md).
+- **Authentication is enforced.** energie won't start with a dashboard or MQTT broker on the
+  network unless a password is configured, and settings can't be changed over MQTT unless you
+  opt in. See [SECURITY.md](SECURITY.md).
 
 ## Building from source
 

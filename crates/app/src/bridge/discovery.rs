@@ -372,6 +372,23 @@ mod tests {
         }
     }
 
+    /// Without `allow_set` a settable entity is offered as a plain sensor, with no command topic.
+    #[test]
+    fn without_allow_set_discovery_offers_no_controls() {
+        let mut p = Publisher::new(crate::bridge::BridgeConfig {
+            discovery_prefix: Some("homeassistant".into()),
+            allow_set: false,
+            ..cfg()
+        });
+        let mut e = Entity::sensor("reservering", "Reservering", Value::Number(1.0)).in_group("setting");
+        e.control = Some(Control::Number { min: Some(0.0), max: None, step: 50.0 });
+        let m = p.tick(&crate::bridge::tests::snap(vec![e]), 0.0);
+        let config = m.iter().find(|m| m.topic.ends_with("/config")).expect("discovery");
+        assert_eq!(config.topic, "homeassistant/sensor/energie/setting_reservering/config");
+        let body: Json = serde_json::from_slice(config.payload.as_ref()).unwrap();
+        assert_eq!(body.get("command_topic"), None);
+    }
+
     /// The publisher sends a config per wanted entity once, again only when it changes (an
     /// empty config first when the component changed), and an empty one when an entity goes.
     #[test]

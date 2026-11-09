@@ -89,8 +89,8 @@ mod tests {
         std::fs::write(&tok, token).unwrap();
         Config::parse(&format!(
             "mode = \"control\"\nstate_dir = \"{}\"\n[ha]\nurl = \"{url}\"\ntoken_file = \"{}\"\nimport_only = true\nstart_wait_s = 5\n",
-            dir.join("state").display(),
-            tok.display()
+            crate::toml_path(dir.join("state")),
+            crate::toml_path(&tok)
         ))
         .unwrap()
     }

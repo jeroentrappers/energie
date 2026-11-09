@@ -7,7 +7,7 @@
 # simulate : closed loop against the built-in house model, on a virtual clock.
 mode = "shadow"
 
-# The dashboard and API. Keep it on loopback, or set web_password_file (docs/INSTALL.md).
+# The dashboard and API. A listen address other machines can reach requires web_password_file.
 listen = "127.0.0.1:8080"
 # web_password_file = "/run/credentials/energie.service/web-password"
 
@@ -240,6 +240,7 @@ log_max_bytes = 262144
 # include = ["*"]
 # exclude = []
 # summary_interval_s = 5
+# allow_set = true                    # accept settings over MQTT; off by default
 #
 # Control mode only: how commands reach the devices (docs/CONTROL.md). The kill switch and the
 # per-device switches are on the dashboard (Systeem → Sturing), at POST /api/control and as the

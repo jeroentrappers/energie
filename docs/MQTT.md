@@ -57,6 +57,11 @@ published nor settable.
 
 ### Setting values
 
+`/set` is off by default. It needs `allow_set = true` in `[mqtt_publish]`, and a broker access
+list that limits who may write these topics: see
+[`deploy/mosquitto-energie.acl`](../deploy/mosquitto-energie.acl). A broker on the network also
+needs a `username` and `password_file`, or energie won't start.
+
 `<prefix>/<group>/<key>/set` takes, by the entity's control: a number (`750`, `14.5`), `ON` /
 `OFF` (also `true`/`false`/`1`/`0`), one of a select's options, or a text. The value then
 goes through `Runtime::set_entity`, the path of `POST /api/entities/<id>`: the control
@@ -67,9 +72,9 @@ unknown entity, one that is not settable now — read only, shadow mode, `settin
 (`mqtt set refused`); nothing changes. The new value comes back on the state topic.
 
 ```
-mosquitto_pub -h 192.168.1.10 -t energie/setting/ev_net_niveau/set -m "Uit"
-mosquitto_pub -h 192.168.1.10 -t energie/setting/batterij_reservering_w/set -m 750
-mosquitto_pub -h 192.168.1.10 -t energie/setting/peak_guard_actief/set -m OFF
+mosquitto_pub -h 192.168.1.10 -u USER -P PASSWORD -t energie/setting/ev_net_niveau/set -m "Uit"
+mosquitto_pub -h 192.168.1.10 -u USER -P PASSWORD -t energie/setting/batterij_reservering_w/set -m 750
+mosquitto_pub -h 192.168.1.10 -u USER -P PASSWORD -t energie/setting/peak_guard_actief/set -m OFF
 ```
 
 ### Connection

@@ -27,7 +27,11 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
     f.sync_all()?;
     drop(f);
     std::fs::rename(&tmp, path)?;
+    // Windows cannot open a directory as a file; its rename is already durable enough here.
+    #[cfg(unix)]
     File::open(dir)?.sync_all()?;
+    #[cfg(not(unix))]
+    let _ = dir;
     Ok(())
 }
 

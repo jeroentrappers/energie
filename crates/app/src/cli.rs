@@ -264,8 +264,8 @@ mod tests {
             &cfg,
             format!(
                 "mode = \"control\"\nstate_dir = \"{}\"\n[ha]\nurl = \"http://127.0.0.1:1\"\ntoken_file = \"{}\"\nimport_only = true\nstart_wait_s = 1\n",
-                d.path().display(),
-                tok.display()
+                crate::toml_path(d.path()),
+                crate::toml_path(&tok)
             ),
         )
         .unwrap();
@@ -306,7 +306,7 @@ mod tests {
             &bad,
             format!(
                 "mode = \"simulate\"\nstate_dir = \"{}\"\nlisten = \"127.0.0.1:0\"\n[sources]\np1 = \"driver\"\n[devices.homewizard]\naddress = \"127.0.0.1\"\nserial = \"x\"\ntoken_file = \"/nonexistent/hw-token\"\n",
-                d.path().display()
+                crate::toml_path(d.path())
             ),
         )
         .unwrap();
@@ -318,7 +318,7 @@ mod tests {
             &taken,
             format!(
                 "mode = \"simulate\"\nstate_dir = \"{}\"\nlisten = \"{}\"\n",
-                d.path().display(),
+                crate::toml_path(d.path()),
                 busy.local_addr().unwrap()
             ),
         )

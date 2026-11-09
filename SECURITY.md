@@ -16,10 +16,12 @@ the public internet.
 
 ### Dashboard and API
 
-- Without `web_password_file`, **anyone who can reach the `listen` address can read all data,
-  change every setting and operate the kill switch.** The default is loopback only for this
-  reason. energie logs a warning if it listens on the network without a password.
-- With `web_password_file`, every route uses HTTP Basic authentication, except `/healthz`.
+- **energie refuses to start if `listen` can be reached from another machine and
+  `web_password_file` is not set.** The password must be at least 12 characters.
+- With a password, every route uses HTTP Basic authentication, except `/healthz`, which returns
+  only a status.
+- On a loopback address no password is required, so anything running on that machine, or any
+  reverse proxy in front of it, can reach the API. A proxy must do its own authentication.
 - energie does not serve TLS, and Basic authentication sends the password in a reversible form.
   For access beyond a trusted LAN, use a VPN, or a reverse proxy that provides TLS.
 - `POST /api/cloud/<id>/credentials` and `GET /api/cloud` also accept connections from the
@@ -39,8 +41,18 @@ the public internet.
 
 Modbus TCP, plain MQTT and the Home Assistant WebSocket link are unencrypted, and Modbus has no
 authentication at all. Keep these devices on a network you trust, and ideally a separate VLAN.
-Use a password on your MQTT broker: anyone who can publish to it may be able to control a
-charger, or change settings through the bridge.
+
+### MQTT
+
+- energie refuses to start if the bridge, or a charger on MQTT, uses a broker on the network
+  without a `username` and `password_file`.
+- The bridge only publishes by default. It accepts settings over `/set` only with
+  `allow_set = true`.
+- **What other clients may read or write is decided by your broker, and energie cannot enforce
+  it.** Set `allow_anonymous false` and use an access list.
+  [`deploy/mosquitto-energie.acl`](deploy/mosquitto-energie.acl) is a starting point. Any client
+  allowed to write `energie/+/+/set` can change settings, and any client allowed to write
+  `SmartEVSE/#` can control that charger.
 
 ### Service hardening
 

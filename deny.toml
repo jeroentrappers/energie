@@ -1,5 +1,10 @@
 # cargo-deny: dependency licences and advisories, run in CI.
 
+[advisories]
+ignore = [
+    { id = "RUSTSEC-2023-0071", reason = "Timing attack on RSA private-key operations. energie only encrypts a password with the server's public key; private keys appear only in tests." },
+]
+
 [licenses]
 allow = [
     "0BSD",

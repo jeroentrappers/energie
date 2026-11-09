@@ -15,8 +15,9 @@ password_file = "/run/credentials/energie.service/mqtt-password"
 discovery = true
 ```
 
-Every entity then appears in HA through MQTT discovery, and settable ones can be changed from
-HA. See [`MQTT.md`](MQTT.md).
+Every entity then appears in HA as a read-only sensor. To change settings from HA as well, add
+`allow_set = true` and give HA's broker user write access to `energie/+/+/set`. See
+[`MQTT.md`](MQTT.md).
 
 ## 2. Shadow mode: compare before you trust it
 
@@ -53,7 +54,7 @@ Move control from HA to energie in this order:
    ```
 
 6. Remove `dry_run`, restart, and watch the audit log.
-7. Turn on MQTT discovery. [`MQTT.md`](MQTT.md) explains how entities can keep their old ids so
+7. Turn on MQTT discovery, with `allow_set = true` if HA should keep its controls. [`MQTT.md`](MQTT.md) explains how entities can keep their old ids so
    that existing dashboards keep working.
 
 To go back: stop energie, or switch off its kill switch, and then re-enable the HA integrations

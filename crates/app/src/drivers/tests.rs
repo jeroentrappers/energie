@@ -52,7 +52,7 @@ const MQTT_PASSWORD: &str = "made-up-password";
 fn write(dir: &Path, name: &str, text: &str) -> String {
     let p = dir.join(name);
     std::fs::write(&p, text).unwrap();
-    p.display().to_string()
+    crate::toml_path(&p).to_string()
 }
 
 /// One simulator per device, and the secret files that reach them.
@@ -153,7 +153,7 @@ fn devices_config_defaults() {
         "mode = \"simulate\"\n[sources]\np1 = \"driver\"\nsolis = \"driver\"\nomnik = \"driver\"\nevse = \"driver\"\ncable = \"driver\"\nprices = \"driver\"\n\
          [devices.homewizard]\naddress = \"192.168.1.30\"\nserial = \"s\"\ntoken_file = \"t\"\n\
          [devices.solis]\naddress = \"192.168.1.20:502\"\n[devices.omnik]\nbase_url = \"http://192.168.1.40\"\n\
-         [devices.smartevse]\nhost = \"192.168.1.10\"\n[devices.cable]\naddress = \"192.168.1.60\"\ndevice_id = \"d\"\nlocal_key_file = \"k\"\n\
+         [devices.smartevse]\nhost = \"127.0.0.1\"\n[devices.cable]\naddress = \"192.168.1.60\"\ndevice_id = \"d\"\nlocal_key_file = \"k\"\n\
          [devices.prices]\n",
     )
     .unwrap();
@@ -323,7 +323,7 @@ async fn runtime_reads_through_drivers_and_actuates_the_simulator() {
     let state = tempfile::tempdir().unwrap();
     let cfg = Config::parse(&format!(
         "mode = \"control\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\ntick_ms = 50\n{}{}",
-        state.path().display(),
+        crate::toml_path(state.path()),
         // Only the price feed is written: the engine's own Solis/EVSE commands go to the log, so
         // the routed command below is not queued behind them.
         ALL_DRIVERS.split("[actuators]").next().unwrap(),
@@ -404,7 +404,7 @@ async fn shadow_mode_never_constructs_driver_actuators() {
     let cfg = Config::parse(&format!(
         "mode = \"shadow\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\ntick_ms = 50\n[ha]\nurl = \"{url}\"\ntoken_file = \"{token}\"\nstart_wait_s = 5\n\
          [sources]\ndefault = \"ha\"\nevse = \"driver\"\nsolis = \"driver\"\n[actuators]\ndefault = \"driver\"\n{}",
-        state.path().display(),
+        crate::toml_path(state.path()),
         rig.devices(false)
     ))
     .unwrap();
@@ -431,7 +431,7 @@ async fn read_only_devices_get_no_actuator() {
     let state = tempfile::tempdir().unwrap();
     let mut cfg = Config::parse(&format!(
         "mode = \"control\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\n{ALL_DRIVERS}{}",
-        state.path().display(),
+        crate::toml_path(state.path()),
         rig.devices(false)
     ))
     .unwrap();
@@ -578,7 +578,7 @@ async fn device_tables_bind_roles_and_expose_entities() {
          [[device]]\nid = \"tuin\"\nkind = \"static\"\nrole = \"pv\"\nvalues = {{ power_w = 100.0 }}\npoll_ms = 50\n\
          [[device]]\nid = \"ev3\"\nkind = \"static\"\nrole = \"car:ev3\"\nvalues = {{ plugged = false, soc = 61.0 }}\nextra = {{ bron = \"stand-in\" }}\npoll_ms = 50\n\
          [[publish]]\nmatch = \"world_pv_*\"\nmin_interval_s = 10\n",
-        state.path().display(),
+        crate::toml_path(state.path()),
         endpoint.addr
     ))
     .unwrap();
@@ -666,7 +666,7 @@ async fn the_solar_forecast_reaches_the_history() {
         "mode = \"simulate\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\ntick_ms = 50\n\
          [history]\nextra_series = [\"forecast_*_kwh\", \"forecast_power_now_w\"]\n\
          [[device]]\nid = \"forecast\"\nkind = \"forecast_solar\"\nrole = \"solar_forecast\"\nbase_url = \"http://{}\"\npoll_interval_s = 0\npoll_ms = 50\ngrace_polls = 0\n",
-        state.path().display(),
+        crate::toml_path(state.path()),
         api.addr
     ))
     .unwrap();

@@ -12,7 +12,7 @@
 
 mode = "control"
 listen = "0.0.0.0:8080"
-# Set this whenever listen is reachable from other machines (docs/INSTALL.md).
+# Required whenever listen can be reached from other machines (docs/INSTALL.md).
 web_password_file = "/run/credentials/energie.service/web-password"
 state_dir = "/var/lib/energie"
 tick_ms = 1000
@@ -162,6 +162,8 @@ discovery_prefix = "homeassistant"
 include = ["*"]
 exclude = []
 summary_interval_s = 5
+# Accept settings over MQTT and offer controls in HA. Also limit who may write on your broker.
+# allow_set = true
 
 # Push notifications through ntfy.
 [notify]

@@ -138,6 +138,7 @@ fn main_exit_codes() {
 /// The terminal prompt, in a child without a controlling terminal (`setsid`): a secret needs
 /// one and fails; a plain answer comes from stdin (empty here). The `credentials` command is
 /// dispatched from the command line.
+#[cfg(target_os = "linux")] // setsid
 #[test]
 fn terminal_prompt_needs_a_terminal() {
     if std::env::var_os("ENERGIE_PROMPT_CHILD").is_some() {

@@ -15,5 +15,7 @@ First public release.
 - Built-in dashboard, HTTP API, history store and MQTT bridge with Home Assistant discovery.
 - `simulate`, `shadow` and `control` modes, dry run, kill switch, audit log and write
   verification.
-- Optional dashboard password (`web_password_file`) and configurable site location (`[site]`).
+- Enforced authentication: a password for any dashboard reachable from the network, a login for
+  any network MQTT broker, and publish-only MQTT unless `allow_set = true`.
+- Configurable site location (`[site]`).
 - Static Linux binaries and builds for macOS and Windows.

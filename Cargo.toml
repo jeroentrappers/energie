@@ -27,7 +27,7 @@ hmac = "0.12"
 http-body-util = "0.1"
 hyper = { version = "1", features = ["server", "http1"] }
 hyper-util = { version = "0.1", features = ["server", "http1", "tokio", "service"] }
-quick-xml = "0.38"
+quick-xml = "0.41"
 rand = "0.9"
 rpassword = "7"
 rsa = { version = "0.9", default-features = false, features = ["std"] }

@@ -1,0 +1,23 @@
+# Example Mosquitto access list for energie. In mosquitto.conf:
+#   allow_anonymous false
+#   password_file /mosquitto/config/passwd
+#   acl_file /mosquitto/config/energie.acl
+#
+# Adjust the user names to yours. A client gets nothing that isn't listed here.
+
+# energie itself: its own topics, Home Assistant discovery, and the charger.
+user energie
+topic readwrite energie/#
+topic readwrite homeassistant/#
+topic readwrite SmartEVSE/#
+
+# Home Assistant: read the values and discovery.
+user homeassistant
+topic read energie/#
+topic readwrite homeassistant/#
+# Let Home Assistant change settings too (needs allow_set = true in energie):
+# topic write energie/+/+/set
+
+# A read-only display or dashboard client.
+user display
+topic read energie/summary

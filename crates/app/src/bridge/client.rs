@@ -84,7 +84,9 @@ pub async fn run(
                     tracing::info!(broker = %format!("{}:{}", link.host, link.port), "mqtt bridge connected");
                     connected = true;
                     backoff = link.backoff_min;
-                    let _ = client.try_subscribe(p.cfg.set_filter(), QoS::AtLeastOnce);
+                    if p.cfg.allow_set {
+                        let _ = client.try_subscribe(p.cfg.set_filter(), QoS::AtLeastOnce);
+                    }
                     if let Some(t) = &ha_status {
                         let _ = client.try_subscribe(t.as_str(), QoS::AtLeastOnce);
                     }

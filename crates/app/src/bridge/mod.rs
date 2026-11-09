@@ -54,6 +54,8 @@ pub struct BridgeConfig {
     pub node: String,
     /// The device instances by id (entity group).
     pub devices: BTreeMap<String, DeviceInfo>,
+    /// Accept `/set` and offer controls in discovery.
+    pub allow_set: bool,
 }
 
 impl BridgeConfig {
@@ -67,6 +69,7 @@ impl BridgeConfig {
             exclude: m.exclude.clone(),
             summary_interval_s: m.summary_interval_s as f64,
             node: m.prefix.replace('/', "_"),
+            allow_set: m.allow_set,
             devices: devices
                 .iter()
                 .map(|d| {
@@ -222,7 +225,14 @@ impl Publisher {
         let mut out = Vec::new();
         let mut now = BTreeMap::new();
         for e in es.iter().filter(|e| self.cfg.wanted(e)) {
-            let (topic, cfg) = discovery::config(&self.cfg, &dp, e);
+            let read_only;
+            let shown = if self.cfg.allow_set {
+                e
+            } else {
+                read_only = Entity { control: None, ..e.clone() };
+                &read_only
+            };
+            let (topic, cfg) = discovery::config(&self.cfg, &dp, shown);
             now.insert(e.id.clone(), (topic, cfg.to_string()));
         }
         for (id, (topic, _)) in &self.discovered {
@@ -272,6 +282,7 @@ pub(crate) mod tests {
 
     pub(crate) fn cfg() -> BridgeConfig {
         BridgeConfig {
+            allow_set: true,
             prefix: "energie".into(),
             discovery_prefix: None,
             include: vec!["*".into()],

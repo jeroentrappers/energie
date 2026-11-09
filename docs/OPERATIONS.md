@@ -90,6 +90,9 @@ The archive holds credentials, so store it accordingly.
 | Service won't start | `journalctl -u energie -n 50`. Run `energie --check-config`. A missing `LoadCredential` source file stops the unit before energie runs. |
 | Dashboard unreachable | `listen` must be an address other machines can reach, such as `0.0.0.0:8080`. Check your firewall. |
 | `401` from the dashboard | Any user name with the contents of `web_password_file`. |
+| Won't start: `web_password_file is required` | `listen` is reachable from the network. Set a password. |
+| Won't start: `needs username and password_file` | A broker on the network needs a login. |
+| MQTT `/set` or HA controls do nothing | The bridge is publish-only unless `allow_set = true`. |
 | A device is unavailable | See `last_error` under *Systeem*. Check that its IP hasn't changed and that no other client holds the connection. |
 | Solis timeouts or reconnects | Another Modbus master is probably active. |
 | Commands show `blocked: no reading of … yet` | The device hasn't been read yet. Fix the read first. |

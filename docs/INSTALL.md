@@ -150,6 +150,9 @@ Which secrets you need depends on your devices: see [supported hardware](HARDWAR
 
 ### 3. Set a dashboard password
 
+This is required if the dashboard is reachable from another machine: energie won't start
+otherwise. On `127.0.0.1` it's optional, but then anything on that machine can reach it.
+
 ```sh
 sudo sh -c 'umask 077; openssl rand -base64 18 > /etc/energie/web-password'
 ```

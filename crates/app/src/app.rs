@@ -215,6 +215,9 @@ fn notifier(cfg: &Config) -> Result<Arc<dyn Notifier>> {
 }
 
 /// Build everything and start serving. `drivers` provides the native device instances.
+/// The web password stands alone, with no account lock-out behind it.
+const MIN_WEB_PASSWORD_CHARS: usize = 12;
+
 pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> {
     let plan = cfg.plan()?;
     for w in cfg.warnings() {
@@ -231,8 +234,11 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
         Some(p) => {
             let read = std::fs::read_to_string(p).map_err(|e| Error::new(format!("{}: {e}", p.display())))?;
             let password = read.trim().to_string();
-            if password.is_empty() {
-                return Err(Error::new(format!("{}: the password file is empty", p.display())));
+            if password.chars().count() < MIN_WEB_PASSWORD_CHARS {
+                return Err(Error::new(format!(
+                    "{}: the password must be at least {MIN_WEB_PASSWORD_CHARS} characters",
+                    p.display()
+                )));
             }
             Some(password)
         }
@@ -349,9 +355,6 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
         history: history.clone(),
     };
     let mut web_stop = stop_rx.clone();
-    if web_password.is_none() && !addr.ip().is_loopback() {
-        tracing::warn!(%addr, "the dashboard and API are open to the network without a password: set web_password_file");
-    }
     tasks.push(tokio::spawn(async move {
         let app = web::router(state);
         let app = match web_password {
@@ -464,7 +467,7 @@ mod tests {
     fn write(dir: &Path, name: &str, text: &str) -> String {
         let p = dir.join(name);
         std::fs::write(&p, text).unwrap();
-        p.display().to_string()
+        crate::toml_path(&p).to_string()
     }
 
     async fn http_get(addr: SocketAddr, path: &str) -> (u16, String) {
@@ -495,7 +498,7 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         let cfg = Config::parse(&format!(
             "mode = \"simulate\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\ntick_ms = 1000\n[sim]\nspeed = 100.0\nstart = \"2026-06-21T12:00:00+02:00\"\n",
-            d.path().join("state").display()
+            crate::toml_path(d.path().join("state"))
         ))
         .unwrap();
         let r = start(cfg, &NoDrivers).await.unwrap();
@@ -518,7 +521,8 @@ mod tests {
     #[tokio::test]
     async fn history_off_or_seeded() {
         let d = tempfile::tempdir().unwrap();
-        let base = format!("mode = \"simulate\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\n", d.path().display());
+        let base =
+            format!("mode = \"simulate\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\n", crate::toml_path(d.path()));
         let r =
             start(Config::parse(&format!("{base}[history]\nenabled = false\n")).unwrap(), &NoDrivers).await.unwrap();
         assert!(r.history.is_none());
@@ -540,8 +544,8 @@ mod tests {
         let other = tempfile::tempdir().unwrap();
         let blocked = format!(
             "mode = \"simulate\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\n[history]\ndir = \"{}\"\n",
-            other.path().display(),
-            d.path().join("blocker").display()
+            crate::toml_path(other.path()),
+            crate::toml_path(d.path().join("blocker"))
         );
         assert!(start(Config::parse(&blocked).unwrap(), &NoDrivers).await.is_err());
     }
@@ -572,7 +576,7 @@ mod tests {
         let token = write(d.path(), "token", "good-token\n");
         let cfg = Config::parse(&format!(
             "mode = \"shadow\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\ntick_ms = 50\n[ha]\nurl = \"{url}\"\ntoken_file = \"{token}\"\nstart_wait_s = 5\n[mqtt]\nhost = \"127.0.0.1\"\nport = 1\n",
-            d.path().display()
+            crate::toml_path(d.path())
         ))
         .unwrap();
         let r = start(cfg, &NoDrivers).await.unwrap();
@@ -607,7 +611,7 @@ mod tests {
         write(d.path(), "memory.json", "{}");
         let cfg = Config::parse(&format!(
             "mode = \"control\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\n[ha]\nurl = \"{url}\"\ntoken_file = \"{token}\"\n[actuators]\ndefault = \"ha\"\n[notify]\nkind = \"ntfy\"\nurl = \"http://127.0.0.1:1/t\"\ntoken_file = \"{ntfy_token}\"\n",
-            d.path().display()
+            crate::toml_path(d.path())
         ))
         .unwrap();
         let r = start(cfg, &NoDrivers).await.unwrap();
@@ -622,7 +626,7 @@ mod tests {
     #[tokio::test]
     async fn startup_errors() {
         let d = tempfile::tempdir().unwrap();
-        let base = format!("listen = \"127.0.0.1:0\"\nstate_dir = \"{}\"\n", d.path().display());
+        let base = format!("listen = \"127.0.0.1:0\"\nstate_dir = \"{}\"\n", crate::toml_path(d.path()));
         let e = |text: String| async move { start(Config::parse(&text).unwrap(), &NoDrivers).await.err().unwrap().0 };
         let hw = "[devices.homewizard]\naddress = \"127.0.0.1\"\nserial = \"x\"\ntoken_file = \"t\"\n";
         assert!(e(format!("mode = \"simulate\"\n{base}[sources]\np1 = \"driver\"\n{hw}")).await.contains("source P1"));
@@ -639,7 +643,7 @@ mod tests {
         let taken = format!(
             "mode = \"simulate\"\nlisten = \"{}\"\nstate_dir = \"{}\"\n",
             busy.local_addr().unwrap(),
-            d.path().display()
+            crate::toml_path(d.path())
         );
         assert!(!e(taken).await.is_empty());
         let mqtt_pw = format!("mode = \"simulate\"\n{base}[mqtt]\nhost = \"h\"\npassword_file = \"/nonexistent/pw\"\n");
@@ -650,7 +654,7 @@ mod tests {
         assert!(e(bad_ntfy).await.contains("topic"));
         let file = d.path().join("file");
         std::fs::write(&file, "").unwrap();
-        let bad_dir = format!("mode = \"simulate\"\nstate_dir = \"{}\"\n", file.join("sub").display());
+        let bad_dir = format!("mode = \"simulate\"\nstate_dir = \"{}\"\n", crate::toml_path(file.join("sub")));
         assert!(e(bad_dir).await.contains("sub"));
         std::fs::write(d.path().join("settings.json"), "kapot").unwrap();
         assert!(e(format!("mode = \"simulate\"\n{base}")).await.contains("settings.json"));
@@ -663,7 +667,7 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         let cfg = Config::parse(&format!(
             "mode = \"control\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\ntick_ms = 20\n",
-            d.path().display()
+            crate::toml_path(d.path())
         ))
         .unwrap();
         let r = start(cfg, &NoDrivers).await.unwrap();
@@ -689,7 +693,7 @@ mod tests {
         let cfg = |url: &str, dir: &Path| {
             Config::parse(&format!(
                 "mode = \"control\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\n[ha]\nurl = \"{url}\"\ntoken_file = \"{token}\"\nimport_only = true\nstart_wait_s = 2\n",
-                dir.display()
+                crate::toml_path(dir)
             ))
             .unwrap()
         };
@@ -727,8 +731,8 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         let pw = write(d.path(), "pw", "geheim");
         let base = format!(
-            "mode = \"simulate\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\ntick_ms = 50\n[mqtt_publish]\nenabled = true\nbroker = \"127.0.0.1\"\nport = {}\nusername = \"energie\"\n",
-            d.path().display(),
+            "mode = \"simulate\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\ntick_ms = 50\n[mqtt_publish]\nallow_set = true\nenabled = true\nbroker = \"127.0.0.1\"\nport = {}\nusername = \"energie\"\n",
+            crate::toml_path(d.path()),
             broker.addr.port()
         );
         let r = start(Config::parse(&format!("{base}password_file = \"{pw}\"\n")).unwrap(), &NoDrivers).await.unwrap();
@@ -751,7 +755,7 @@ mod tests {
         let token = write(d.path(), "token", "x");
         let cfg = Config::parse(&format!(
             "mode = \"shadow\"\nlisten = \"127.0.0.1:0\"\nstate_dir = \"{}\"\n[ha]\nurl = \"http://127.0.0.1:1\"\ntoken_file = \"{token}\"\nstart_wait_s = 0\n",
-            d.path().display()
+            crate::toml_path(d.path())
         ))
         .unwrap();
         let r = run(cfg, &NoDrivers, Box::pin(async {})).await;

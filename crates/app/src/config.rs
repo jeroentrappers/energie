@@ -215,6 +215,9 @@ pub struct MqttPublishConfig {
     pub exclude: Vec<String>,
     /// Seconds between two `<prefix>/summary` messages.
     pub summary_interval_s: u64,
+    /// Accept `/set` messages and offer controls in HA discovery. Off by default: the MQTT
+    /// bridge then only publishes.
+    pub allow_set: bool,
 }
 
 impl Default for MqttPublishConfig {
@@ -232,11 +235,23 @@ impl Default for MqttPublishConfig {
             include: vec!["*".into()],
             exclude: Vec::new(),
             summary_interval_s: 5,
+            allow_set: false,
         }
     }
 }
 
 /// A topic prefix: levels without wildcards, no empty level.
+/// Whether a host name or IP address stays on this machine.
+fn is_loopback_host(host: &str) -> bool {
+    let host = host.trim_start_matches('[').trim_end_matches(']');
+    host.eq_ignore_ascii_case("localhost") || host.parse::<std::net::IpAddr>().is_ok_and(|ip| ip.is_loopback())
+}
+
+/// Whether `listen` (`host:port`) can only be reached from this machine.
+fn listen_is_loopback(listen: &str) -> bool {
+    listen.rsplit_once(':').is_some_and(|(host, _)| is_loopback_host(host))
+}
+
 fn topic_prefix_ok(p: &str) -> bool {
     !p.is_empty() && p.split('/').all(|l| !l.is_empty() && !l.contains(['+', '#']))
 }
@@ -247,8 +262,11 @@ impl MqttPublishConfig {
             return Ok(());
         }
         let bad = |m: &str| Err(Error::new(format!("mqtt_publish: {m}")));
-        if self.broker.as_deref().is_none_or(str::is_empty) {
+        let Some(broker) = self.broker.as_deref().filter(|b| !b.is_empty()) else {
             return bad("enabled needs a broker");
+        };
+        if !is_loopback_host(broker) && !(self.username.is_some() && self.password_file.is_some()) {
+            return bad("a broker on the network needs username and password_file");
         }
         if !topic_prefix_ok(&self.prefix) || !topic_prefix_ok(&self.discovery_prefix) {
             return bad("prefix and discovery_prefix are topic levels without wildcards or empty levels");
@@ -386,8 +404,8 @@ pub struct Config {
     pub listen: String,
     #[serde(default = "default_state_dir")]
     pub state_dir: PathBuf,
-    /// A file holding the dashboard and API password (HTTP Basic, any user name). Without it
-    /// anyone who can reach `listen` can read everything and change every setting.
+    /// A file holding the dashboard and API password (HTTP Basic, any user name). Required
+    /// whenever `listen` can be reached from another machine.
     pub web_password_file: Option<PathBuf>,
     /// Where the installation is, for the sun position and the default solar forecast plane.
     pub site: Option<SiteConfig>,
@@ -573,6 +591,21 @@ impl Config {
     }
 
     fn validate(&self) -> Result<()> {
+        if self.web_password_file.is_none() && !listen_is_loopback(&self.listen) {
+            return Err(Error::new(format!(
+                "listen = \"{}\" can be reached from other machines, so web_password_file is required",
+                self.listen
+            )));
+        }
+        let chargers = self.device.iter().filter(|d| d.kind == "smartevse_mqtt").map(|d| (d.id.as_str(), &d.table));
+        for (id, table) in chargers.chain(self.devices.get("smartevse").map(|t| ("smartevse", t))) {
+            let host = table.get("host").and_then(|h| h.as_str()).unwrap_or_default();
+            if !is_loopback_host(host) && !(table.contains_key("username") && table.contains_key("password_file")) {
+                return Err(Error::new(format!(
+                    "device {id}: a broker on the network needs username and password_file"
+                )));
+            }
+        }
         if let Some(s) = self.site
             && !((-90.0..=90.0).contains(&s.latitude) && (-180.0..=180.0).contains(&s.longitude))
         {
@@ -685,7 +718,7 @@ mod tests {
         let c = Config::parse(&format!(
             "mode = \"control\"\n{HA}[sources]\ndefault = \"ha\"\np1 = \"driver\"\n[actuators]\nevse = \"driver\"\ndefault = \"ha\"\n\
              [devices.homewizard]\naddress = \"192.168.1.30\"\nserial = \"s\"\ntoken_file = \"t\"\n\
-             [devices.smartevse]\nhost = \"192.168.1.10\"\nread_only = false\n"
+             [devices.smartevse]\nhost = \"127.0.0.1\"\nread_only = false\n"
         ))
         .unwrap();
         assert_eq!(c.source(Section::P1), SourceKind::Driver);
@@ -721,6 +754,40 @@ mod tests {
         assert!(err("mode = \"simulate\"\n[history]\nminute_days = 0\n").contains("minute_days"));
         assert!(err("mode = \"simulate\"\n[history]\nseed_from_ha = true\n").contains("[ha]"));
         assert!(err("mode = \"simulate\"\n[history]\nextra_series = [\"\"]\n").contains("extra_series"));
+    }
+
+    /// Reaching the dashboard from another machine takes a password; this machine alone does not.
+    #[test]
+    fn a_network_listener_needs_a_password() {
+        let parse = |top: &str| Config::parse(&format!("mode = \"simulate\"\n{top}\n"));
+        for open in ["0.0.0.0:8080", "[::]:8080", "192.168.1.10:8080", "server.lan:8080"] {
+            let e = parse(&format!("listen = \"{open}\"")).unwrap_err();
+            assert!(e.0.contains("web_password_file"), "{open}: {e}");
+            parse(&format!("listen = \"{open}\"\nweb_password_file = \"/p\"")).unwrap();
+        }
+        for local in ["127.0.0.1:8080", "127.0.0.1:0", "[::1]:8080", "localhost:8080"] {
+            parse(&format!("listen = \"{local}\"")).unwrap();
+        }
+        parse("").unwrap();
+    }
+
+    /// A broker on the network takes a login, for the bridge and for a charger on MQTT alike.
+    #[test]
+    fn a_network_broker_needs_a_login() {
+        let bridge = |rest: &str| {
+            Config::parse(&format!("mode = \"control\"\n[mqtt_publish]\nenabled = true\nbroker = {rest}\n"))
+        };
+        assert!(bridge("\"192.168.1.10\"").unwrap_err().0.contains("password_file"));
+        assert!(bridge("\"192.168.1.10\"\nusername = \"u\"").unwrap_err().0.contains("password_file"));
+        bridge("\"192.168.1.10\"\nusername = \"u\"\npassword_file = \"/p\"").unwrap();
+        bridge("\"127.0.0.1\"").unwrap();
+        let charger = |extra: &str| {
+            Config::parse(&format!(
+                "mode = \"control\"\n[[device]]\nid = \"e\"\nkind = \"smartevse_mqtt\"\nrole = \"charger\"\nhost = \"192.168.1.10\"\nprefix = \"SmartEVSE/1\"\n{extra}"
+            ))
+        };
+        assert!(charger("").unwrap_err().0.contains("password_file"));
+        charger("username = \"u\"\npassword_file = \"/p\"\n").unwrap();
     }
 
     /// The WebSocket URL is derived from any of the usual HA address spellings.
@@ -827,7 +894,7 @@ mod tests {
     fn device_tables_and_legacy_tables() {
         let c = Config::parse(&format!(
             "mode = \"control\"\n{HA}[[device]]\nid = \"ha\"\nkind = \"ha\"\nrole = \"*\"\ncontrol = \"charger:ev3\"\nread_only = false\n\
-             [[device]]\nid = \"evse\"\nkind = \"smartevse_mqtt\"\nrole = \"charger\"\ncontrol = \"charger\"\nread_only = false\nhost = \"h\"\n"
+             [[device]]\nid = \"evse\"\nkind = \"smartevse_mqtt\"\nrole = \"charger\"\ncontrol = \"charger\"\nread_only = false\nhost = \"127.0.0.1\"\n"
         ))
         .unwrap();
         assert_eq!(c.source(Section::Evse), SourceKind::Driver);
