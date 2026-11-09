@@ -58,7 +58,7 @@ check that your setup fits:
 | Battery | Optional. Controlling one uses the Solis remote-control model; other inverters need a driver that maps onto it. Solar with an EV and no battery works out of the box. |
 | Chargers and cars | Exactly two named slots, `buzz` (SmartEVSE-style) and `ev3` (cable-style). Another brand can fill a slot with a new driver; a third charger needs logic changes. |
 | Interface language | The dashboard is in English and Dutch, following the browser. Phone notifications are in Dutch. |
-| Maturity | Version 0.x. About 920 automated tests, including a simulated-day comparison, but real-world control experience comes from a single installation. |
+| Maturity | Version 0.x. About 950 automated tests, including a simulated-day comparison, but real-world control experience comes from a single installation. |
 
 See [supported hardware](docs/HARDWARE.md) for each device. Contributions that make it more
 general are very welcome.

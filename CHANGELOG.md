@@ -3,7 +3,7 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
-## Unreleased
+## 0.3.0 - 2026-11-09
 
 - The dashboard is available in English as well as Dutch, following the browser's language, with
   a button to switch.
