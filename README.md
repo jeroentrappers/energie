@@ -10,6 +10,15 @@ tariff, protects the main breaker, and shows it all on a built-in dashboard.
 It is one small binary with no database or runtime. On a typical server it uses about 18 MB of
 memory and 0.4 % of one CPU core. It can run on its own, or next to Home Assistant over MQTT.
 
+**Website: [energie.appmire.be](https://energie.appmire.be)**
+
+<picture>
+  <source srcset="docs/images/overview-light.png" media="(prefers-color-scheme: light)">
+  <img src="docs/images/overview-dark.png" alt="The energie dashboard: live power flows between solar panels, grid, battery, house and an electric van, with a chart of the last six hours.">
+</picture>
+
+<sub>A simulated house at mid-morning. The dashboard is in Dutch.</sub>
+
 > **Read this first.** energie writes to inverters and EV chargers. Wrong settings can
 > overload a circuit, drain a battery or leave a car uncharged. Start in `shadow` or
 > `dry_run` mode, keep your breakers and the inverter's own limits in place, and read
@@ -31,6 +40,12 @@ memory and 0.4 % of one CPU core. It can run on its own, or next to Home Assista
   discovery.
 - **Modes for trying it safely.** `simulate` runs against a built-in house model, `shadow`
   decides but never writes, and `[control] dry_run` works out each register write and logs it.
+
+## Screenshots
+
+| Capacity tariff | Prices | EV charging |
+| --- | --- | --- |
+| ![Capacity tariff: this quarter-hour's average against the target](docs/images/capacity.png) | ![Colour-coded quarter-hour prices for today and tomorrow](docs/images/prices.png) | ![Priority controls and live status for both cars and chargers](docs/images/ev.png) |
 
 ## Is this for you?
 
