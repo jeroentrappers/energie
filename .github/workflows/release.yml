@@ -97,8 +97,69 @@ jobs:
           done
           exit 1
 
-  publish:
+  image:
+    name: Container image
     needs: [build, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Lay out the binaries by platform
+        run: |
+          for pair in linux/amd64=x86_64-unknown-linux-musl \
+                      linux/arm64=aarch64-unknown-linux-musl \
+                      linux/arm/v7=armv7-unknown-linux-musleabihf \
+                      linux/riscv64=riscv64gc-unknown-linux-musl; do
+            platform="${pair%%=*}"
+            target="${pair##*=}"
+            name="energie-${GITHUB_REF_NAME}-${target}"
+            mkdir -p "context/${platform}"
+            tar -xzf "dist/${name}.tar.gz" -C "context/${platform}" --strip-components=1 "${name}/energie"
+          done
+          cp LICENSE NOTICE.md context/
+      - name: Work out the tags
+        id: tags
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          image="ghcr.io/${GITHUB_REPOSITORY}"
+          {
+            echo "image=${image}"
+            echo "list<<EOF"
+            echo "${image}:${version}"
+            echo "${image}:${version%.*}"
+            echo "${image}:latest"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: context
+          file: deploy/Dockerfile.release
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
+          push: true
+          tags: ${{ steps.tags.outputs.list }}
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ steps.tags.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+  publish:
+    needs: [build, smoke, image]
     runs-on: ubuntu-latest
     permissions:
       contents: write

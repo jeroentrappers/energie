@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/core", "crates/drivers", "crates/cloud", "crates/app"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["Jeroen Trappers"]
 license = "AGPL-3.0-or-later"
@@ -26,6 +26,8 @@ futures-util = { version = "0.3", default-features = false, features = ["sink", 
 hmac = "0.12"
 http-body-util = "0.1"
 hyper = { version = "1", features = ["server", "http1"] }
+jsonwebtoken = { version = "11", default-features = false, features = ["rust_crypto"] }
+url = "2"
 hyper-util = { version = "0.1", features = ["server", "http1", "tokio", "service"] }
 quick-xml = "0.41"
 rand = "0.9"

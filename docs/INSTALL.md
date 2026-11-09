@@ -76,24 +76,12 @@ cannot set restrictive permissions on them there.
 
 ## Docker
 
-The image contains only the static binary. Build it for a published release, from a checkout:
+Multi-architecture images are published at `ghcr.io/jeroentrappers/energie`. Tags are the version
+(`0.2.0`), the minor version (`0.2`) and `latest`.
 
-```sh
-docker build -f deploy/Dockerfile --build-arg ENERGIE_VERSION=v0.1.0 -t energie .
-```
-
-Put your config at `./config/energie.toml` and any secrets in `./config/`, with paths such as
-`/etc/energie/mqtt-password` in the config, and set `listen = "0.0.0.0:8080"` plus
-`web_password_file`. Then:
-
-```sh
-docker compose -f deploy/docker-compose.yml up -d
-```
-
-The container must be able to reach your devices. On a typical bridge network, outbound
-connections to your LAN work without extra settings.
-
-Keep the `energie-state` volume: it holds your settings and history.
+[`deploy/docker`](../deploy/docker/README.md) has a Compose setup that shows a simulated house
+with a few commands, and then how to move to your real devices. The image has no shell and runs as
+uid `65532`, on a read-only filesystem.
 
 ## From source
 
@@ -148,10 +136,14 @@ after changing the unit.
 
 Which secrets you need depends on your devices: see [supported hardware](HARDWARE.md).
 
-### 3. Set a dashboard password
+### 3. Set up sign-in
 
-This is required if the dashboard is reachable from another machine: energie won't start
-otherwise. On `127.0.0.1` it's optional, but then anything on that machine can reach it.
+A dashboard reachable from another machine needs a sign-in, or energie won't start. On
+`127.0.0.1` it's optional, but then anything on that machine can reach it.
+
+If you run an OpenID Connect provider, use [`[oidc]`](CONFIGURATION.md#oidc) and there's no
+fixed password to manage. It needs HTTPS, so put a TLS reverse proxy in front of energie.
+Otherwise, generate a password:
 
 ```sh
 sudo sh -c 'umask 077; openssl rand -base64 18 > /etc/energie/web-password'

@@ -32,6 +32,13 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace --locked --no-fail-fast
 
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f deploy/Dockerfile -t energie:ci .
+      - run: docker run --rm energie:ci --version
+
   dependencies:
     runs-on: ubuntu-latest
     steps:

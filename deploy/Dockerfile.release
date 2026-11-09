@@ -1,0 +1,24 @@
+# The published multi-architecture image, made from the release binaries. Only used by
+# .github/workflows/release.yml; its build context holds <platform>/energie for each platform.
+# Nothing runs on the target architecture, so no emulation is needed.
+FROM --platform=$BUILDPLATFORM alpine:3.20 AS layout
+ARG TARGETPLATFORM
+COPY ${TARGETPLATFORM}/energie /out/usr/local/bin/energie
+COPY LICENSE NOTICE.md /out/usr/share/doc/energie/
+RUN mkdir -p /out/var/lib/energie /out/etc/energie \
+    && chmod 0755 /out/usr/local/bin/energie \
+    && chown -R 65532:65532 /out/var/lib/energie
+
+FROM scratch
+COPY --from=layout /out/ /
+LABEL org.opencontainers.image.title="energie" \
+      org.opencontainers.image.description="Self-hosted home energy controller" \
+      org.opencontainers.image.source="https://github.com/jeroentrappers/energie" \
+      org.opencontainers.image.licenses="AGPL-3.0-or-later"
+USER 65532:65532
+VOLUME ["/var/lib/energie"]
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD ["/usr/local/bin/energie", "--healthcheck"]
+ENTRYPOINT ["/usr/local/bin/energie"]
+CMD ["--config", "/etc/energie/energie.toml"]

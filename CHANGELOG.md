@@ -3,6 +3,13 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## 0.2.0 - 2026-11-09
+
+- Multi-architecture container image at `ghcr.io/jeroentrappers/energie`, a Compose setup in
+  `deploy/docker`, and `energie --healthcheck` for container health checks.
+- Sign in through any OpenID Connect provider (`[oidc]`), for browsers and for API clients with
+  bearer tokens, as an alternative to `web_password_file`.
+
 ## 0.1.0 - 2026-11-09
 
 First public release.

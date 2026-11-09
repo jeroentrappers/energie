@@ -4,3 +4,4 @@
 /state
 *.local.toml
 .claude/
+/deploy/docker/secrets/

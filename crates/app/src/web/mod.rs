@@ -18,6 +18,7 @@
 //! | `GET /healthz` | `200` while ticking, `503` when stale or not started |
 
 pub mod fields;
+pub mod oidc;
 pub mod prices;
 
 use std::convert::Infallible;
@@ -71,6 +72,16 @@ pub fn router(st: AppState) -> Router {
         .route("/assets/charts.js", get(|| asset("text/javascript; charset=utf-8", include_str!("assets/charts.js"))))
         .route("/healthz", get(healthz))
         .with_state(st)
+}
+
+/// Put the configured sign-in in front of the router. The config guarantees that nothing reachable
+/// from the network ends up with neither.
+pub fn protect(router: Router, password: Option<String>, oidc: Option<Arc<oidc::Oidc>>) -> Router {
+    match (password, oidc) {
+        (password, Some(oidc)) => oidc::protect(router, password, oidc),
+        (Some(password), None) => require_password(router, password),
+        (None, None) => router,
+    }
 }
 
 /// HTTP Basic in front of the router (any user name, compared in constant time). `/healthz`

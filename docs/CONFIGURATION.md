@@ -19,11 +19,53 @@ These must appear before the first `[section]`.
 | --- | --- | --- |
 | `mode` | required | `simulate`, `shadow` or `control`. See [modes](OPERATIONS.md#modes). |
 | `listen` | `127.0.0.1:8080` | Address of the dashboard and API. |
-| `web_password_file` | none | File holding the dashboard password, at least 12 characters (HTTP Basic, any user name). **Required** if `listen` can be reached from another machine: energie won't start without it. |
+| `web_password_file` | none | File holding the dashboard password, at least 12 characters (HTTP Basic, any user name). If `listen` can be reached from another machine, energie needs this or [`[oidc]`](#oidc) to start. |
 | `state_dir` | `/var/lib/energie` | Settings, memory, logs and history. |
 | `tick_ms` | `1000` | How often the control logic runs. |
 | `persist_interval_s` | `60` | The most often that state is written to disk. |
 | `settings_source` | `ha` in shadow, otherwise `local` | Who owns settings: Home Assistant helpers or the state directory. |
+
+## `[oidc]`
+
+Sign in through an OpenID Connect provider such as Logto, Authentik, Keycloak or Zitadel, instead
+of a fixed password. Register energie at the provider as a web application with this redirect
+URL, then:
+
+```toml
+[oidc]
+issuer = "https://id.example.org/oidc"
+client_id = "energie"
+redirect_url = "https://energie.example.org/auth/callback"
+allowed_emails = ["you@example.org"]
+```
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `issuer` | required | Exactly as the provider states it, including any trailing slash. HTTPS, or `http` on this machine only. |
+| `client_id` | required | The client registered at the provider. |
+| `client_secret_file` | none | File holding the client secret. Leave it out for a public client: PKCE is always used. |
+| `redirect_url` | required | This server's `/auth/callback`, as the browser reaches it. HTTPS, or `http` on this machine only, so a LAN install needs a TLS reverse proxy. |
+| `allowed_subjects` | `[]` | Accounts allowed in, by `sub` claim. |
+| `allowed_emails` | `[]` | Accounts allowed in, by email. The provider must report `email_verified` as true. |
+| `allowed_groups` | `[]` | Groups allowed in. |
+| `groups_claim` | `groups` | The claim that holds the groups. |
+| `api_audience` | none | The `aud` of JWT access tokens accepted as `Authorization: Bearer`. Must differ from `client_id`. Without it no bearer token is accepted. |
+| `scopes` | `openid`, `profile`, `email` | Scopes to request. Must include `openid`. |
+| `session_hours` | `12` | How long a browser session lasts. |
+
+At least one allow-list is required: otherwise every account at the provider could sign in. All
+allowed users have full control, as there are no read-only roles.
+
+The provider is only used for signing in, and the controller doesn't depend on it. If it's down,
+existing sessions keep working but nobody new can sign in. **Set `web_password_file` as well, as
+a break-glass login:** browse directly to `/auth/basic` and enter it to get a normal session, with
+any user name. Keep the address bookmarked and the password stored outside this system, because
+once energie has reached the provider, the normal sign-in sends you there even when it's down.
+Without a break-glass password, a provider outage also locks you out of the kill switch. Sessions
+are kept in memory, so a restart signs everyone out.
+
+Opaque access tokens can't be verified: API clients need a JWT access token from the provider,
+which many providers issue only when you register an API or resource with this audience.
 
 ## `[site]`
 

@@ -12,7 +12,8 @@
 
 mode = "control"
 listen = "0.0.0.0:8080"
-# Required whenever listen can be reached from other machines (docs/INSTALL.md).
+# Sign-in is required whenever listen can be reached from other machines: this password, or
+# an [oidc] section instead (docs/CONFIGURATION.md).
 web_password_file = "/run/credentials/energie.service/web-password"
 state_dir = "/var/lib/energie"
 tick_ms = 1000

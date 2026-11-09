@@ -388,6 +388,75 @@ impl HistoryConfig {
     }
 }
 
+/// `[oidc]`: sign-in through an OpenID Connect provider.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OidcConfig {
+    /// Exactly as the provider states it, trailing slash included.
+    pub issuer: String,
+    pub client_id: String,
+    /// A file holding the client secret; none for a public client (PKCE is always used).
+    pub client_secret_file: Option<PathBuf>,
+    /// This server's `/auth/callback`, as the browser reaches it.
+    pub redirect_url: String,
+    #[serde(default = "default_oidc_scopes")]
+    pub scopes: Vec<String>,
+    /// Who may sign in: at least one of these three must be set.
+    #[serde(default)]
+    pub allowed_subjects: Vec<String>,
+    #[serde(default)]
+    pub allowed_emails: Vec<String>,
+    #[serde(default)]
+    pub allowed_groups: Vec<String>,
+    #[serde(default = "default_groups_claim")]
+    pub groups_claim: String,
+    /// The `aud` of JWT access tokens accepted as `Bearer`; without it no bearer token is.
+    pub api_audience: Option<String>,
+    #[serde(default = "default_session_hours")]
+    pub session_hours: u64,
+}
+
+fn default_oidc_scopes() -> Vec<String> {
+    vec!["openid".into(), "profile".into(), "email".into()]
+}
+fn default_groups_claim() -> String {
+    "groups".into()
+}
+fn default_session_hours() -> u64 {
+    12
+}
+
+impl OidcConfig {
+    fn check(&self) -> Result<()> {
+        use crate::web::oidc::secure_url;
+        let bad = |m: &str| Err(Error::new(format!("oidc: {m}")));
+        if !secure_url(&self.issuer) || !secure_url(&self.redirect_url) {
+            return bad("issuer and redirect_url must be https (http is accepted only on this machine)");
+        }
+        if !self.redirect_url.trim_end_matches('/').ends_with("/auth/callback") {
+            return bad("redirect_url must end in /auth/callback");
+        }
+        if self.client_id.is_empty() {
+            return bad("client_id is empty");
+        }
+        if self.allowed_subjects.is_empty() && self.allowed_emails.is_empty() && self.allowed_groups.is_empty() {
+            return bad(
+                "set allowed_subjects, allowed_emails or allowed_groups: otherwise every account at the provider could sign in",
+            );
+        }
+        if !self.scopes.iter().any(|s| s == "openid") {
+            return bad("scopes must include openid");
+        }
+        if self.api_audience.as_deref() == Some(self.client_id.as_str()) {
+            return bad("api_audience must differ from client_id, or an ID token would work as an access token");
+        }
+        if self.session_hours == 0 {
+            return bad("session_hours must be above 0");
+        }
+        Ok(())
+    }
+}
+
 /// `[site]`: degrees, north and east positive.
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -407,6 +476,8 @@ pub struct Config {
     /// A file holding the dashboard and API password (HTTP Basic, any user name). Required
     /// whenever `listen` can be reached from another machine.
     pub web_password_file: Option<PathBuf>,
+    /// Sign-in through an OpenID Connect provider, with or without `web_password_file`.
+    pub oidc: Option<OidcConfig>,
     /// Where the installation is, for the sun position and the default solar forecast plane.
     pub site: Option<SiteConfig>,
     /// Tick period, ms (virtual seconds still advance by this much per tick in simulate).
@@ -591,11 +662,14 @@ impl Config {
     }
 
     fn validate(&self) -> Result<()> {
-        if self.web_password_file.is_none() && !listen_is_loopback(&self.listen) {
+        if self.web_password_file.is_none() && self.oidc.is_none() && !listen_is_loopback(&self.listen) {
             return Err(Error::new(format!(
-                "listen = \"{}\" can be reached from other machines, so web_password_file is required",
+                "listen = \"{}\" can be reached from other machines, so [oidc] or web_password_file is required",
                 self.listen
             )));
+        }
+        if let Some(o) = &self.oidc {
+            o.check()?;
         }
         let chargers = self.device.iter().filter(|d| d.kind == "smartevse_mqtt").map(|d| (d.id.as_str(), &d.table));
         for (id, table) in chargers.chain(self.devices.get("smartevse").map(|t| ("smartevse", t))) {
@@ -769,6 +843,24 @@ mod tests {
             parse(&format!("listen = \"{local}\"")).unwrap();
         }
         parse("").unwrap();
+    }
+
+    /// `[oidc]` replaces the password, and refuses a setup that would let anyone sign in.
+    #[test]
+    fn oidc_config_is_checked() {
+        let good = "issuer = \"https://id.example.org/\"\nclient_id = \"energie\"\nredirect_url = \"https://e.example.org/auth/callback\"\nallowed_emails = [\"a@example.org\"]\n";
+        let parse = |t: &str| Config::parse(&format!("mode = \"simulate\"\nlisten = \"0.0.0.0:8080\"\n[oidc]\n{t}"));
+        let c = parse(good).unwrap();
+        assert_eq!(c.oidc.as_ref().unwrap().scopes, ["openid", "profile", "email"]);
+        assert_eq!(c.oidc.unwrap().session_hours, 12);
+        let without = good.replace("allowed_emails = [\"a@example.org\"]\n", "");
+        assert!(parse(&without).unwrap_err().0.contains("every account"));
+        assert!(parse(&good.replace("https://id", "http://id")).unwrap_err().0.contains("https"));
+        assert!(parse(&good.replace("https://e.example.org", "http://192.168.1.10")).unwrap_err().0.contains("https"));
+        assert!(parse(&good.replace("/auth/callback", "/cb")).unwrap_err().0.contains("/auth/callback"));
+        assert!(parse(&format!("{good}api_audience = \"energie\"\n")).unwrap_err().0.contains("api_audience"));
+        assert!(parse(&format!("{good}scopes = [\"email\"]\n")).unwrap_err().0.contains("openid"));
+        assert!(parse(&format!("{good}session_hours = 0\n")).unwrap_err().0.contains("session_hours"));
     }
 
     /// A broker on the network takes a login, for the bridge and for a charger on MQTT alike.

@@ -1,0 +1,10 @@
+# A simulated house: no hardware needed, and nothing outside the container is touched.
+# deploy/docker/README.md explains how to move to your real devices.
+mode = "simulate"
+
+listen = "0.0.0.0:8080"
+web_password_file = "/run/secrets/web-password"
+
+[site]
+latitude = 50.85
+longitude = 4.35

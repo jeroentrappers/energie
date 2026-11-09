@@ -7,7 +7,8 @@
 # simulate : closed loop against the built-in house model, on a virtual clock.
 mode = "shadow"
 
-# The dashboard and API. A listen address other machines can reach requires web_password_file.
+# The dashboard and API. A listen address other machines can reach requires web_password_file
+# or an [oidc] section (docs/CONFIGURATION.md).
 listen = "127.0.0.1:8080"
 # web_password_file = "/run/credentials/energie.service/web-password"
 

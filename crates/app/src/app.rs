@@ -355,12 +355,25 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
         history: history.clone(),
     };
     let mut web_stop = stop_rx.clone();
+    let oidc = match &cfg.oidc {
+        Some(o) => {
+            let secret = o.client_secret_file.as_deref().map(read_secret).transpose()?;
+            let oidc = Arc::new(web::oidc::Oidc::new(o.clone(), secret)?);
+            // Only for the log: the controller never waits for the provider.
+            let probe = oidc.clone();
+            tokio::spawn(async move {
+                match probe.check().await {
+                    Ok(()) => tracing::info!("oidc: provider reached"),
+                    Err(e) => tracing::warn!(error = %e, "oidc: provider not reachable; sign-in waits for it"),
+                }
+            });
+            Some(oidc)
+        }
+        None => None,
+    };
     tasks.push(tokio::spawn(async move {
         let app = web::router(state);
-        let app = match web_password {
-            Some(password) => web::require_password(app, password),
-            None => app,
-        };
+        let app = web::protect(app, web_password, oidc);
         let shutdown = async move {
             let _ = web_stop.wait_for(|s| *s).await;
         };

@@ -26,6 +26,8 @@ usage:
                                        here, kept by the running service, which logs in at once
   energie credentials status [--url http://127.0.0.1:8080]
                                        how each cloud device's sign-in is doing
+  energie --healthcheck [port]         ask the local service for /healthz (default port 8080);
+                                       exit 0 when healthy, for container health checks
   energie --version | --help
 
 Logging: RUST_LOG (default: info), to stderr.";
@@ -38,6 +40,8 @@ pub enum Cmd {
     Import(PathBuf, bool),
     Replay(Box<ReplayConfig>),
     Credentials(crate::credentials::CredCmd),
+    /// `--healthcheck [port]`.
+    Health(u16),
     Version,
     Help,
 }
@@ -97,6 +101,10 @@ pub fn parse(args: &[String]) -> Result<Cmd, String> {
         [cmd, rest @ ..] if cmd == "credentials" => crate::credentials::parse(rest).map(Cmd::Credentials),
         [flag, path] if flag == "--config" || flag == "-c" => Ok(Cmd::Run(path.into())),
         [flag, path] if flag == "--check-config" => Ok(Cmd::Check(path.into())),
+        [flag] if flag == "--healthcheck" => Ok(Cmd::Health(8080)),
+        [flag, port] if flag == "--healthcheck" => {
+            port.parse().map(Cmd::Health).map_err(|_| format!("--healthcheck: not a port: {port}"))
+        }
         [flag] if flag == "--version" || flag == "-V" => Ok(Cmd::Version),
         [flag] if flag == "--help" || flag == "-h" => Ok(Cmd::Help),
         _ => Err(format!("unexpected arguments: {}", args.join(" "))),
@@ -126,6 +134,23 @@ async fn signal() {
         _ = tokio::signal::ctrl_c() => {}
         _ = term.recv() => {}
     }
+}
+
+/// `--healthcheck`: 0 when the service on this machine answers `/healthz` with 200. A container
+/// image without a shell has nothing else to run.
+fn healthcheck(port: u16) -> i32 {
+    use std::io::{Read, Write};
+    let timeout = std::time::Duration::from_secs(3);
+    let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+    let status = || -> std::io::Result<bool> {
+        let mut stream = std::net::TcpStream::connect_timeout(&addr, timeout)?;
+        stream.set_read_timeout(Some(timeout))?;
+        stream.write_all(b"GET /healthz HTTP/1.0\r\nHost: localhost\r\n\r\n")?;
+        let mut head = [0u8; 12];
+        stream.read_exact(&mut head)?;
+        Ok(head.starts_with(b"HTTP/1.") && &head[8..] == b" 200")
+    };
+    i32::from(!status().unwrap_or(false))
 }
 
 /// `energie replay`: the summary to stdout, the report files as configured.
@@ -175,6 +200,7 @@ pub fn main(args: Vec<String>) -> i32 {
         }
     };
     let path = match cmd {
+        Cmd::Health(port) => return healthcheck(port),
         Cmd::Version => {
             println!("energie {}", env!("CARGO_PKG_VERSION"));
             return 0;
@@ -229,6 +255,27 @@ pub fn main(args: Vec<String>) -> i32 {
 mod tests {
     use super::*;
 
+    /// 200 is healthy; a 503, an unfinished answer or nothing listening is not.
+    #[test]
+    fn healthcheck_needs_a_200() {
+        use std::io::{Read, Write};
+        let serve = |reply: &'static [u8]| {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let port = listener.local_addr().unwrap().port();
+            std::thread::spawn(move || {
+                let (mut s, _) = listener.accept().unwrap();
+                let _ = s.read(&mut [0u8; 256]);
+                let _ = s.write_all(reply);
+            });
+            port
+        };
+        assert_eq!(healthcheck(serve(b"HTTP/1.1 200 OK\r\n\r\n")), 0);
+        assert_eq!(healthcheck(serve(b"HTTP/1.1 503 Service Unavailable\r\n\r\n")), 1);
+        assert_eq!(healthcheck(serve(b"nope")), 1);
+        let closed = std::net::TcpListener::bind("127.0.0.1:0").unwrap().local_addr().unwrap().port();
+        assert_eq!(healthcheck(closed), 1);
+    }
+
     fn a(v: &[&str]) -> Vec<String> {
         v.iter().map(|s| s.to_string()).collect()
     }
@@ -240,6 +287,9 @@ mod tests {
         assert_eq!(parse(&a(&["-c", "x.toml"])), Ok(Cmd::Run("x.toml".into())));
         assert_eq!(parse(&a(&["--check-config", "x.toml"])), Ok(Cmd::Check("x.toml".into())));
         assert_eq!(parse(&a(&["--version"])), Ok(Cmd::Version));
+        assert_eq!(parse(&a(&["--healthcheck"])), Ok(Cmd::Health(8080)));
+        assert_eq!(parse(&a(&["--healthcheck", "9090"])), Ok(Cmd::Health(9090)));
+        assert!(parse(&a(&["--healthcheck", "x"])).unwrap_err().contains("not a port"));
         assert_eq!(parse(&a(&["-h"])), Ok(Cmd::Help));
         assert!(parse(&a(&[])).is_err());
         assert!(parse(&a(&["--config"])).is_err());

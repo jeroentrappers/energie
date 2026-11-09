@@ -244,7 +244,7 @@ case-insensitively, booleans exactly.
 | `GET /api/prices` | the offtake quarter prices of today (and tomorrow), the injection prices recomputed from them, the lowest and highest quarter |
 | `GET /healthz` | `200 {"status":"ok"}` while ticking; `503` `starting` / `stale` (no tick for 10 s) |
 
-`web_password_file` turns on HTTP Basic authentication, and is required when `listen` can be reached from another machine. See `SECURITY.md`.
+A `listen` address other machines can reach requires `[oidc]` or `web_password_file`. See `docs/CONFIGURATION.md` and `SECURITY.md`.
 
 ## Shadow comparison
 

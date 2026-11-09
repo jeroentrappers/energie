@@ -94,6 +94,8 @@ less install.sh     # read it first
 sudo sh install.sh
 ```
 
+With Docker, [`deploy/docker`](deploy/docker/README.md) has a ready-made Compose setup.
+
 The [installation guide](docs/INSTALL.md) covers manual, Docker and from-source installs,
 upgrades, and the steps from `shadow` to live control.
 
@@ -106,6 +108,7 @@ build provenance.
 | --- | --- | --- |
 | Linux (static, any distribution) | x86-64, ARM64, ARMv7, RISC-V 64 | Recommended |
 | macOS | Apple Silicon, Intel | Supported for evaluation |
+| Container image | `linux/amd64`, `arm64`, `arm/v7`, `riscv64` | `ghcr.io/jeroentrappers/energie` |
 | Windows | x86-64, ARM64 | Experimental: secrets files are not permission-protected, and MQTT reconnection is untested |
 
 ## Documentation
@@ -133,7 +136,7 @@ build provenance.
 - **EV chargers keep their last setting** if energie stops. See
   [what happens when it stops](docs/OPERATIONS.md#what-happens-when-energie-stops).
 - **Authentication is enforced.** energie won't start with a dashboard or MQTT broker on the
-  network unless a password is configured, and settings can't be changed over MQTT unless you
+  network unless sign-in is configured (OpenID Connect or a password), and settings can't be changed over MQTT unless you
   opt in. See [SECURITY.md](SECURITY.md).
 
 ## Building from source

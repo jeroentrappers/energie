@@ -707,10 +707,25 @@ loadHistMeta();
 fetch("/api/entities").then((r) => r.json()).then((list) => { entities = list; renderDevices(); render(S.snap); }).catch(() => {});
 setInterval(() => { refreshCharts(false); }, 5000);
 setInterval(() => { loadPrices(); loadHistMeta(); }, 60000);
+// With a sign-in session: who is signed in, and a way out.
+fetch("/auth/me").then((r) => (r.ok ? r.json() : null)).then((me) => {
+  if (!me || !me.logout) return;
+  const form = document.createElement("form");
+  form.method = "post";
+  form.action = "/auth/logout";
+  form.style.display = "inline";
+  const button = document.createElement("button");
+  button.textContent = "Afmelden (" + me.user + ")";
+  form.append(" · ", button);
+  $("signout").append(form);
+}).catch(() => {});
 const es = new EventSource("/api/events");
 es.addEventListener("state", (e) => {
   const s = JSON.parse(e.data);
   applyEntities(s.entities);
   render(s);
 });
-es.onerror = () => { $("ha").textContent = "verbinding met energie verbroken"; $("ha").className = "badge bad"; };
+es.onerror = () => {
+  // The session has ended: back through the sign-in.
+  fetch("/api/entities", { method: "HEAD" }).then((r) => { if (r.status === 401) location.reload(); }).catch(() => {});
+  $("ha").textContent = "verbinding met energie verbroken"; $("ha").className = "badge bad"; };
