@@ -3,7 +3,7 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
-## Unreleased
+## 0.4.0 - 2026-11-09
 
 - Optional off-device history in VictoriaMetrics, or any database that accepts InfluxDB line
   protocol (`[history.victoriametrics]`), with the dashboard reading back what the device doesn't
