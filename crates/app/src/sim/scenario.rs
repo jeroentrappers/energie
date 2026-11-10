@@ -104,6 +104,43 @@ mod tests {
         assert_eq!(s.t, start + Duration::hours(24));
     }
 
+    /// A cheap November night under `Max tot piek`, closed loop from 60 %: the battery fills, and
+    /// once full it holds until morning instead of discharging into the house and grid-charging
+    /// it back. Live on 2026-11-10 the integer SoC flipped it between 98 % (charge) and 99 %
+    /// (discharge) every minute or two: 135 RC mode switches between 02:40 and 06:30.
+    #[test]
+    fn a_cheap_night_fills_the_battery_then_holds_it() {
+        use energie_core::world::RcMode;
+        let start = TZ.with_ymd_and_hms(2026, 11, 9, 23, 30, 0).unwrap();
+        let cfg = SimConfig { buzz_plugged: false, ev3_plugged: false, battery_soc: 60.0, ..Default::default() };
+        let settings =
+            Settings { ev_net_niveau: NetNiveau::MaxTotPiek, goedkoop_laden_prijs_drempel: 1.0, ..Settings::default() };
+        let mut s = Scenario::new(cfg, start, settings, Memory::default());
+        let (mut full_at, mut last_mode, mut switches, mut discharged_kwh) = (None, None, 0, 0.0);
+        s.run_for(Duration::hours(7), |f| {
+            if full_at.is_none() && f.world.solis.soc.is_some_and(|soc| soc >= 99.0) {
+                full_at = Some(f.t);
+            }
+            if full_at.is_none() {
+                return;
+            }
+            for c in &f.commands {
+                if let Command::SolisRcMode(m @ (RcMode::ForceCharge | RcMode::ForceDischarge)) = c {
+                    if last_mode.is_some_and(|l| l != *m) {
+                        switches += 1;
+                    }
+                    last_mode = Some(*m);
+                }
+            }
+            discharged_kwh += f.world.solis.battery_power_w.unwrap_or(0.0).max(0.0) / 3.6e6;
+        });
+        let full_at = full_at.expect("the battery never got full");
+        assert!(full_at < start + Duration::hours(4), "full at {full_at}");
+        assert!(switches <= 2, "{switches} charge/discharge switches after full at {full_at}");
+        assert!(discharged_kwh < 0.05, "{discharged_kwh:.3} kWh discharged into the house while full");
+        assert!(s.house.soc > 97.0, "still full at 06:30: {:.1} %", s.house.soc);
+    }
+
     /// Commands from the engine reach the house in the same step.
     #[test]
     fn engine_commands_reach_the_house() {

@@ -158,6 +158,40 @@ async fn an_rc_mode_already_held_is_only_kept_alive() {
     assert_eq!(sim.writes(), vec![(reg::RC_MODE, 1), (reg::RC_MODE, 1)], "every keepalive is due");
 }
 
+/// What the dispatcher does every 30 s while grid-charging (timeout, mode, a slightly different
+/// power), for 30 virtual minutes, against the simulator's RC timeout: how often the next run
+/// finds the inverter fallen back to `None`.
+async fn lapses_over_half_an_hour(keepalive: Option<Duration>) -> usize {
+    let sim = SolisSim::start().await;
+    let mut s = Solis::tcp(SolisConfig { rc_keepalive: keepalive, ..cfg(sim.addr) });
+    let mut lapses = 0;
+    for run in 0..60u32 {
+        s.poll().await.unwrap();
+        if run > 0 && sim.holding(reg::RC_MODE) == Some(0) {
+            lapses += 1;
+        }
+        for cmd in [
+            Command::SolisRcTimeoutMin(10),
+            Command::SolisRcMode(RcMode::ForceCharge),
+            Command::SolisRcChargeW(3000 + run % 3 * 10),
+        ] {
+            s.apply(&cmd).await.unwrap();
+        }
+        sim.advance(30);
+    }
+    lapses
+}
+
+/// The default (every run selects, as HA) keeps a forced mode alive for good. A mode-only
+/// keepalive (here due on every run) does not restart the S6-EH1P's RC timeout: it falls back
+/// to self-use every 10 minutes, as the house's inverter did all night on 2026-11-10.
+#[tokio::test]
+async fn a_forced_mode_never_lapses_at_the_dispatcher_cadence() {
+    let default = SolisConfig::new(SocketAddr::from(([127, 0, 0, 1], 502)), 1).rc_keepalive;
+    assert_eq!(lapses_over_half_an_hour(default).await, 0, "the default");
+    assert_eq!(lapses_over_half_an_hour(Some(Duration::ZERO)).await, 2, "mode-only keepalive: 10:30 and 21:00");
+}
+
 /// Held, but with an invalid RC timeout: the full select, which writes the fallback timeout.
 /// Without `rc_keepalive` (the default) every select writes the mode and its companions, as HA
 /// does.

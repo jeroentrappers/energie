@@ -4,6 +4,11 @@
 //! Reading an address that is not in the map gets exception 2 (illegal data address), like the
 //! inverter. Writing 43135/43136/43129 runs a small model: in force charge the battery charges at
 //! the RC charge power, in force discharge it discharges at the RC discharge power.
+//!
+//! The RC timeout runs on a virtual clock that only [`SolisSim::advance`] moves, as the house's
+//! S6-EH1P showed on 2026-11-10: a forced mode falls back to `None` (self-use) 43282 minutes
+//! after the last write of 43282 or the last change of 43135. Re-writing 43135 with the mode it
+//! already holds, or new RC powers, does not restart it.
 
 use std::collections::BTreeMap;
 use std::future::Future;
@@ -26,6 +31,9 @@ struct Regs {
     writes: Vec<(u16, u16)>,
     fail_next: Option<ExceptionCode>,
     stall: bool,
+    /// Virtual seconds ([`SolisSim::advance`]) and when the RC timeout last restarted.
+    clock_s: u64,
+    rc_restart_s: u64,
 }
 
 impl Regs {
@@ -88,6 +96,16 @@ impl Regs {
         }
     }
 
+    /// Move the virtual clock; a forced mode past its RC timeout falls back to `None`.
+    fn advance(&mut self, secs: u64) {
+        self.clock_s += secs;
+        let timeout_s = u64::from(self.holding.get(&reg::RC_TIMEOUT).copied().unwrap_or(0)) * 60;
+        if self.holding.get(&reg::RC_MODE).is_some_and(|m| *m != 0) && self.clock_s - self.rc_restart_s > timeout_s {
+            self.holding.insert(reg::RC_MODE, 0);
+            self.set_battery(0);
+        }
+    }
+
     fn handle(&mut self, req: Request<'static>) -> Result<Response, ExceptionCode> {
         if let Some(code) = self.fail_next.take() {
             return Err(code);
@@ -97,7 +115,11 @@ impl Regs {
             Request::ReadHoldingRegisters(a, n) => Regs::read(&self.holding, a, n).map(Response::ReadHoldingRegisters),
             Request::WriteSingleRegister(a, v) => {
                 let slot = self.holding.get_mut(&a).ok_or(ExceptionCode::IllegalDataAddress)?;
+                let changed = *slot != v;
                 *slot = v;
+                if a == reg::RC_TIMEOUT || (a == reg::RC_MODE && changed) {
+                    self.rc_restart_s = self.clock_s;
+                }
                 self.writes.push((a, v));
                 self.model();
                 Ok(Response::WriteSingleRegister(a, v))
@@ -185,6 +207,11 @@ impl SolisSim {
         r.input.insert(reg::PV_POWER + 1, w as u16);
     }
 
+    /// Let `secs` of virtual time pass for the RC timeout (nothing else in the model is timed).
+    pub fn advance(&self, secs: u64) {
+        self.regs.lock().unwrap().advance(secs);
+    }
+
     /// Every register write received, in order.
     pub fn writes(&self) -> Vec<(u16, u16)> {
         self.regs.lock().unwrap().writes.clone()
@@ -206,6 +233,28 @@ mod tests {
     use super::*;
     use tokio_modbus::client::Reader;
     use tokio_modbus::prelude::Slave;
+
+    /// The RC timeout as the S6-EH1P keeps it: restarted by a 43282 write or a new mode, not by
+    /// re-writing the held mode or the powers.
+    #[tokio::test]
+    async fn the_rc_timeout_restarts_only_on_43282_or_a_new_mode() {
+        use tokio_modbus::client::Writer;
+        let sim = SolisSim::start().await;
+        let mut ctx = tokio_modbus::client::tcp::connect_slave(sim.addr, Slave(1)).await.unwrap();
+        // Live start: force charge held, timeout 10 min, restarted at 0.
+        sim.advance(540);
+        ctx.write_single_register(reg::RC_MODE, 1).await.unwrap().unwrap();
+        ctx.write_single_register(reg::RC_CHARGE, 300).await.unwrap().unwrap();
+        sim.advance(61);
+        assert_eq!(sim.holding(reg::RC_MODE), Some(0), "lapsed 601 s after the last restart");
+        ctx.write_single_register(reg::RC_MODE, 1).await.unwrap().unwrap();
+        sim.advance(590);
+        ctx.write_single_register(reg::RC_TIMEOUT, 10).await.unwrap().unwrap();
+        sim.advance(590);
+        assert_eq!(sim.holding(reg::RC_MODE), Some(1), "43282 restarted it");
+        sim.advance(11);
+        assert_eq!(sim.holding(reg::RC_MODE), Some(0));
+    }
 
     /// Function codes the inverter map does not implement get exception 1 (illegal function).
     #[tokio::test]

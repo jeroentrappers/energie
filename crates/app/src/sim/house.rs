@@ -301,18 +301,15 @@ impl House {
                 self.cable_pending = None;
             }
             CableSetCurrent(a) => self.set_cable_current(f64::from(*a)),
+            // Only a mode select (which re-writes 43282 with its companions) restarts the RC
+            // timeout; new powers do not (the S6-EH1P on 2026-11-10 fell back to self-use while
+            // 43136 was being re-written every 30 s).
             SolisRcMode(m) => {
                 self.rc_mode = *m;
                 self.rc_since = now;
             }
-            SolisRcChargeW(w) => {
-                self.rc_charge_w = f64::from(*w);
-                self.rc_since = now;
-            }
-            SolisRcDischargeW(w) => {
-                self.rc_discharge_w = f64::from(*w);
-                self.rc_since = now;
-            }
+            SolisRcChargeW(w) => self.rc_charge_w = f64::from(*w),
+            SolisRcDischargeW(w) => self.rc_discharge_w = f64::from(*w),
             SolisRcTimeoutMin(m) => self.rc_timeout_min = f64::from(*m),
             SolisAllowGridCharge(on) => self.allow_grid_charge = *on,
             SolisFeedInLimit(on) => self.feed_in_limit_on = *on,
@@ -519,11 +516,13 @@ mod tests {
         h.step(at(2, 1));
         assert!(h.battery_w > -10.0, "no grid charge without the switch: {}", h.battery_w);
         h.apply(at(2, 1), &Command::SolisAllowGridCharge(true));
-        h.step(at(2, 2));
-        assert!(h.battery_w < -2900.0, "{}", h.battery_w);
-        assert!(h.p1_w > 2900.0);
+        h.apply(at(2, 1), &Command::SolisRcChargeW(3100));
+        h.step(at(2, 2) - Duration::seconds(5));
+        assert!(h.battery_w < -3000.0, "{}", h.battery_w);
+        assert!(h.p1_w > 3000.0);
+        h.step(at(2, 2) + Duration::seconds(5));
+        assert_eq!(h.rc_mode, RcMode::None, "timed out: the new power at 02:01 did not restart it");
         h.step(at(2, 4));
-        assert_eq!(h.rc_mode, RcMode::None, "timed out");
         h.apply(at(2, 4), &Command::SolisRcDischargeW(1500));
         h.apply(at(2, 4), &Command::SolisRcMode(RcMode::ForceDischarge));
         h.step(at(2, 5));

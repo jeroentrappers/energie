@@ -12,6 +12,8 @@ version may include breaking changes.
 - The Solis RC mode is selected on every dispatcher run again, as Home Assistant does
   (`rc_keepalive_s` now defaults to 0). The mode-only keepalive let an S6-EH1P fall back to
   self-use every 10 minutes, briefly halving the charge power. It stays available as an opt-in.
+- Simulation tests for both: the Modbus inverter simulator keeps the RC timeout as the S6-EH1P
+  does, and a closed-loop cheap night checks that a full battery holds instead of cycling.
 
 ## 0.4.0 - 2026-11-09
 
