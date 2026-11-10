@@ -31,8 +31,9 @@ These must appear before the first `[section]`.
 ## `[oidc]`
 
 Sign in through an OpenID Connect provider such as Logto, Authentik, Keycloak or Zitadel, instead
-of a fixed password. Register energie at the provider as a web application with this redirect
-URL, then:
+of a fixed password. Register energie at the provider as a web application with
+`https://<energie>/auth/callback` as its redirect URI and `https://<energie>/auth/logged-out` as
+its post-logout redirect URI, then:
 
 ```toml
 [oidc]
@@ -66,6 +67,11 @@ any user name. Keep the address bookmarked and the password stored outside this 
 once energie has reached the provider, the normal sign-in sends you there even when it's down.
 Without a break-glass password, a provider outage also locks you out of the kill switch. Sessions
 are kept in memory, so a restart signs everyone out.
+
+Signing out ends the session at the provider as well (RP-initiated logout), when its discovery
+document lists an `end_session_endpoint`. Otherwise the provider's own session survives, and the
+next sign-in goes straight through without asking for a password. The provider returns the browser
+to `/auth/logged-out`, on the same origin as `redirect_url`.
 
 Opaque access tokens can't be verified: API clients need a JWT access token from the provider,
 which many providers issue only when you register an API or resource with this audience.

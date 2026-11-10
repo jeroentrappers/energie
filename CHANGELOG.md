@@ -3,6 +3,12 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## Unreleased
+
+- Signing out also signs you out at the OIDC provider, so the next sign-in asks for your password
+  again. Before, the provider's session stayed and you were signed straight back in. Register
+  `https://<energie>/auth/logged-out` as a post-logout redirect URI at the provider.
+
 ## 0.4.1 - 2026-11-10
 
 - Cheap grid-charging no longer flip-flops at the top. Once the battery is full in a cheap

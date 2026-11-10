@@ -63,6 +63,9 @@ struct Metadata {
     jwks_uri: String,
     #[serde(default)]
     token_endpoint_auth_methods_supported: Vec<String>,
+    /// RP-initiated logout. Without it, signing out only ends the session here.
+    #[serde(default)]
+    end_session_endpoint: Option<String>,
 }
 
 #[derive(Default)]
@@ -81,6 +84,9 @@ struct Pending {
 struct Session {
     user: String,
     expires: Instant,
+    /// The ID token it was started with, as `id_token_hint` when signing out at the provider.
+    /// `None` for a break-glass password session.
+    id_token: Option<String>,
 }
 
 /// The provider connection, the logins in progress and the sessions.
@@ -281,7 +287,7 @@ impl Oidc {
         self.pending.lock().expect("pending lock").remove(state).filter(|p| p.at.elapsed() < LOGIN_TTL)
     }
 
-    fn new_session(&self, user: String) -> String {
+    fn new_session(&self, user: String, id_token: Option<String>) -> String {
         let id = random_token();
         let mut sessions = self.sessions.lock().expect("sessions lock");
         let now = Instant::now();
@@ -292,7 +298,7 @@ impl Oidc {
             sessions.remove(&first);
         }
         let expires = now + Duration::from_secs(self.cfg.session_hours * 3600);
-        sessions.insert(id.clone(), Session { user, expires });
+        sessions.insert(id.clone(), Session { user, expires, id_token });
         id
     }
 
@@ -301,8 +307,34 @@ impl Oidc {
         sessions.get(id).filter(|s| s.expires > Instant::now()).map(|s| s.user.clone())
     }
 
-    fn session_response(&self, user: String, next: &str) -> Response {
-        let id = self.new_session(user);
+    fn take_session(&self, id: &str) -> Option<Session> {
+        self.sessions.lock().expect("sessions lock").remove(id)
+    }
+
+    /// Where the provider sends the browser after signing out: `/auth/logged-out` on the origin of
+    /// `redirect_url`. It must be registered at the provider as a post-logout redirect URI.
+    fn post_logout_url(&self) -> Option<String> {
+        let mut url = Url::parse(&self.cfg.redirect_url).ok()?;
+        url.set_path("/auth/logged-out");
+        url.set_query(None);
+        url.set_fragment(None);
+        Some(url.to_string())
+    }
+
+    /// The provider's end-session URL for a session started with `id_token`, when it has one.
+    async fn end_session_url(&self, id_token: &str) -> Option<String> {
+        let meta = self.metadata().await.ok()?;
+        let end = meta.end_session_endpoint.filter(|e| secure_url(e))?;
+        let mut url = Url::parse(&end).ok()?;
+        url.query_pairs_mut()
+            .append_pair("id_token_hint", id_token)
+            .append_pair("client_id", &self.cfg.client_id)
+            .append_pair("post_logout_redirect_uri", &self.post_logout_url()?);
+        Some(url.to_string())
+    }
+
+    fn session_response(&self, user: String, id_token: Option<String>, next: &str) -> Response {
+        let id = self.new_session(user, id_token);
         let max_age = self.cfg.session_hours * 3600;
         let mut r = (StatusCode::SEE_OTHER, [(header::LOCATION, next.to_string())]).into_response();
         for c in [self.cookie_value(SESSION_COOKIE, &id, "/", max_age), self.cookie_value(LOGIN_COOKIE, "", "/auth", 0)]
@@ -528,7 +560,7 @@ async fn callback(State(g): State<Arc<Guard>>, headers: HeaderMap, Query(q): Que
     }
     let user = claims["email"].as_str().or(claims["sub"].as_str()).unwrap_or("?").to_string();
     tracing::info!(user = %user, "oidc: signed in");
-    o.session_response(user, &pending.next)
+    o.session_response(user, Some(id_token), &pending.next)
 }
 
 /// The emergency way in, when both a password and OIDC are configured: a session for the password.
@@ -543,16 +575,23 @@ async fn password_login(State(g): State<Arc<Guard>>, headers: HeaderMap) -> Resp
             .into_response();
     }
     tracing::info!("signed in with the emergency password");
-    g.oidc.session_response("noodwachtwoord".to_string(), "/")
+    g.oidc.session_response("noodwachtwoord".to_string(), None, "/")
 }
 
+/// Ends the session here, then at the provider too, so the next sign-in asks for credentials
+/// again instead of silently reusing the provider's session. Falls back to signing out here only
+/// when the provider has no end-session endpoint or can't be reached.
 async fn logout(State(g): State<Arc<Guard>>, headers: HeaderMap) -> Response {
-    if let Some(id) = cookie(&headers, SESSION_COOKIE) {
-        g.oidc.sessions.lock().expect("sessions lock").remove(id);
+    let session = cookie(&headers, SESSION_COOKIE).and_then(|id| g.oidc.take_session(id));
+    let mut location = "/auth/logged-out".to_string();
+    if let Some(token) = session.and_then(|s| s.id_token) {
+        match g.oidc.end_session_url(&token).await {
+            Some(url) => location = url,
+            None => tracing::info!("oidc: signed out here only; the provider session stays"),
+        }
     }
     let cleared = g.oidc.cookie_value(SESSION_COOKIE, "", "/", 0);
-    (StatusCode::SEE_OTHER, [(header::LOCATION, "/auth/logged-out".to_string()), (header::SET_COOKIE, cleared)])
-        .into_response()
+    (StatusCode::SEE_OTHER, [(header::LOCATION, location), (header::SET_COOKIE, cleared)]).into_response()
 }
 
 async fn logged_out() -> Response {
@@ -589,6 +628,11 @@ mod tests {
 
     impl Idp {
         async fn start() -> Idp {
+            Idp::start_with(true).await
+        }
+
+        /// `end_session`: whether discovery lists an end-session endpoint.
+        async fn start_with(end_session: bool) -> Idp {
             let pair = rcgen::KeyPair::generate().unwrap();
             let raw = pair.public_key_raw().to_vec();
             let jwks = json!({"keys": [{
@@ -598,12 +642,15 @@ mod tests {
             let key = EncodingKey::from_ec_pem(pair.serialize_pem().as_bytes()).unwrap();
             let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
             let issuer = format!("http://{}", listener.local_addr().unwrap());
-            let meta = json!({
+            let mut meta = json!({
                 "issuer": issuer,
                 "authorization_endpoint": format!("{issuer}/authorize"),
                 "token_endpoint": format!("{issuer}/token"),
                 "jwks_uri": format!("{issuer}/jwks"),
             });
+            if end_session {
+                meta["end_session_endpoint"] = json!(format!("{issuer}/session/end"));
+            }
             let claims = Arc::new(Mutex::new(json!({})));
             let token_request = Arc::new(Mutex::new(String::new()));
             let (signer, reply, seen) = (key.clone(), claims.clone(), token_request.clone());
@@ -735,9 +782,51 @@ mod tests {
         assert!(String::from_utf8_lossy(&body).contains("user-1"));
 
         let out = send(&app, get_req("/auth/logout").method("POST").header(header::COOKIE, &session)).await;
-        assert_eq!(location(&out), "/auth/logged-out");
+        assert_eq!(out.status(), StatusCode::SEE_OTHER);
+        assert_eq!(set_cookie(&out, SESSION_COOKIE), "");
         let gone = send(&app, get_req("/api/state").header(header::COOKIE, &session)).await;
         assert_eq!(gone.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    /// Signing out also ends the provider's session, or the next sign-in would reuse it silently.
+    #[tokio::test]
+    async fn logout_ends_the_provider_session_too() {
+        let idp = Idp::start().await;
+        let app = app(&idp, None);
+        let done = sign_in(&app, &idp, idp.base_claims(CLIENT)).await;
+        let session = format!("{SESSION_COOKIE}={}", set_cookie(&done, SESSION_COOKIE));
+
+        let out = send(&app, get_req("/auth/logout").method("POST").header(header::COOKIE, &session)).await;
+        let to = location(&out);
+        assert!(to.starts_with(&format!("{}/session/end?", idp.issuer)), "{to}");
+        assert_eq!(query(&to, "client_id"), CLIENT);
+        assert_eq!(query(&to, "post_logout_redirect_uri"), "http://127.0.0.1:8080/auth/logged-out");
+        let hint = query(&to, "id_token_hint");
+        let claims = decode_header(&hint).map(|h| h.kid);
+        assert_eq!(claims.unwrap().as_deref(), Some("k1"), "the hint is the session's ID token");
+
+        // The session is gone: signing out again stays here.
+        let again = send(&app, get_req("/auth/logout").method("POST").header(header::COOKIE, &session)).await;
+        assert_eq!(again.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    /// Without an end-session endpoint, or for a password session, signing out stays here.
+    #[tokio::test]
+    async fn logout_stays_here_without_a_provider_session() {
+        let idp = Idp::start_with(false).await;
+        let plain = app(&idp, None);
+        let done = sign_in(&plain, &idp, idp.base_claims(CLIENT)).await;
+        let session = format!("{SESSION_COOKIE}={}", set_cookie(&done, SESSION_COOKIE));
+        let out = send(&plain, get_req("/auth/logout").method("POST").header(header::COOKIE, &session)).await;
+        assert_eq!(location(&out), "/auth/logged-out");
+
+        let idp = Idp::start().await;
+        let with_password = app(&idp, Some("pw"));
+        let basic = format!("Basic {}", base64::engine::general_purpose::STANDARD.encode("x:pw"));
+        let done = send(&with_password, get_req("/auth/basic").header(header::AUTHORIZATION, basic)).await;
+        let session = format!("{SESSION_COOKIE}={}", set_cookie(&done, SESSION_COOKIE));
+        let out = send(&with_password, get_req("/auth/logout").method("POST").header(header::COOKIE, &session)).await;
+        assert_eq!(location(&out), "/auth/logged-out");
     }
 
     /// Control routes follow the session, and a write from another site is refused.
