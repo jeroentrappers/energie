@@ -3,7 +3,7 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
-## Unreleased
+## 0.4.2 - 2026-11-10
 
 - Signing out also signs you out at the OIDC provider, so the next sign-in asks for your password
   again. Before, the provider's session stayed and you were signed straight back in. Register
