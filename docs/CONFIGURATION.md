@@ -151,6 +151,25 @@ token_file = "/run/credentials/energie.service/ntfy-token"   # optional
 
 Anyone who knows a public ntfy topic can read it, so use a long random name or your own server.
 
+| Key | Default | Description |
+| --- | --- | --- |
+| `kind` | `log` | `log` only logs; `ntfy` pushes. |
+| `url` | none | The ntfy topic URL. Required for `ntfy`. |
+| `token_file` | none | File with an ntfy access token, sent as `Authorization: Bearer`. |
+| `include` | `[]` (all) | `*`-globs on the title: only these are pushed. |
+| `exclude` | `[]` | `*`-globs on the title that are never pushed. |
+
+High-priority notifications, such as failed writes, are always pushed. Filtered ones still appear
+in the log and on the dashboard. To push only a few kinds:
+
+```toml
+[notify]
+kind = "ntfy"
+url = "http://ntfy.example.org/energie"
+token_file = "/run/credentials/energie.service/ntfy-token"
+include = ["⚡ Peak guard*", "🛑*", "🔌 Auto laadt niet*", "🔌 Batterij vol*", "🌙 Nachtdekking*", "⚡ Dagbalans*"]
+```
+
 ## `[mqtt_publish]`
 
 The MQTT bridge, off by default. Details are in [`MQTT.md`](MQTT.md).

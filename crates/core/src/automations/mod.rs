@@ -29,6 +29,7 @@ pub mod ev_hoger_laadstil;
 pub mod ev_laden_buzz;
 pub mod ev_laden_cable;
 pub mod ev_modulator;
+pub mod ev_vol_laadt_niet;
 pub mod goedkoop_laden;
 pub mod nachtdekking;
 pub mod neg_injectie;
@@ -99,6 +100,7 @@ pub fn all() -> Vec<Box<dyn Automation>> {
         Box::new(buzz_laadweigering_reset::BuzzLaadweigeringReset::default()),
         Box::new(goedkoop_laden::GoedkoopLaden::default()),
         Box::new(ev_hoger_laadstil::EvHogerLaadstil::default()),
+        Box::new(ev_vol_laadt_niet::EvVolLaadtNiet::default()),
         Box::new(batterij_naar_auto::BatterijNaarAuto::default()),
         Box::new(ev_laden_buzz::EvLadenBuzz::default()),
         Box::new(ev_laden_cable::EvLadenCable::default()),
@@ -131,7 +133,8 @@ mod tests {
     /// Every enabled live HA automation (the original configuration) is ported exactly once,
     /// under its HA `id` (the key of `last_triggered`, which other automations read, e.g.
     /// `buzz_mode_stempel`). `vriezer_bewaking` is disabled in HA since 2026-11-07 and not run;
-    /// `entsoe_qh_kwartier_verversen` was added that day.
+    /// `entsoe_qh_kwartier_verversen` was added that day. Native additions with no HA original
+    /// (`ev_vol_laadt_niet`) are listed too, marked as such.
     #[test]
     fn the_registry_holds_the_29_enabled_live_automations_by_their_ha_ids() {
         let ids: Vec<&str> = super::all().iter().map(|a| a.id()).collect();
@@ -143,6 +146,7 @@ mod tests {
                 "buzz_laadweigering_reset",
                 "goedkoop_laden",
                 "ev_hoger_laadstil_beheer",
+                "ev_vol_laadt_niet", // native, not an HA port
                 "batterij_naar_auto_beheer",
                 "ev_laden_buzz",
                 "ev_laden_cable",

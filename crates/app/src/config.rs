@@ -297,6 +297,21 @@ pub struct NotifyConfig {
     pub url: Option<String>,
     /// Optional file with an ntfy access token (sent as `Authorization: Bearer`).
     pub token_file: Option<PathBuf>,
+    /// `*`-globs on the title: only these are pushed. Empty: all of them.
+    pub include: Vec<String>,
+    /// `*`-globs on the title that are never pushed, even when included.
+    pub exclude: Vec<String>,
+}
+
+impl NotifyConfig {
+    /// Whether a notification goes out as a push message. High priority always does; the rest
+    /// only stays in the log and on the dashboard when filtered out.
+    pub fn pushes(&self, title: &str, high_priority: bool) -> bool {
+        use crate::entities::glob;
+        high_priority
+            || ((self.include.is_empty() || self.include.iter().any(|p| glob(p, title)))
+                && !self.exclude.iter().any(|p| glob(p, title)))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]

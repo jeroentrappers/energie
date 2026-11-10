@@ -36,6 +36,26 @@ impl Notifier for LogNotifier {
     }
 }
 
+/// Passes on only what `[notify]`'s `include`/`exclude` let through (high priority always);
+/// the rest is logged.
+pub struct Filtered {
+    pub inner: std::sync::Arc<dyn Notifier>,
+    pub cfg: crate::config::NotifyConfig,
+}
+
+impl Notifier for Filtered {
+    fn name(&self) -> &str {
+        self.inner.name()
+    }
+    fn notify(&self, n: &Notification) {
+        if n.persistent || self.cfg.pushes(&n.title, n.high_priority) {
+            self.inner.notify(n);
+        } else {
+            tracing::info!(title = %n.title, message = %n.message, "notification (not pushed: filtered)");
+        }
+    }
+}
+
 /// Push messages through ntfy's JSON publish API.
 pub struct NtfyNotifier {
     base: String,
@@ -100,6 +120,59 @@ mod tests {
     use axum::Json;
     use axum::http::HeaderMap;
     use std::sync::{Arc, Mutex};
+
+    #[derive(Default)]
+    struct Titles(Mutex<Vec<String>>);
+    impl Notifier for Arc<Titles> {
+        fn name(&self) -> &str {
+            "seen"
+        }
+        fn notify(&self, n: &Notification) {
+            self.0.lock().unwrap().push(n.title.clone());
+        }
+    }
+
+    fn titled(title: &str, high_priority: bool, persistent: bool) -> Notification {
+        Notification {
+            at: "2026-11-10T11:20:00+01:00".into(),
+            title: title.into(),
+            message: "m".into(),
+            high_priority,
+            persistent,
+            id: None,
+        }
+    }
+
+    /// Only included titles are pushed, exclusions win, high priority and dashboard notes always
+    /// pass, and an empty include list means everything.
+    #[test]
+    fn the_filter_passes_what_the_config_lets_through() {
+        let seen = Arc::new(Titles::default());
+        let cfg = crate::config::NotifyConfig {
+            include: vec!["⚡ Peak guard*".into(), "🛑*".into(), "🌙*".into()],
+            exclude: vec!["🛑 Test*".into()],
+            ..Default::default()
+        };
+        let f = Filtered { inner: Arc::new(seen.clone()), cfg };
+        for (title, high, persistent) in [
+            ("⚡ Peak guard", false, false),
+            ("✅ Peak guard", false, false),
+            ("EV cable auto-heal", false, false),
+            ("🛑 Hoofdzekering", false, false),
+            ("🛑 Test", false, false),
+            ("Sturing: commando mislukt", true, false),
+            ("EV cable auto-heal", false, true),
+            ("🌙 Nachtdekking", false, false),
+        ] {
+            f.notify(&titled(title, high, persistent));
+        }
+        assert_eq!(
+            *seen.0.lock().unwrap(),
+            ["⚡ Peak guard", "🛑 Hoofdzekering", "Sturing: commando mislukt", "EV cable auto-heal", "🌙 Nachtdekking"]
+        );
+        let all = crate::config::NotifyConfig::default();
+        assert!(all.pushes("anything", false) && all.pushes("", false));
+    }
 
     fn n(persistent: bool) -> Notification {
         Notification {

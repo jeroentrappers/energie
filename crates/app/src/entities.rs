@@ -75,13 +75,13 @@ impl PublishRule {
     }
 }
 
-/// `*`-glob match.
+/// `*`-glob match. Safe on any UTF-8: notification titles start with an emoji.
 pub fn glob(pat: &str, s: &str) -> bool {
     match pat.split_once('*') {
         None => pat == s,
-        Some((head, rest)) => {
-            s.starts_with(head) && (0..=s.len() - head.len()).any(|i| glob(rest, &s[head.len() + i..]))
-        }
+        Some((head, rest)) => s.strip_prefix(head).is_some_and(|tail| {
+            tail.char_indices().map(|(i, _)| i).chain([tail.len()]).any(|i| glob(rest, &tail[i..]))
+        }),
     }
 }
 
@@ -837,6 +837,9 @@ mod tests {
         assert!(glob("a*b*c", "aXXbYc") && !glob("a*b*c", "aXXcYb"));
         assert!(glob("exact", "exact") && !glob("exact", "exactly"));
         assert!(glob("*", "") && !glob("x*", ""));
+        // Multi-byte characters: no slicing inside one.
+        assert!(glob("⚡ Peak guard*", "⚡ Peak guard") && glob("*guard", "⚡ Peak guard"));
+        assert!(glob("*é*", "café crème") && !glob("🛑*", "⚡ Peak guard"));
         let views: Vec<Arc<dyn DeviceView>> = vec![Arc::new(View(vec![Slot::Pv], World::default(), vec![]))];
         let rules = vec![
             PublishRule {

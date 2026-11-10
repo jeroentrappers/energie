@@ -20,7 +20,7 @@ use crate::ha::ws::{self, ClientConfig, ServiceCall, SharedStore};
 use crate::ha::{HaActuator, HaSource};
 use crate::history::{self, History, SharedHistory};
 use crate::mqtt::{self, SharedInbox, Subscriber};
-use crate::notify::{LogNotifier, Notifier, NtfyNotifier};
+use crate::notify::{Filtered, LogNotifier, Notifier, NtfyNotifier};
 use crate::persist::Persister;
 use crate::plan::Provider;
 use crate::plug::{
@@ -211,7 +211,8 @@ fn notifier(cfg: &Config) -> Result<Arc<dyn Notifier>> {
     }
     let token = cfg.notify.token_file.as_deref().map(read_secret).transpose()?;
     let url = cfg.notify.url.as_deref().expect("validated: ntfy needs a url");
-    Ok(Arc::new(Arc::new(NtfyNotifier::new(url, token)?)))
+    let ntfy: Arc<dyn Notifier> = Arc::new(Arc::new(NtfyNotifier::new(url, token)?));
+    Ok(Arc::new(Filtered { inner: ntfy, cfg: cfg.notify.clone() }))
 }
 
 /// Build everything and start serving. `drivers` provides the native device instances.
