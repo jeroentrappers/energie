@@ -3,7 +3,7 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
-## Unreleased
+## 0.4.1 - 2026-11-10
 
 - Cheap grid-charging no longer flip-flops at the top. Once the battery is full in a cheap
   `Max tot piek` window, it holds instead of discharging into the house, and charging restarts
