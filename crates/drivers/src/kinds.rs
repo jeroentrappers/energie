@@ -102,7 +102,10 @@ pub struct SolisTable {
     #[serde(default = "solis_rc_fallback")]
     pub rc_timeout_fallback_min: u16,
     /// Re-select an RC mode the inverter already holds at most this often (a forced mode: only
-    /// 43135, capped at half the RC timeout; `None`: never). 0 selects on every command, as HA.
+    /// 43135, capped at half the RC timeout; `None`: never). 0 (the default) selects on every
+    /// command, as HA. An S6-EH1P did not restart its RC timeout on a 43135-only write and fell
+    /// back to self-use every 10 minutes, so only set this for an inverter checked to keep a
+    /// forced mode past its timeout (CONTROL.md, checklist item 9).
     #[serde(default = "solis_rc_keepalive")]
     pub rc_keepalive_s: u64,
 }
@@ -120,7 +123,7 @@ fn solis_rc_fallback() -> u16 {
     10
 }
 fn solis_rc_keepalive() -> u64 {
-    300
+    0
 }
 
 impl DriverKind for SolisKind {
@@ -331,7 +334,7 @@ mod tests {
                 solis.rc_timeout_fallback_min,
                 solis.rc_keepalive_s
             ),
-            (1, 310, 5000, 4, 10, 300)
+            (1, 310, 5000, 4, 10, 0)
         );
         let cable: TuyaCableTable =
             serde_json::from_value(json!({"address": "a", "device_id": "d", "local_key_file": "k"})).unwrap();

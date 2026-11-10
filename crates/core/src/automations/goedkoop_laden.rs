@@ -15,6 +15,14 @@ use crate::cascade;
 use crate::settings::{BatterijNiveau, Consumer};
 use crate::trigger::changed;
 
+/// `soc < 99`: the battery wants grid charge below this, as in HA.
+pub const NET_LADEN_VOL_SOC: f64 = 99.0;
+/// Not in HA: once the battery reached [`NET_LADEN_VOL_SOC`] in a cheap window, grid-charging
+/// restarts only below this. HA's single threshold on an integer SoC made the battery flip
+/// between charging (98 %) and discharging into the house (99 %) every minute or two for the
+/// rest of the night (135 RC mode switches between 02:40 and 06:30 on 2026-11-10).
+pub const NET_LADEN_HERSTART_SOC: f64 = 95.0;
+
 #[derive(Debug, Default)]
 pub struct GoedkoopLaden;
 
@@ -38,7 +46,7 @@ impl GoedkoopLaden {
     fn want_netladen(cx: &Cx) -> bool {
         let (w, s, m, d) = (cx.w, &*cx.s, &*cx.m, cx.d);
         let grid_max = cascade::grid_max(w, d, s);
-        let batt_wants = w.solis.soc.unwrap_or(0.0) < 99.0;
+        let batt_wants = w.solis.soc.unwrap_or(0.0) < NET_LADEN_VOL_SOC && !m.batterij_net_laden_vol;
         let batt_dump = s.ev_batterij_niveau == BatterijNiveau::OntlaadBudget;
         // `plug_known == 'Connected' or stateid in ['B', 'C']`, as in the setpoint template.
         let buzz_wants = cascade::buzz_wants(w, m);
@@ -46,6 +54,16 @@ impl GoedkoopLaden {
         let zp = s.zonprioriteit;
         let batt_first = zp.above(Consumer::Batterij, Consumer::Buzz) && zp.above(Consumer::Batterij, Consumer::Ev3);
         grid_max && batt_wants && !batt_dump && (batt_first || !car_wants)
+    }
+
+    /// [`Memory::batterij_net_laden_vol`]: set when the battery is full in a cheap window, kept
+    /// while it stays cheap and the SoC at or above the restart level. An unknown SoC clears it.
+    ///
+    /// [`Memory::batterij_net_laden_vol`]: crate::memory::Memory::batterij_net_laden_vol
+    fn full(cx: &Cx) -> bool {
+        let Some(soc) = cx.w.solis.soc else { return false };
+        let level = if cx.m.batterij_net_laden_vol { NET_LADEN_HERSTART_SOC } else { NET_LADEN_VOL_SOC };
+        cascade::grid_max(cx.w, cx.d, cx.s) && soc >= level
     }
 }
 
@@ -58,6 +76,7 @@ impl Automation for GoedkoopLaden {
         if !(cx.every(300) || cx.started || Self::state_changed(cx)) {
             return;
         }
+        cx.m.batterij_net_laden_vol = Self::full(cx);
         cx.m.batterij_net_laden = Self::want_netladen(cx);
         if let Some(p) = cx.w.evse.plug.as_deref()
             && !cascade::is_missing(Some(p))
@@ -183,6 +202,55 @@ mod tests {
         r.s.ev_batterij_niveau = BatterijNiveau::OntlaadBudget;
         r.tick(t0());
         assert!(!r.m.batterij_net_laden);
+    }
+
+    /// Not in HA: full at 99 % in a cheap window latches until the SoC drops below 95 %, so the
+    /// integer SoC no longer flips grid-charging on at 98 % and off at 99 % (live 2026-11-10).
+    #[test]
+    fn full_latches_until_the_restart_level() {
+        let mut r = rig();
+        let mut t = t0();
+        let mut at_soc = |r: &mut Rig<GoedkoopLaden>, soc: f64| {
+            r.w.solis.soc = Some(soc);
+            t += Duration::seconds(1);
+            r.tick(t);
+            (r.m.batterij_net_laden, r.m.batterij_net_laden_vol)
+        };
+        assert_eq!(at_soc(&mut r, 98.0), (true, false), "charging");
+        assert_eq!(at_soc(&mut r, 99.0), (false, true), "full: stop and latch");
+        assert_eq!(at_soc(&mut r, 98.0), (false, true), "98 % does not restart");
+        assert_eq!(at_soc(&mut r, 95.0), (false, true), "95 % is not below 95");
+        assert_eq!(at_soc(&mut r, 94.0), (true, false), "below 95: charge again");
+        assert_eq!(at_soc(&mut r, 98.0), (true, false), "and on to full");
+        assert_eq!(at_soc(&mut r, 99.0), (false, true));
+    }
+
+    /// The latch belongs to one cheap window: when the price rises above the threshold it
+    /// clears, and the next window tops up from 97 % as HA does.
+    #[test]
+    fn the_latch_clears_when_the_window_ends() {
+        let mut r = rig();
+        r.w.solis.soc = Some(99.0);
+        r.tick(t0());
+        assert!(r.m.batterij_net_laden_vol);
+        r.d.stroomprijs_nu = Some(0.45);
+        r.tick(secs(1));
+        assert!(!r.m.batterij_net_laden_vol, "not cheap: cleared");
+        r.w.solis.soc = Some(97.0);
+        r.d.stroomprijs_nu = Some(0.20);
+        r.tick(secs(2));
+        assert_eq!((r.m.batterij_net_laden, r.m.batterij_net_laden_vol), (true, false), "next window tops up");
+    }
+
+    /// An unknown SoC never latches (HA's `|float(0)` still wants charge).
+    #[test]
+    fn an_unknown_soc_clears_the_latch() {
+        let mut r = rig();
+        r.w.solis.soc = Some(99.0);
+        r.tick(t0());
+        r.w.solis.soc = None;
+        r.tick(secs(1));
+        assert_eq!((r.m.batterij_net_laden, r.m.batterij_net_laden_vol), (true, false));
     }
 
     /// `batt_first or not car_wants`: a wanting car ranked above the battery takes the grid

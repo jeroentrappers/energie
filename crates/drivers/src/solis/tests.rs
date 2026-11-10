@@ -137,7 +137,7 @@ async fn rc_mode_without_cache_writes_the_mode_and_a_timeout() {
 #[tokio::test]
 async fn an_rc_mode_already_held_is_only_kept_alive() {
     let sim = SolisSim::start().await;
-    let mut s = driver(&sim).await;
+    let mut s = Solis::tcp(SolisConfig { rc_keepalive: Some(Duration::from_secs(300)), ..cfg(sim.addr) });
     s.poll().await.unwrap();
     let mut apply = async |m| s.apply(&Command::SolisRcMode(m)).await.unwrap();
     assert_eq!(apply(RcMode::ForceCharge).await, Applied::Done, "no write of ours yet: keep it alive");
@@ -159,12 +159,13 @@ async fn an_rc_mode_already_held_is_only_kept_alive() {
 }
 
 /// Held, but with an invalid RC timeout: the full select, which writes the fallback timeout.
-/// Without `rc_keepalive` every select writes the mode and its companions, as HA does.
+/// Without `rc_keepalive` (the default) every select writes the mode and its companions, as HA
+/// does.
 #[tokio::test]
 async fn an_rc_mode_is_selected_again_for_a_bad_timeout_or_as_ha() {
     let sim = SolisSim::start().await;
     sim.set_holding(reg::RC_TIMEOUT, 0);
-    let mut s = driver(&sim).await;
+    let mut s = Solis::tcp(SolisConfig { rc_keepalive: Some(Duration::from_secs(300)), ..cfg(sim.addr) });
     s.poll().await.unwrap();
     s.apply(&Command::SolisRcMode(RcMode::ForceCharge)).await.unwrap();
     assert_eq!(

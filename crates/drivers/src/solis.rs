@@ -122,7 +122,8 @@ pub struct SolisConfig {
     /// re-writes 43136, 43129 and 43282: about 13 000 writes a day. With `Some(every)`, a mode
     /// the inverter already holds (and a valid cached timeout) is not selected again: `None`
     /// writes nothing, a forced mode re-writes only 43135, as the keepalive its RC timeout needs,
-    /// at most every `every` and at least every half timeout. `None` keeps HA's behaviour.
+    /// at most every `every` and at least every half timeout. `None` (the default) keeps HA's
+    /// behaviour: an S6-EH1P ignored the 43135-only keepalive and dropped to self-use.
     pub rc_keepalive: Option<Duration>,
 }
 
@@ -135,7 +136,7 @@ impl SolisConfig {
             frame_gap: Duration::from_millis(310),
             settings_every: 4,
             rc_timeout_fallback_min: 10,
-            rc_keepalive: Some(Duration::from_secs(300)),
+            rc_keepalive: None,
         }
     }
 }

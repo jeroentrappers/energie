@@ -58,9 +58,9 @@ peak-shaving settings. Map, decodes and HA entity ids: `crates/drivers/src/solis
 | Writes | queued, one at a time, 310 ms apart (`modbus_controller.py:146`, `PARALLEL_UPDATES = 1`) | one device task, one write at a time, 310 ms apart |
 
 HA's dispatcher selects the RC mode every 30 s, and the select writes four registers each time
-(43135 and three companions): 12 999 register writes on the simulated day. Solis does not document
-which of these registers end up in flash, so energie does not select a mode the inverter already
-holds (next section). The same day then takes 2 144 writes:
+(43135 and three companions): 12 999 register writes on the simulated day. energie does the same
+by default. Solis does not document which of these registers end up in flash; the opt-in
+`rc_keepalive_s` (next section) cuts the same day to 2 144 writes:
 
 | Register | energie | HA |
 | --- | --- | --- |
@@ -72,14 +72,19 @@ holds (next section). The same day then takes 2 144 writes:
 
 What is left are real changes: a new mode (with its companions, which the firmware needs right
 after the mode to latch the setpoints and the timeout, issue #352 of the integration) and new
-power setpoints. In the house a held forced mode adds one 43135 keepalive every 5 minutes
-(at most 288 a day).
+power setpoints. With `rc_keepalive_s` a held forced mode adds one 43135 keepalive every
+5 minutes (at most 288 a day).
 
-### Deviation: an RC mode already held is not selected again
+### Opt-in: an RC mode already held is not selected again (`rc_keepalive_s`)
 
-The RC registers fall back to self-use after the RC timeout (43282) unless 43135 is written again,
-so a forced mode needs a keepalive, but not the three companions every 30 s. When the register
-cache shows the requested mode and a valid timeout:
+Off by default (`rc_keepalive_s = 0`, every command selects, as HA). **It does not work on the
+S6-EH1P in the house:** on 2026-11-10 a 43135-only keepalive did not restart the RC timeout, and
+the inverter fell back to self-use about 10 minutes after each full select, for up to 30 s until
+the next dispatcher run (one-minute dips to half the charge power, every 10 minutes all night).
+Only a full select, which also re-writes 43282, kept the forced mode. Use it only on an inverter
+that passes checklist item 9.
+
+With `rc_keepalive_s > 0`, when the register cache shows the requested mode and a valid timeout:
 
 - `None`: nothing is written (there is nothing to keep alive);
 - a forced mode: only 43135 is written, at most every `rc_keepalive_s` (300 s) and at least every
@@ -87,9 +92,9 @@ cache shows the requested mode and a valid timeout:
 - a different mode, or an invalid timeout: the full select as HA does it.
 
 The cache is the last read (every 60 s, and on the poll after any write, so a failed write is read
-back) or our own last write. `rc_keepalive_s = 0` restores HA's behaviour (every command selects).
-To check on the real inverter (checklist item 9): after a keepalive, 43136, 43129 and 43282 still
-hold their values and the forced mode keeps running past the RC timeout.
+back) or our own last write. To check on the real inverter (checklist item 9): after a keepalive,
+43136, 43129 and 43282 still hold their values and the forced mode keeps running past the RC
+timeout.
 
 ### Deviation: the RC timeout always goes with a forced mode
 
@@ -207,9 +212,11 @@ a command from the API verified by its read-back, the kill switch, the release, 
    charges (the 3 s rule).
 8. **SmartEVSE**: the broker lets energie's client publish on `SmartEVSE/1234/Set/#`;
    `ChargeCurrentOverride` echoes the published tenths and `Mode` the option.
-9. **RC keepalive**: with a forced mode held for over 10 min, `control-audit.jsonl` shows a 43135
-   write every 5 min and nothing else for the RC; 43136, 43129 and 43282 keep their values and
-   the mode never drops to `None`. If it does, set `rc_keepalive_s = 0` (HA's behaviour).
+9. **RC keepalive** (only with `rc_keepalive_s > 0`): with a forced mode held for over 10 min,
+   `control-audit.jsonl` shows a 43135 write every 5 min and nothing else for the RC; 43136, 43129
+   and 43282 keep their values and the mode never drops to `None`. If it does (the house's
+   S6-EH1P on 2026-11-10: `SolisRcMode` entries with `"before": "None"` every ~10 min), go back
+   to `rc_keepalive_s = 0`.
 10. **HA**: its energy automations are off (two controllers fighting over the Buzz can latch the
    charger's "Laadstation controleren" fault).
 

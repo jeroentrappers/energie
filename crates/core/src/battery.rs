@@ -125,6 +125,9 @@ pub struct Brain {
     /// `net_laden`: `input_boolean.batterij_net_laden` and `soc < 100`, so at 100 % with the
     /// flag still on the cascade branches apply.
     pub net_laden: bool,
+    /// Not in HA: [`Memory::batterij_net_laden_vol`] while `Max tot piek` is still cheap. The
+    /// battery was grid-charged full; hold it rather than discharge into the house.
+    pub vol_hold: bool,
     /// `battery_bridges`: `ev_batterij_niveau == '6A-brug'`.
     pub battery_bridges: bool,
     /// `reserve_surplus` / `reserve_surplus_w`: the manual reservation toggle and amount.
@@ -158,6 +161,7 @@ impl Brain {
             allowed,
             maxphase: cascade::maxphase(w),
             net_laden: m.batterij_net_laden && soc < 100.0,
+            vol_hold: m.batterij_net_laden_vol && cascade::grid_max(w, d, s),
             battery_bridges: s.ev_batterij_niveau == BatterijNiveau::Brug6A,
             reserve_surplus: s.batterij_reservering_actief,
             reserve_surplus_w: s.batterij_reservering_w,
@@ -239,6 +243,14 @@ fn grid_parked_shave(b: &Brain, d: f64) -> f64 {
     if b.grid_reservation_applies() { min2(d, b.grid_reservation()) } else { d }
 }
 
+/// Not in HA: `vol_hold and not net_laden and not ev_batterij_auto_laden`: the battery was
+/// grid-charged full in this cheap window, so it does not discharge into the house (only to buy
+/// back the same energy at the same price a few minutes later); export is still absorbed. The
+/// peak guard's own forced discharge is not a setpoint and still applies.
+fn vol_hold(b: &Brain, d: f64) -> f64 {
+    if b.vol_hold && !b.net_laden && !b.flags.ev_batterij_auto_laden { min2(0.0, d) } else { d }
+}
+
 /// `net_laden and soc < 100`: grid-charge to full, steering import onto `allowed` with the
 /// instantaneous P1, bounded by the worst conductor reaching 27 A and by 5000 W.
 fn net_laden(b: &Brain, d: f64) -> f64 {
@@ -269,8 +281,17 @@ fn floor(b: &Brain, d: f64) -> f64 {
 /// `sensor.batterij_setpoint`, W: every step of the template in order, then the validity gate,
 /// the ±5000 W clamp and `round(0)`.
 pub fn setpoint(b: &Brain) -> f64 {
-    let steps: [fn(&Brain, f64) -> f64; 8] =
-        [dump_feed_forward, yield_to_higher_ev, grid_laden_hold, grid_parked_shave, net_laden, trickle, ceiling, floor];
+    let steps: [fn(&Brain, f64) -> f64; 9] = [
+        dump_feed_forward,
+        yield_to_higher_ev,
+        grid_laden_hold,
+        grid_parked_shave,
+        vol_hold,
+        net_laden,
+        trickle,
+        ceiling,
+        floor,
+    ];
     let d = steps.iter().fold(base(b), |d, step| step(b, d));
     let out = if b.valid { clamp(d, -MAX_W, MAX_W) } else { 0.0 };
     // HA's `round(0)` returns an int, so the state never reads `-0`; `+ 0.0` drops the sign.
@@ -279,12 +300,13 @@ pub fn setpoint(b: &Brain) -> f64 {
 
 /// `track` in `soluna_dispatcher.new_bias`: the loop is plainly driving P1 to zero, so the
 /// integral may accumulate. `ev_grid_parked` freezes it too: the parked-car shave keeps P1
-/// non-zero on purpose.
+/// non-zero on purpose. So does `vol_hold` (not in HA), which imports on purpose.
 pub fn bias_tracking(b: &Brain) -> bool {
     b.valid
         && !b.flags.ev_higher_hungry
         && !b.flags.ev_grid_laden
         && !b.flags.ev_grid_parked
+        && !b.vol_hold
         && !b.flags.ev_batterij_auto_laden
         && !(b.net_laden && b.soc < 100.0)
         && b.soc < 100.0

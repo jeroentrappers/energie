@@ -12,9 +12,9 @@
 //!   read-modify-write of one bit), `tuya_local` via `script.laadkabel_start_laden` (select,
 //!   3 s, number; `mode: restart`) and `script.laadkabel_stop_laden`, and the automations'
 //!   `mqtt.publish` / the SmartEVSE mode select (QoS 0, not retained).
-//! - **The writes made** are what the simulators received. One deliberate difference: an RC mode
-//!   the inverter already holds is not selected again (`rc_keepalive_s`, the model's
-//!   `keepalive`); the day reports how many register writes that saves against HA.
+//! - **The writes made** are what the simulators received. With the default `rc_keepalive_s = 0`
+//!   they are HA's, write for write. The model's `keepalive` reproduces the opt-in mode-only
+//!   keepalive (`rc_keepalive_s > 0`), which the driver tests cover.
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -335,7 +335,7 @@ async fn a_day_in_control_mode_writes_what_ha_would() {
     });
 
     // HA's cache starts where the inverter is; `ha` is what energie writes, `as_ha` what HA would.
-    let mut ha = HaModel { keepalive: true, ..HaModel::default() };
+    let mut ha = HaModel::default();
     for r in [43073, 43074, 43110, 43129, 43135, 43136, 43282] {
         ha.regs.insert(r, solis.holding(r).unwrap());
     }
@@ -406,7 +406,7 @@ async fn a_day_in_control_mode_writes_what_ha_would() {
     );
     assert_eq!(c.stats.errors as usize, ha.refused, "the driver refuses exactly what HA refuses");
     assert!(c.view().recent.iter().all(|e| e.result != Verdict::Error || e.detail.is_some()));
-    assert!(modbus.len() * 2 < as_ha.modbus.len(), "{} Modbus writes, HA {}", modbus.len(), as_ha.modbus.len());
+    assert_eq!(modbus.len(), as_ha.modbus.len(), "the default keeps HA's RC selects");
     let per_register = |w: &[(u16, u16)]| {
         w.iter().fold(BTreeMap::<u16, usize>::new(), |mut m, (r, _)| {
             *m.entry(*r).or_default() += 1;

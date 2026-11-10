@@ -36,7 +36,9 @@ when dear, every level collapses to solar-only):
 - **Max tot piek** — charge to the month-peak (grid-maximising, day or night). Also folds in
   **grid → battery-to-full**: when it's the battery's turn (`zonprioriteit`) the battery
   grid-charges via the internal `batterij_net_laden`, driven by `build_goedkoop_laden.py`. Only one
-  grid-charger runs at a time (3-wire delta); the car defers via its `allowed` gate.
+  grid-charger runs at a time (3-wire delta); the car defers via its `allowed` gate. Port only:
+  once full (99 %) in a cheap window the battery holds (no discharge into the house) and
+  grid-charging restarts only below 95 %, until the window ends (`docs/FINDINGS.md`).
 
 **Battery level** (`ev_batterij_niveau`) — how much the home battery gives the car:
 - **Uit** — never discharge to feed the car (normal self-consumption + cascade yield).

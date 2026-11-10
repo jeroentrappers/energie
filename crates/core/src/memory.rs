@@ -16,6 +16,14 @@ pub struct Memory {
     pub batterij_setpoint_bias: f64,
     /// `input_boolean.batterij_net_laden`: grid-charge the battery to full (set by goedkoop_laden).
     pub batterij_net_laden: bool,
+    /// Not in HA: `goedkoop_laden` stopped because the battery reached [`NET_LADEN_VOL_SOC`]
+    /// during this cheap `Max tot piek` window. While set, grid-charging restarts only below
+    /// [`NET_LADEN_HERSTART_SOC`] and the setpoint holds the battery instead of discharging
+    /// it. Cleared when the window ends or the SoC falls below the restart level.
+    ///
+    /// [`NET_LADEN_VOL_SOC`]: crate::automations::goedkoop_laden::NET_LADEN_VOL_SOC
+    /// [`NET_LADEN_HERSTART_SOC`]: crate::automations::goedkoop_laden::NET_LADEN_HERSTART_SOC
+    pub batterij_net_laden_vol: bool,
     /// `input_boolean.soluna_absorptie_bezig`: the dispatcher is actively charging/discharging.
     pub soluna_absorptie_bezig: bool,
     /// `input_boolean.ev_hoger_laadstil`: a higher-ranked car is eligible but not drawing.
@@ -79,6 +87,7 @@ impl Default for Memory {
         Memory {
             batterij_setpoint_bias: 0.0,
             batterij_net_laden: false,
+            batterij_net_laden_vol: false,
             soluna_absorptie_bezig: false,
             ev_hoger_laadstil: false,
             ev_hoger_laadstil_sinds: 0.0,

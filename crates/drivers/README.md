@@ -108,10 +108,11 @@ Writes, as the component does them:
 * RC mode select: write 43135, then re-write 43136, 43129, 43282 from the register cache
   (`companion_writes`, so setpoints and timeout latch); a power companion with no cached value is
   skipped; a timeout that is not cached or outside 1..30 is written as `rc_timeout_fallback_min`
-  (10; HA would skip it). A mode the inverter already holds (with a valid timeout) is not selected
-  again: `None` writes nothing, a forced mode only re-writes 43135 as its keepalive, at most every
-  `rc_keepalive_s` (300) and at least every half RC timeout; `rc_keepalive_s = 0` selects on every
-  command, as HA.
+  (10; HA would skip it). By default every command selects, as HA. Opt-in `rc_keepalive_s > 0`: a
+  mode the inverter already holds (with a valid timeout) is not selected again, `None` writes
+  nothing, a forced mode only re-writes 43135 as its keepalive, at most every `rc_keepalive_s` and
+  at least every half RC timeout. The house's S6-EH1P ignores that keepalive and drops to
+  self-use (`docs/CONTROL.md`).
 * Numbers: skipped (`Unchanged`) when the cached value already equals the request; otherwise
   `round(value / step)` with Python's ties-to-even; outside the entity's min/max → `OutOfRange`.
 * Switches: read-modify-write of one bit, starting from the cache or a live read (never from 0,

@@ -29,6 +29,7 @@ fn b() -> Brain {
         allowed: 5829.0,
         maxphase: 20.0,
         net_laden: false,
+        vol_hold: false,
         battery_bridges: false,
         reserve_surplus: false,
         reserve_surplus_w: 800.0,
@@ -361,6 +362,35 @@ fn net_laden_at_100_leaves_the_cascade_branches_on() {
     assert_eq!(full(HUNGRY, 1400.0), 0.0, "yield");
     assert_eq!(full(GRID_LADEN, 2000.0), 0.0, "hold");
     assert_eq!(full(PARKED, 2763.0), 28.0, "shave");
+}
+
+/// Not in HA: full in a cheap window, the battery holds instead of covering the house (live
+/// 2026-11-10 it discharged ~800 W at 99 % and grid-charged at 98 %, every minute or two).
+/// Export is still absorbed; the dump into a car still runs; grid-charging still wins.
+#[test]
+fn full_in_a_cheap_window_holds() {
+    let full = |x: f64| Brain { vol_hold: true, soc: 99.0, ..p1(x) };
+    assert_eq!(sp(Brain { soc: 99.0, ..p1(800.0) }), 800.0, "without the hold: covers the house");
+    assert_eq!(sp(full(800.0)), 0.0, "holds");
+    assert_eq!(sp(full(-1200.0)), -1200.0, "export is still charged");
+    assert_eq!(sp(Brain { flags: AUTO, ..full(800.0) }), 3000.0, "the dump still runs");
+    let charging = sp(Brain { net_laden: true, ..full(800.0) });
+    assert!(charging < 0.0, "grid-charging wins: {charging}");
+    assert!(!bias_tracking(&full(800.0)), "imports on purpose: the bias freezes");
+}
+
+/// `vol_hold` is the latch and a still-cheap `Max tot piek`.
+#[test]
+fn vol_hold_needs_the_latch_and_a_cheap_window() {
+    let mut s = Settings { ev_net_niveau: NetNiveau::MaxTotPiek, ..Settings::default() };
+    let d = Derived { stroomprijs_nu: Some(0.20), ..Derived::default() };
+    let m = Memory { batterij_net_laden_vol: true, ..Memory::default() };
+    assert!(read(&world(), &s, &m, &d).vol_hold);
+    assert!(!read(&world(), &s, &Memory::default(), &d).vol_hold, "no latch");
+    let dear = Derived { stroomprijs_nu: Some(0.50), ..d.clone() };
+    assert!(!read(&world(), &s, &m, &dear).vol_hold, "window over");
+    s.ev_net_niveau = NetNiveau::Brug6A;
+    assert!(!read(&world(), &s, &m, &d).vol_hold, "not Max tot piek");
 }
 
 /// `ev_grid_parked and ... not ev_batterij_auto_laden`, pinned with hand-built flags.

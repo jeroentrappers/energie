@@ -3,6 +3,16 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## Unreleased
+
+- Cheap grid-charging no longer flip-flops at the top. Once the battery is full in a cheap
+  `Max tot piek` window, it holds instead of discharging into the house, and charging restarts
+  only below 95 % until the window ends. Before, it charged at 98 % and discharged at 99 %, every
+  minute or two.
+- The Solis RC mode is selected on every dispatcher run again, as Home Assistant does
+  (`rc_keepalive_s` now defaults to 0). The mode-only keepalive let an S6-EH1P fall back to
+  self-use every 10 minutes, briefly halving the charge power. It stays available as an opt-in.
+
 ## 0.4.0 - 2026-11-09
 
 - Optional off-device history in VictoriaMetrics, or any database that accepts InfluxDB line
