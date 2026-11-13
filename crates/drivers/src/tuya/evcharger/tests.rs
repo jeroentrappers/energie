@@ -100,7 +100,7 @@ fn charging_without_power_reads_the_set_current() {
     let mut d = evcharger_dps();
     d.insert("3".into(), json!("charger_charging"));
     d.insert("4".into(), json!(10));
-    for power in [Some(json!(0)), None] {
+    for power in [Some(json!(0)), Some(json!(1)), Some(json!(99)), None] {
         match power {
             Some(p) => d.insert("9".into(), p),
             None => d.remove("9"),

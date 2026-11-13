@@ -25,10 +25,12 @@
 //!
 //! The EV3's charger does not meter at all: DP 9 and DP 5 stay 0, and the energy counters do
 //! not move, while the car draws 2.2 kW at 10 A (checked 2026-11-13, also 0 in the Tuya cloud).
-//! So while it is `charger_charging` with no power reported, the set current (DP 4) is taken as
-//! the current and the power is that at 230 V. That is an upper bound: a car that takes less
-//! (near full, or its own limit lower) still reads the set current. A charger that does report
-//! power is read as measured.
+//! It has also been seen reporting 1 W (DP 9 = 1) and leaving the switch (DP 18) `false` while
+//! the car charges at 1.2 kW, and its app shows voltage and current from the cloud that never
+//! reach the local DPs. So while it is `charger_charging` with less than 0.1 kW reported, the
+//! set current (DP 4) is taken as the current and the power is that at 230 V. That is an upper
+//! bound: a car that takes less (near full, or its own limit lower) still reads the set current.
+//! A charger that does report power is read as measured.
 //!
 //! The logic counts the EV3 as there when the status is `plugged_in`, `charging` or `charged`,
 //! so the states with a car connected and not charging (`charger_insert`, `charger_wait`,
@@ -52,6 +54,9 @@ pub const MIN_A: u8 = 6;
 pub const MAX_A: u8 = 16;
 /// The voltage the current is derived at.
 const VOLT: f64 = 230.0;
+/// Below this a power reported while charging is not a measurement (the EV3's charger reports
+/// 0 or 1 W while the car draws 1.2 kW); a car charges at 6 A × 230 V = 1.38 kW at least.
+const MIN_METERED_KW: f64 = 0.1;
 
 /// The `work_state` (DP 3) in the cable's vocabulary. Unknown values pass through.
 pub fn status_name(dp: &str) -> String {
@@ -73,7 +78,7 @@ pub fn cable_from_dps(dps: &Dps) -> Cable {
     let measured = num("9").map(|v| v / 1000.0);
     // No power while charging: the charger does not meter, so estimate from the set current.
     let power_kw = match (measured, num("4")) {
-        (Some(kw), _) if kw > 0.0 || !charging => Some(kw),
+        (Some(kw), _) if kw >= MIN_METERED_KW || !charging => Some(kw),
         (_, Some(amps)) if charging => Some(amps * VOLT / 1000.0),
         (m, _) => m,
     };
