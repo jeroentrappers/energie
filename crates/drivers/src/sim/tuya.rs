@@ -7,8 +7,9 @@
 //! stops it, a new `114` while charging changes the current.
 //!
 //! `qccdz` charger ([`TuyaSim::start_evcharger`], 3.5): `18 = true` with a car connected starts
-//! charging at DP 4 (`3 = charger_charging`, `9` and `5` = W), `18 = false` pauses it
-//! (`charger_pause`), a new `4` while charging changes the current. No current or voltage DP.
+//! charging at DP 4 (`3 = charger_charging`; the meter in DP 6, `9` and `5` in whole kW),
+//! `18 = false` ends the session (`charger_end`, as the real one), a new `4` while charging
+//! changes the current. DP 6 is only sent on `UPDATEDPS`, never in a query or a push.
 
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
@@ -108,8 +109,9 @@ impl Dev {
                 self.dps.insert("3".into(), json!("charger_charging"));
                 draw(self, true);
             }
+            // As the real one: a switch-off ends the session.
             Some(false) if state == "charger_charging" => {
-                self.dps.insert("3".into(), json!("charger_pause"));
+                self.dps.insert("3".into(), json!("charger_end"));
                 draw(self, false);
             }
             _ if set.contains_key("4") && state == "charger_charging" => draw(self, true),

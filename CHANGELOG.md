@@ -3,6 +3,15 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## 0.5.4 - 2026-11-13
+
+- Tuya chargers: after energie's own stop, a session the charger ends (`charger_end` on the
+  `qccdz`, read as `charged`) reads `plugged_in` until the next start or until the charger
+  charges again. The logic treats `charged` as a full car and retries it only every 30 minutes,
+  which held the EV3 back after energie had paused it for lack of headroom. An end the charger
+  reaches by itself still reads `charged`.
+- The EV charger simulator ends the session on a switch-off, as the real charger does.
+
 ## 0.5.3 - 2026-11-13
 
 - `tuya_evcharger` reads the charger's phase meter: DP 6, eight bytes of voltage, current and

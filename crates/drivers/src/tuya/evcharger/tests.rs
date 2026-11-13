@@ -212,18 +212,47 @@ async fn start_selects_charge_now_and_skips_a_bad_current() {
     assert_eq!(sim.sets()[0].1, dps(json!({"14": "charge_now", "18": true})));
 }
 
-/// A stop switches off; the paused charger still reads `plugged_in`.
+/// A stop switches off. The charger then ends the session (`charger_end`, which reads
+/// `charged`), but the car is not full: after energie's own stop it reads `plugged_in`, so the
+/// logic does not hold back the next start.
 #[tokio::test]
-async fn stop_switches_off() {
+async fn stop_switches_off_and_reads_plugged_in() {
     let sim = sim().await;
     let mut h = connected(&sim).await;
     h.apply(&Command::CableStart { amps: 8 }).await.unwrap();
     eventually("charging", || h.dps().get("3") == Some(&json!("charger_charging"))).await;
     assert_eq!(h.apply(&Command::CableStop).await.unwrap(), Applied::Done);
-    eventually("paused", || h.dps().get("3") == Some(&json!("charger_pause"))).await;
+    eventually("ended", || h.dps().get("3") == Some(&json!("charger_end"))).await;
     assert_eq!(sim.sets()[1].1, dps(json!({"18": false})));
     let Reading::Cable(c) = h.read().await.unwrap() else { panic!() };
     assert_eq!((c.status.as_deref(), c.current_a), (Some("plugged_in"), Some(0.0)));
+    // It starts again from there.
+    h.apply(&Command::CableStart { amps: 8 }).await.unwrap();
+    eventually("charging again", || h.dps().get("3") == Some(&json!("charger_charging"))).await;
+}
+
+/// A session the charger ends by itself (the car is full) reads `charged`, also when energie
+/// stopped an earlier session: charging again clears that, whoever started it.
+#[tokio::test]
+async fn an_end_of_its_own_reads_charged() {
+    let sim = sim().await;
+    let mut h = connected(&sim).await;
+    let status = |c: Reading| match c {
+        Reading::Cable(c) => c.status,
+        _ => panic!(),
+    };
+    sim.set_dp("3", json!("charger_charging"));
+    sim.set_dp("3", json!("charger_end"));
+    eventually("ended", || h.dps().get("3") == Some(&json!("charger_end"))).await;
+    assert_eq!(status(h.read().await.unwrap()).as_deref(), Some("charged"), "never stopped by energie");
+    h.apply(&Command::CableStop).await.unwrap();
+    assert_eq!(status(h.read().await.unwrap()).as_deref(), Some("plugged_in"), "stopped by energie");
+    eventually("the stop arrived", || sim.sets().len() == 1).await;
+    sim.set_dp("3", json!("charger_charging")); // started from the app
+    eventually("charging", || h.dps().get("3") == Some(&json!("charger_charging"))).await;
+    sim.set_dp("3", json!("charger_end"));
+    eventually("ended", || h.dps().get("3") == Some(&json!("charger_end"))).await;
+    assert_eq!(status(h.read().await.unwrap()).as_deref(), Some("charged"), "the car's own end");
 }
 
 /// The current goes to DP 4 within 6..16 A; anything else is refused without a write. A new

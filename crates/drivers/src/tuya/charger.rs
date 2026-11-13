@@ -115,6 +115,21 @@ fn op_of(cmd: &Command) -> Option<Op> {
 struct State {
     connected: bool,
     dps: Dps,
+    /// energie switched the charger off and it has not charged since. A charger that ends its
+    /// session on a switch-off (the `qccdz` goes to `charger_end`) then reads `plugged_in`,
+    /// not `charged`: the car is not full, so the logic must not hold back its next start.
+    stopped: bool,
+}
+
+impl State {
+    /// The reading, with a session energie ended reported as `plugged_in`.
+    fn cable<P: Profile>(&self) -> Cable {
+        let mut c = P::cable(&self.dps);
+        if self.stopped && c.status.as_deref() == Some("charged") {
+            c.status = Some("plugged_in".into());
+        }
+        c
+    }
 }
 
 type Shared = Arc<Mutex<State>>;
@@ -169,7 +184,7 @@ impl<P: Profile> Source for TuyaCharger<P> {
         if !s.connected {
             return Err(DriverError::NotConnected);
         }
-        Ok(Reading::Cable(P::cable(&s.dps)))
+        Ok(Reading::Cable(s.cable::<P>()))
     }
 
     fn unavailable(&self) -> Reading {
@@ -321,13 +336,16 @@ impl<P: Profile> Worker<P> {
             Op::Start(amps) => {
                 let (now, later) = P::start(amps, &self.state.lock().unwrap().dps);
                 self.set(wr, now).await?;
+                self.state.lock().unwrap().stopped = false;
                 // `mode: restart`: a new start replaces a pending one.
                 self.pending = later.map(|a| (Instant::now() + self.cfg.start_delay, a));
                 Ok(if later.is_some() { Applied::Scheduled } else { Applied::Done })
             }
             Op::Stop => {
                 let m = P::stop(&self.state.lock().unwrap().dps);
-                self.set(wr, m).await.map(|()| Applied::Done)
+                self.set(wr, m).await?;
+                self.state.lock().unwrap().stopped = true;
+                Ok(Applied::Done)
             }
             Op::Current(amps) => self.set_current(wr, amps).await.map(|()| Applied::Done),
             Op::Reconnect => Ok(Applied::Done),
@@ -350,7 +368,14 @@ impl<P: Profile> Worker<P> {
                     let Ok(frame) = frame else { return Exit::Lost };
                     last_rx = Instant::now();
                     if let Some(dps) = wr.open(&frame).ok().as_deref().and_then(dps_of) {
-                        self.state.lock().unwrap().dps.extend(dps);
+                        let mut s = self.state.lock().unwrap();
+                        // The device reports charging (again), whoever started it: a later end is
+                        // the car's own. Only this frame's DPs count: a meter refresh between the
+                        // stop and the device's new status would otherwise clear the flag.
+                        if P::cable(&dps).status.as_deref() == Some("charging") {
+                            s.stopped = false;
+                        }
+                        s.dps.extend(dps);
                     }
                 }
                 _ = beat.tick() => {

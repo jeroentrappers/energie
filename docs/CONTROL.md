@@ -141,7 +141,7 @@ same commands the cable took.
 | Command | DP set (one `CONTROL_NEW`) |
 | --- | --- |
 | `CableStart { amps }` | 14 `charge_now` (only when another mode is selected), 4 the current (only within 6..16 A), 18 `true` |
-| `CableStop` | 18 `false` |
+| `CableStop` | 18 `false`; the charger ends the session (`charger_end`) |
 | `CableSetCurrent(a)` | 4, 6..16 A; out of range is refused without a write |
 | `CableReconnect` | session dropped and renegotiated |
 
@@ -150,9 +150,16 @@ client, 10 s heartbeat, lost after 3 silent periods, reconnect after 5 s), in pr
 Extra read-only entities (`cable_<key>`): total and session energy, phase power, temperature,
 mode, switch, raw status, fault bitfield, firmware (`tuya/evcharger.rs` `HA_ENTITIES`).
 
-The charger does not meter: power (DP 9, DP 5) and energy (DP 1, DP 25) stay 0 while the car
-charges. While it is `charger_charging` with no power, the set current stands for the current
-and the power is that at 230 V (`cable_from_dps`), an upper bound on what the car takes.
+`charger_end` reads `charged`, so a full car is offered a start only every 30 minutes
+(`ev_laden_cable`'s `START_RETRY_S`). But the charger also ends the session on energie's own
+switch-off. The worker therefore remembers its own stop: until the next start, or until the
+charger reports charging again (whoever started it), `charger_end` reads `plugged_in`, and the
+logic restarts the car as soon as there is room.
+
+The meter is DP 6 (voltage, current, power), which the charger only sends when asked: the
+worker requests it every 5 s with `UPDATEDPS`. DP 9 and DP 5 come in whole kW. While
+`charger_charging` without a live DP 6, the set current stands for the current and the power is
+that at 230 V (`cable_from_dps`), an upper bound on what the car takes.
 
 Checked against the real charger with no car connected: reads, the session, and setting the
 current (DP 4 follows within a second). Without a car the charger refuses the switch: it answers
