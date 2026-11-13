@@ -3,6 +3,16 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## Unreleased
+
+- New driver kind `tuya_evcharger` for Tuya EV chargers of category `qccdz` (the EV3's new
+  charger, which replaced the Kolanky cable), with Tuya local protocol 3.5 (AES-GCM). It fills
+  `charger:ev3` and carries out the same start, stop, current and reconnect commands. The charger
+  reports no current, so `current_a` is its power over 230 V. Its reads were checked against the
+  real charger; check its writes with `dry_run` and a supervised session before relying on them.
+- The Tuya session worker is shared by both chargers; the Kolanky cable behaves as before.
+- The Tuya simulator speaks 3.5 too and models the new charger.
+
 ## 0.4.2 - 2026-11-10
 
 - Signing out also signs you out at the OIDC provider, so the next sign-in asks for your password

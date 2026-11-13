@@ -1,10 +1,14 @@
-//! Kolanky EV cable as a Tuya 3.4 device: session-key handshake, DP query, DP pushes, sets and
-//! heartbeats. Like the real cable it serves one local connection at a time; a second one is
-//! closed straight away.
+//! The Tuya chargers as devices: session-key handshake, DP query, DP pushes, sets and
+//! heartbeats, in protocol 3.4 or 3.5. Like the real devices they serve one local connection at
+//! a time; a second one is closed straight away.
 //!
-//! Model: `124 = OpenCharging` while plugged in starts charging at the set current
-//! (`101 = charing`, `105` = A×10, `109` = kW×10), `CloseCharging` stops it, a new `114` while
-//! charging changes the current.
+//! Kolanky cable ([`TuyaSim::start`], 3.4): `124 = OpenCharging` while plugged in starts
+//! charging at the set current (`101 = charing`, `105` = A×10, `109` = kW×10), `CloseCharging`
+//! stops it, a new `114` while charging changes the current.
+//!
+//! `qccdz` charger ([`TuyaSim::start_evcharger`], 3.5): `18 = true` with a car connected starts
+//! charging at DP 4 (`3 = charger_charging`, `9` and `5` = W), `18 = false` pauses it
+//! (`charger_pause`), a new `4` while charging changes the current. No current or voltage DP.
 
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
@@ -16,7 +20,8 @@ use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
 use tokio::time::Instant;
 
-use crate::tuya::protocol::{self, Frame, Key, cmd};
+use crate::tuya::protocol::{Frame, Key, cmd};
+use crate::tuya::wire::{self, Version};
 
 /// The DPs of the cable at rest, plugged in (`kolanky_evcharger.yaml` ids).
 pub fn default_dps() -> Map<String, Value> {
@@ -25,7 +30,22 @@ pub fn default_dps() -> Map<String, Value> {
     v.as_object().expect("object").clone()
 }
 
+/// The `qccdz` charger at rest with a car connected (its DP ids; values as read from the device).
+pub fn evcharger_dps() -> Map<String, Value> {
+    let v = json!({"1": 1, "3": "charger_insert", "4": 16, "5": 0, "9": 0, "10": 0, "14": "charge_now",
+        "18": false, "23": "2.0.0", "24": 18, "25": 0, "27": "online"});
+    v.as_object().expect("object").clone()
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Model {
+    Kolanky,
+    EvCharger,
+}
+
 struct Dev {
+    model: Model,
+    version: Version,
     key: Key,
     dps: Map<String, Value>,
     sets: Vec<(Instant, Map<String, Value>)>,
@@ -57,6 +77,35 @@ impl Dev {
         for (k, v) in set {
             self.dps.insert(k.clone(), v.clone());
         }
+        match self.model {
+            Model::Kolanky => self.apply_kolanky(set),
+            Model::EvCharger => self.apply_evcharger(set),
+        }
+        self.dps.iter().filter(|(k, v)| before.get(*k) != Some(v)).map(|(k, v)| (k.clone(), v.clone())).collect()
+    }
+
+    fn apply_evcharger(&mut self, set: &Map<String, Value>) {
+        let state = self.dps["3"].as_str().unwrap_or_default().to_string();
+        let draw = |d: &mut Self, on: bool| {
+            let w = if on { d.dps["4"].as_i64().unwrap_or(0) * 230 } else { 0 };
+            d.dps.insert("9".into(), json!(w));
+            d.dps.insert("5".into(), json!(w));
+        };
+        match set.get("18").and_then(Value::as_bool) {
+            Some(true) if state != "charger_free" && !state.contains("fault") => {
+                self.dps.insert("3".into(), json!("charger_charging"));
+                draw(self, true);
+            }
+            Some(false) if state == "charger_charging" => {
+                self.dps.insert("3".into(), json!("charger_pause"));
+                draw(self, false);
+            }
+            _ if set.contains_key("4") && state == "charger_charging" => draw(self, true),
+            _ => {}
+        }
+    }
+
+    fn apply_kolanky(&mut self, set: &Map<String, Value>) {
         let status = self.dps["101"].as_str().unwrap_or_default().to_string();
         match set.get("124").and_then(Value::as_str) {
             Some("OpenCharging") if status != "no_connet" => {
@@ -70,7 +119,6 @@ impl Dev {
             _ if set.contains_key("114") && status == "charing" => self.charge(self.amps()),
             _ => {}
         }
-        self.dps.iter().filter(|(k, v)| before.get(*k) != Some(v)).map(|(k, v)| (k.clone(), v.clone())).collect()
     }
 }
 
@@ -96,9 +144,9 @@ impl Drop for TuyaSim {
     }
 }
 
-async fn next_frame(rd: &mut (impl AsyncReadExt + Unpin), key: &Key, buf: &mut Vec<u8>) -> Option<Frame> {
+async fn next_frame(rd: &mut (impl AsyncReadExt + Unpin), v: Version, key: &Key, buf: &mut Vec<u8>) -> Option<Frame> {
     loop {
-        match protocol::unpack(key, buf) {
+        match wire::decode(v, key, buf, false) {
             Ok(Some((f, used))) => {
                 buf.drain(..used);
                 return Some(f);
@@ -113,21 +161,16 @@ async fn next_frame(rd: &mut (impl AsyncReadExt + Unpin), key: &Key, buf: &mut V
 }
 
 /// Server side of the handshake; the session key on success.
-async fn handshake(stream: &mut TcpStream, local: &Key, buf: &mut Vec<u8>) -> Option<Key> {
-    let start = next_frame(stream, local, buf).await.filter(|f| f.cmd == cmd::SESS_KEY_NEG_START)?;
-    let client_nonce: Key = protocol::decrypt(local, &start.payload).ok()?.try_into().ok()?;
+async fn handshake(stream: &mut TcpStream, v: Version, local: &Key, buf: &mut Vec<u8>) -> Option<Key> {
+    use crate::tuya::protocol::hmac;
+    let start = next_frame(stream, v, local, buf).await.filter(|f| f.cmd == cmd::SESS_KEY_NEG_START)?;
+    let client_nonce: Key = wire::open_handshake(v, local, &start).ok()?.try_into().ok()?;
     let device_nonce: Key = rand::random();
-    let body = [&device_nonce[..], &protocol::hmac(local, &client_nonce)[..]].concat();
-    let resp = Frame {
-        seq: start.seq,
-        cmd: cmd::SESS_KEY_NEG_RESP,
-        retcode: Some(0),
-        payload: protocol::encrypt(local, &body),
-    };
-    stream.write_all(&protocol::pack(local, &resp)).await.ok()?;
-    let finish = next_frame(stream, local, buf).await.filter(|f| f.cmd == cmd::SESS_KEY_NEG_FINISH)?;
-    let proof = protocol::decrypt(local, &finish.payload).ok()?;
-    (proof == protocol::hmac(local, &device_nonce)).then(|| protocol::session_key(local, &client_nonce, &device_nonce))
+    let body = [&device_nonce[..], &hmac(local, &client_nonce)[..]].concat();
+    stream.write_all(&wire::encode(v, local, start.seq, cmd::SESS_KEY_NEG_RESP, Some(0), Some(&body))).await.ok()?;
+    let finish = next_frame(stream, v, local, buf).await.filter(|f| f.cmd == cmd::SESS_KEY_NEG_FINISH)?;
+    let proof = wire::open_handshake(v, local, &finish).ok()?;
+    (proof == hmac(local, &device_nonce)).then(|| wire::session_key(v, local, &client_nonce, &device_nonce))
 }
 
 async fn send(
@@ -138,9 +181,12 @@ async fn send(
     command: u32,
     plain: Option<&[u8]>,
 ) -> bool {
-    let payload = plain.map(|p| protocol::seal(key, command, p)).unwrap_or_default();
-    let mut wire = protocol::pack(key, &Frame { seq, cmd: command, retcode: Some(0), payload });
-    if std::mem::take(&mut dev.lock().unwrap().corrupt_next) {
+    let (v, corrupt) = {
+        let mut d = dev.lock().unwrap();
+        (d.version, std::mem::take(&mut d.corrupt_next))
+    };
+    let mut wire = wire::encode(v, key, seq, command, Some(0), plain);
+    if corrupt {
         let n = wire.len();
         wire[n - 5] ^= 0xff;
     }
@@ -153,19 +199,22 @@ fn status_json(dps: &Map<String, Value>) -> Vec<u8> {
 
 /// One client session; `None` ends it (closing the socket).
 async fn session(mut stream: TcpStream, dev: Shared, mut events: broadcast::Receiver<Ev>) -> Option<()> {
-    let local = dev.lock().unwrap().key;
+    let (local, v) = {
+        let d = dev.lock().unwrap();
+        (d.key, d.version)
+    };
     // Shared with the handshake: the first query can arrive in the same read as its last frame.
     let mut buf = Vec::new();
-    let key = handshake(&mut stream, &local, &mut buf).await?;
+    let key = handshake(&mut stream, v, &local, &mut buf).await?;
     dev.lock().unwrap().handshakes += 1;
     let (mut rd, mut wr) = stream.into_split();
     let mut seq = 100;
     loop {
         seq += 1;
         tokio::select! {
-            f = next_frame(&mut rd, &key, &mut buf) => {
+            f = next_frame(&mut rd, v, &key, &mut buf) => {
                 let f = f?;
-                let plain = protocol::open(&key, &f.payload).unwrap_or_default();
+                let plain = wire::open(v, &key, &f).unwrap_or_default();
                 let ok = match f.cmd {
                     cmd::DP_QUERY_NEW => {
                         let reply = dev.lock().unwrap().query_reply();
@@ -196,13 +245,24 @@ async fn session(mut stream: TcpStream, dev: Shared, mut events: broadcast::Rece
 }
 
 impl TuyaSim {
-    /// Start a cable that uses `local_key`, with [`default_dps`].
+    /// Start a Kolanky cable (protocol 3.4) that uses `local_key`, with [`default_dps`].
     pub async fn start(local_key: &Key) -> TuyaSim {
+        Self::start_model(Model::Kolanky, Version::V34, local_key, default_dps()).await
+    }
+
+    /// Start a `qccdz` charger (protocol 3.5) that uses `local_key`, with [`evcharger_dps`].
+    pub async fn start_evcharger(local_key: &Key) -> TuyaSim {
+        Self::start_model(Model::EvCharger, Version::V35, local_key, evcharger_dps()).await
+    }
+
+    async fn start_model(model: Model, version: Version, local_key: &Key, dps: Map<String, Value>) -> TuyaSim {
         let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let addr = listener.local_addr().expect("addr");
         let dev = Arc::new(Mutex::new(Dev {
+            model,
+            version,
             key: *local_key,
-            dps: default_dps(),
+            dps,
             sets: Vec::new(),
             handshakes: 0,
             active: false,
@@ -264,7 +324,7 @@ impl TuyaSim {
         self.dev.lock().unwrap().query_override = Some(reply);
     }
 
-    /// Corrupt the HMAC of the next frame the device sends.
+    /// Corrupt the HMAC (3.4) or GCM tag (3.5) of the next frame the device sends.
     pub fn corrupt_next_frame(&self) {
         self.dev.lock().unwrap().corrupt_next = true;
     }

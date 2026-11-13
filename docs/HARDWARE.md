@@ -11,6 +11,7 @@ regions are untested. Please report what works for you.
 | Solis hybrid S6-EH1P via Modbus TCP gateway | `solis_modbus` | `battery_inverter` | yes | yes | IP and port of the gateway, Modbus unit |
 | Omnik string inverter | `omnik` | `pv` | yes | | Base URL |
 | SmartEVSE v3 over MQTT | `smartevse_mqtt` | `charger:buzz` | yes | yes | Broker, topic prefix |
+| Tuya EV charger, category `qccdz` (Tuya local 3.5) | `tuya_evcharger` | `charger:ev3` | yes | yes | IP, device id, local key |
 | Kolanky EV cable (Tuya local 3.4) | `tuya_cable` | `charger:ev3` | yes | yes | IP, device id, local key |
 | Any HTTP JSON endpoint | `http_json` | `pv` and others | yes | | URL, JSON pointer |
 | Fixed values | `static` | any | yes | | The values, as a stand-in |
@@ -38,11 +39,20 @@ can latch a fault on the charger.
 If energie stops, the charger **keeps its last current setting**, as it would with any
 external controller using its Normal mode.
 
-### Tuya EV cable
+### Tuya EV chargers
 
-Get the device id and local key with a tool such as
-[tinytuya](https://github.com/jasonacox/tinytuya). The cable accepts a single local client, so
-other integrations must be disabled.
+Get the device id, local key and protocol version with a tool such as
+[tinytuya](https://github.com/jasonacox/tinytuya) (`tinytuya scan` shows the address, id and
+version; `tinytuya wizard` fetches the local key from a Tuya IoT project). The local key changes
+when the device is paired again. These devices accept a single local client, so other *local*
+integrations (`tuya_local`, LocalTuya) must be disabled; the Tuya cloud integration can stay.
+
+`tuya_evcharger` speaks the standard DPs of Tuya's charging-pile category (`qccdz`: `work_state`
+on DP 3, `charge_cur_set` on 4, `power_total` on 9, `work_mode` on 14, `switch` on 18). It was
+written for product `dsmsam7xpb3ht7rl` (firmware 2.0.0); another `qccdz` charger may number its
+DPs differently, so compare its DP list (Tuya IoT console, *Device debugging*) with the table in
+`crates/drivers/README.md` first. The charger reports no current: `current_a` is its power over
+230 V. `tuya_cable` is the Kolanky cable (`tuya_local` `kolanky_evcharger`).
 
 ## Cloud services
 

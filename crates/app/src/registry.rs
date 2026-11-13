@@ -120,7 +120,8 @@ mod tests {
                 "smartevse_mqtt",
                 "solis_modbus",
                 "static",
-                "tuya_cable"
+                "tuya_cable",
+                "tuya_evcharger"
             ]
         );
         assert!(r.get("ha").unwrap().is_bridge() && r.get("sim").unwrap().is_bridge());

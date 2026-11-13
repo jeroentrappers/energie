@@ -1,10 +1,17 @@
+use std::net::SocketAddr;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
+
+use energie_core::command::Command;
 
 use serde_json::json;
 use tokio::net::TcpListener;
 
 use super::*;
+use crate::driver::{Actuator, Applied, Outcome, Reading, Source, Write};
 use crate::sim::tuya::{TuyaSim, default_dps};
+use crate::tuya::charger::dps_of;
+use crate::tuya::protocol;
 
 /// A made-up local key; the real one lives only in the HA config entry.
 const KEY: &str = "0123456789abcdef";

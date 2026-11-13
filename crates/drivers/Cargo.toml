@@ -11,6 +11,7 @@ repository.workspace = true
 [dependencies]
 energie-core = { path = "../core" }
 aes.workspace = true
+aes-gcm.workspace = true
 async-trait.workspace = true
 axum.workspace = true
 chrono.workspace = true

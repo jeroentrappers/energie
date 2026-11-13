@@ -115,6 +115,16 @@ role = "*"
 #
 # [[device]]
 # id = "cable"
+# kind = "tuya_evcharger"             # Tuya EV charger (EV3, category qccdz), Tuya local protocol 3.5
+# role = "charger"                    # = charger:ev3
+# address = "192.168.1.179"          # port 6668
+# device_id = "your-tuya-device-id"
+# local_key_file = "/run/credentials/energie.service/cable-local-key"
+# protocol = "3.5"                    # default; "3.4" for an older charger
+#
+# Or the Kolanky cable it replaced:
+# [[device]]
+# id = "cable"
 # kind = "tuya_cable"                 # Kolanky cable (EV3), Tuya local protocol 3.4
 # role = "charger"                    # = charger:ev3
 # address = "192.168.1.60"           # port 6668
