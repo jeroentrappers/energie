@@ -163,7 +163,9 @@ fn the_meter_wins_over_dp9() {
 async fn the_meter_is_refreshed() {
     let sim = sim().await;
     let h = connected(&sim).await;
-    assert_eq!(h.dps().get("6"), None, "not in the query");
+    // The first request goes out at once, so DP 6 may already be there; it never comes without
+    // one (the query does not carry it).
+    assert!(h.dps().get("6").is_none() || sim.refreshes() > 0, "not in the query");
     eventually("refreshes", || sim.refreshes() >= 3).await;
     assert_eq!(h.dps().get("6"), Some(&json!("AAAAAAAAAAA=")));
 }
