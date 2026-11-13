@@ -888,7 +888,7 @@ dependencies = [
 
 [[package]]
 name = "energie"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "axum 0.8.9",
  "base64 0.22.1",
@@ -921,7 +921,7 @@ dependencies = [
 
 [[package]]
 name = "energie-cloud"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "async-trait",
  "axum 0.8.9",
@@ -945,7 +945,7 @@ dependencies = [
 
 [[package]]
 name = "energie-core"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -955,7 +955,7 @@ dependencies = [
 
 [[package]]
 name = "energie-drivers"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "aes",
  "aes-gcm",

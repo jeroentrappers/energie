@@ -3,6 +3,12 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## 0.5.2 - 2026-11-13
+
+- `tuya_evcharger`: a power below 0.1 kW while charging counts as not metered too. The EV3's
+  charger also reports 1 W while the car draws 1.2 kW, which made the modulator think the car
+  had stopped and send a start every 26 s.
+
 ## 0.5.1 - 2026-11-13
 
 - `tuya_evcharger`: the EV3's charger turns out not to meter (0 W and no energy while the car
