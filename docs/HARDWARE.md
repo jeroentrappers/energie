@@ -54,6 +54,47 @@ DPs differently, so compare its DP list (Tuya IoT console, *Device debugging*) w
 `crates/drivers/README.md` first. The charger reports no current: `current_a` is its power over
 230 V. `tuya_cable` is the Kolanky cable (`tuya_local` `kolanky_evcharger`).
 
+#### Finding the local key
+
+The device encrypts everything with a 16-character *local key* that only Tuya's cloud knows.
+It changes whenever the device is paired again in the Tuya or Smart Life app, so fetch it again
+after a re-pair.
+
+1. **Find the device.** On the same LAN (UDP broadcasts, so not over a VPN), run
+   `python3 -m tinytuya scan`. It lists each device's IP, device id and protocol version
+   (`3.4`, `3.5`). Give the device a fixed IP in your router.
+2. **Get the key**, in one of two ways:
+   - **Through Home Assistant's Tuya integration** (if it is signed in to the account that owns
+     the device). `scripts/tuya-local-key.py` runs inside the HA container, borrows HA's Tuya
+     session and prints the key:
+
+     ```sh
+     docker exec -i <ha-container> python3 - <device-id> < scripts/tuya-local-key.py \
+       | sudo sh -c 'umask 077; cat > /etc/energie/cable-local-key'
+     ```
+
+     The key goes to stdout and nowhere else. The device's name, category, product id and its
+     local DP map (which DPs exist and which are settable) go to stderr, which is how you check
+     that a charger matches the table in `crates/drivers/README.md`. The script never refreshes
+     HA's token; with less than 15 minutes left on it, it stops, so try again later.
+   - **Through a Tuya IoT developer project**: link the Smart Life account to a cloud project
+     at [iot.tuya.com](https://iot.tuya.com) and run `python3 -m tinytuya wizard`. It writes
+     `devices.json` with every device's key.
+3. **Store it as a credential**: a root-only file holding just the key, loaded into the service
+   (in `/etc/systemd/system/energie.service.d/cable.conf`):
+
+   ```ini
+   [Service]
+   LoadCredential=cable-local-key:/etc/energie/cable-local-key
+   ```
+
+   Then run `sudo systemctl daemon-reload`, and in the device table set
+   `local_key_file = "/run/credentials/energie.service/cable-local-key"`. Restart energie to
+   load it. Keep the key out of the config file, logs and the repository.
+4. **Check it** before giving energie control: with `--check-config` and `dry_run = true`,
+   `GET /api/state` should show the charger `available` with its status. A wrong key shows as a
+   handshake that never completes (`tuya: bad hmac` in the log, for 3.5 too).
+
 ## Cloud services
 
 | Service | `kind` | Role | Credentials file (JSON) | Notes |
