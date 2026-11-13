@@ -11,7 +11,7 @@
 //! | 3 | `work_state` | `charger_free`, `charger_insert`, `charger_wait`, `charger_charging`, `charger_pause`, `charger_end`, `charger_fault`, `charger_free_fault` | `status` ([`status_name`]) |
 //! | 4 | `charge_cur_set` | A (the device takes 1..255; we write 6..=[`MAX_A`]) | `set_current_a` |
 //! | 5 | `sigle_phase_power` | kW ×1000 | entity `phase_power_kw` |
-//! | 9 | `power_total` | kW ×1000 | `power_kw`, and `current_a` = W / 230 |
+//! | 9 | `power_total` | kW ×1000 | `power_kw`, and `current_a` = W / 230 (see below) |
 //! | 10 | fault bitfield (not in the cloud map) | 0 = none | entity `fault` |
 //! | 14 | `work_mode` | `charge_now`, `charge_pct`, `charge_energy`, `charge_schedule` | entity `mode`; a start sets `charge_now` |
 //! | 18 | `switch` | bool | start / stop |
@@ -22,6 +22,13 @@
 //! The device reports no current and no voltage. `current_a` is the power over 230 V, as the
 //! logic already does for the SmartEVSE (`sensor.ev_laadvermogen_smartevse_w / 230`), and
 //! `voltage_v` stays unset (the logic's `|float(230)`).
+//!
+//! The EV3's charger does not meter at all: DP 9 and DP 5 stay 0, and the energy counters do
+//! not move, while the car draws 2.2 kW at 10 A (checked 2026-11-13, also 0 in the Tuya cloud).
+//! So while it is `charger_charging` with no power reported, the set current (DP 4) is taken as
+//! the current and the power is that at 230 V. That is an upper bound: a car that takes less
+//! (near full, or its own limit lower) still reads the set current. A charger that does report
+//! power is read as measured.
 //!
 //! The logic counts the EV3 as there when the status is `plugged_in`, `charging` or `charged`,
 //! so the states with a car connected and not charging (`charger_insert`, `charger_wait`,
@@ -62,7 +69,14 @@ pub fn status_name(dp: &str) -> String {
 /// The `charger:ev3` reading from the DPs.
 pub fn cable_from_dps(dps: &Dps) -> Cable {
     let num = |k: &str| dps.get(k).and_then(Value::as_f64);
-    let power_kw = num("9").map(|v| v / 1000.0);
+    let charging = dps.get("3").and_then(Value::as_str) == Some("charger_charging");
+    let measured = num("9").map(|v| v / 1000.0);
+    // No power while charging: the charger does not meter, so estimate from the set current.
+    let power_kw = match (measured, num("4")) {
+        (Some(kw), _) if kw > 0.0 || !charging => Some(kw),
+        (_, Some(amps)) if charging => Some(amps * VOLT / 1000.0),
+        (m, _) => m,
+    };
     Cable {
         status: dps.get("3").and_then(Value::as_str).map(status_name),
         current_a: power_kw.map(|kw| (kw * 1000.0 / VOLT * 100.0).round() / 100.0),
