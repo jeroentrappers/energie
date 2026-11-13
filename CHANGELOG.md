@@ -3,13 +3,17 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
-## Unreleased
+## 0.5.0 - 2026-11-13
 
 - New driver kind `tuya_evcharger` for Tuya EV chargers of category `qccdz` (the EV3's new
   charger, which replaced the Kolanky cable), with Tuya local protocol 3.5 (AES-GCM). It fills
   `charger:ev3` and carries out the same start, stop, current and reconnect commands. The charger
-  reports no current, so `current_a` is its power over 230 V. Its reads were checked against the
-  real charger; check its writes with `dry_run` and a supervised session before relying on them.
+  reports no current, so `current_a` is its power over 230 V. Checked against the real charger:
+  reads, the session and setting the current. Starting and stopping with a car connected is not
+  checked yet; use `dry_run` and a supervised session first.
+- `scripts/tuya-local-key.py` fetches a Tuya device's local key through Home Assistant's Tuya
+  integration. [docs/HARDWARE.md](docs/HARDWARE.md#finding-the-local-key) describes the whole
+  procedure, from scan to credential.
 - The Tuya session worker is shared by both chargers; the Kolanky cable behaves as before.
 - The Tuya simulator speaks 3.5 too and models the new charger.
 
