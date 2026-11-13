@@ -9,7 +9,7 @@
 //! | [`homewizard`] | HomeWizard P1 meter | HTTPS, local API v2 |
 //! | [`solis`] | Solis S6-EH1P hybrid inverter | Modbus TCP via a Waveshare RS485 gateway |
 //! | [`smartevse`] | SmartEVSE v3 (Buzz) | MQTT |
-//! | [`tuya`] | Kolanky EV cable (EV3) | Tuya local protocol 3.4 |
+//! | [`tuya`] | EV3 charger: Tuya `qccdz` charger, Kolanky cable (before) | Tuya local protocol 3.5, 3.4 |
 //! | [`omnik`] | Omnik string inverter | HTTP, `js/status.js` |
 //! | [`prices`] | Day-ahead prices | energy-charts JSON, ENTSO-E XML fallback |
 //! | [`http_json`] | any JSON endpoint with a power value | HTTP |

@@ -137,6 +137,7 @@ to the notifier. `read` is called once per tick per distinct source.
 | `omnik` | `pv` | | Omnik `js/status.js` |
 | `smartevse_mqtt` | `charger:buzz` | yes | SmartEVSE over MQTT |
 | `tuya_cable` | `charger:ev3` | yes | Kolanky cable, Tuya 3.4 |
+| `tuya_evcharger` | `charger:ev3` | yes | Tuya `qccdz` EV charger, Tuya 3.5 (3.4 with `protocol`) |
 | `energy_charts` | `price_feed` | yes (refresh) | energy-charts, ENTSO-E fallback |
 | `http_json` | `pv`, `grid_meter` | | one power value from any JSON endpoint |
 | `static` | any | | fixed values from the config (stand-in, tests) |

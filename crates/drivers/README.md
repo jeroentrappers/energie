@@ -150,6 +150,33 @@ select's `command_topic`). QoS 0, not retained. The read is `NotConnected` while
 is down or the charger is not `online`; commands are refused (not queued) while the link is down.
 The rumqttc event loop runs in a task that re-subscribes after every reconnect.
 
+## Tuya EV charger (`qccdz`) — Tuya local protocol 3.5
+
+`tuya::evcharger`, kind `tuya_evcharger`: the EV3's charger (product `dsmsam7xpb3ht7rl`). The
+session worker (`tuya::charger`) is the cable's, generic over a `Profile` (DP mapping and
+command DPs); the protocol version is a setting of the session (`tuya::wire`).
+
+Protocol 3.5 (`tuya::v35`): frame `00006699 0000 seq cmd len IV(12) ciphertext tag(16) 00009966`,
+AES-128-GCM with the 14 header bytes after the prefix as additional data and a fresh random IV
+per frame. Device frames carry the 4-byte return code at the start of the plaintext. The
+handshake is 3.4's with these frames under the local key; the session key is the GCM encryption
+of `nonce ⊕ nonce` under the local key with the client nonce's first 12 bytes as IV, tag dropped.
+Known-answer tests against tinytuya 1.21.
+
+| DP | Code | `world::Cable` | Encoding |
+| --- | --- | --- | --- |
+| 3 | `work_state` | `status` | `charger_free` available; `charger_insert`, `charger_wait`, `charger_pause` plugged_in; `charger_charging` charging; `charger_end` charged; `charger_fault`, `charger_free_fault` fault |
+| 9 | `power_total` | `power_kw`, `current_a` (W / 230) | kW ×1000 |
+| 4 | `charge_cur_set` | `set_current_a` | A; written 6..16 |
+| — | | `set_current_max_a` | 16 |
+| — | | `voltage_v` | unset (no DP) |
+| 18 | `switch` | (start / stop) | bool |
+| 14 | `work_mode` | (a start selects `charge_now`) | `charge_now`, `charge_pct`, `charge_energy`, `charge_schedule` |
+
+Extra entities: total energy (1, kWh ×100), session energy (25, kWh ×100), phase power (5, kW
+×1000), temperature (24), mode (14), switch (18), raw state (3), fault bitfield (10), firmware
+(23), with the Tuya cloud integration's entity ids where it has one (`HA_ENTITIES`).
+
 ## Kolanky EV cable — Tuya local protocol 3.4 (`tuya_local`, `kolanky_evcharger`)
 
 `192.168.1.60:6668`. Frame: `000055AA seq cmd len [retcode] payload HMAC-SHA256 0000AA55`;
@@ -224,7 +251,7 @@ against HA on 2026-11-07 13:47: 0.37692 offtake, 0.2099 injection, 18.6 % (with 
 | `sim::homewizard::HomeWizardSim` | HTTPS (throwaway CA from `rcgen`), bearer check | `set_measurement`, `set_status`, `set_raw_body`, `last_api_version`, `config(token)` |
 | `sim::solis::SolisSim` | Modbus TCP server with the register map, RC model | `set_input/holding`, `remove_holding`, `set_battery`, `set_pv`, `writes`, `fail_next(exception)`, `set_stall` |
 | `sim::mqtt::Broker` + `SmartEvseSim` | embedded `rumqttd` broker; charger client with will | `set(topic, payload)`, `get`, `received`, `kill` |
-| `sim::tuya::TuyaSim` | Tuya 3.4 device, one connection at a time | `set_dp` (pushes), `dps`, `sets`, `handshakes`, `drop_connection`, `answer_heartbeats`, `corrupt_next_frame`, `set_query_reply` |
+| `sim::tuya::TuyaSim` | Kolanky cable (3.4, `start`) or `qccdz` charger (3.5, `start_evcharger`), one connection at a time | `set_dp` (pushes), `dps`, `sets`, `handshakes`, `drop_connection`, `answer_heartbeats`, `corrupt_next_frame`, `set_query_reply` |
 | `sim::omnik::OmnikSim` | HTTP `js/status.js` | `set_power`, `set_body`, `set_status`, `set_content_type` |
 | `sim::prices::PriceSim` | energy-charts JSON + ENTSO-E XML from one per-day table | `set_day`, `remove_day`, `set_energy_charts_status`, `set_entsoe_status`, `hits` |
 | `sim::proxy::TcpProxy` | TCP pass-through | `drop_all` (cut every connection) |

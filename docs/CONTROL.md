@@ -132,6 +132,31 @@ status and operation, the fault bitfield, delay and duration (`tuya/cable.rs` `H
 
 No discrepancy with HA was found.
 
+## Tuya `qccdz` charger (Tuya 3.5, `tuya_evcharger`)
+
+The EV3's charger since the Kolanky cable was replaced. HA reaches it only through the Tuya cloud
+integration and has no scripts for it, so there is nothing to match: the writes carry out the
+same commands the cable took.
+
+| Command | DP set (one `CONTROL_NEW`) |
+| --- | --- |
+| `CableStart { amps }` | 14 `charge_now` (only when another mode is selected), 4 the current (only within 6..16 A), 18 `true` |
+| `CableStop` | 18 `false` |
+| `CableSetCurrent(a)` | 4, 6..16 A; out of range is refused without a write |
+| `CableReconnect` | session dropped and renegotiated |
+
+A start is `Done`, not `Scheduled`: no current follows later. Session as for the cable (one
+client, 10 s heartbeat, lost after 3 silent periods, reconnect after 5 s), in protocol 3.5.
+Extra read-only entities (`cable_<key>`): total and session energy, phase power, temperature,
+mode, switch, raw status, fault bitfield, firmware (`tuya/evcharger.rs` `HA_ENTITIES`).
+
+Checked against the real charger with no car connected: reads, the session, and setting the
+current (DP 4 follows within a second). Without a car the charger refuses the switch: it answers
+`{"18": false}` and stays `charger_free`, while the set is still acknowledged, so a start then
+reports `Done` and the status shows nothing happened. A start, a current change while charging
+and a stop with the EV3 connected are not yet checked: run control mode with `dry_run = true`
+first, then watch them.
+
 ## SmartEVSE (Buzz, MQTT)
 
 | HA | Topic | Payload | QoS / retain | energie |

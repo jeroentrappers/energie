@@ -7,6 +7,7 @@
 //! | `omnik` | `pv` | no | 30 s |
 //! | `smartevse_mqtt` | `charger:buzz` | yes | 1 s |
 //! | `tuya_cable` | `charger:ev3` | yes | 1 s |
+//! | `tuya_evcharger` | `charger:ev3` | yes | 1 s |
 //! | `energy_charts` | `price_feed` | yes (refresh) | 10 s |
 //! | `http_json` | `pv`, `grid_meter` | no | 5 s |
 //! | `static` | every slot | no | 1 s |
@@ -23,7 +24,7 @@ use crate::plugin::{BuildCx, Driver, DriverKind, Factory, Slot, factory, read_se
 use crate::prices::{PriceFeed, PricesConfig};
 use crate::smartevse::{EvseConfig, SmartEvse};
 use crate::solis::{Solis, SolisConfig};
-use crate::tuya::{CableConfig, CableHandle};
+use crate::tuya::{CableConfig, CableHandle, EvChargerHandle, Version, evcharger};
 use crate::{error::Result, fixed, http_json};
 
 /// Every kind in this crate, for the app's registry.
@@ -34,6 +35,7 @@ pub fn all() -> Vec<Box<dyn Factory>> {
         factory::<OmnikKind>(),
         factory::<SmartEvseKind>(),
         factory::<TuyaCableKind>(),
+        factory::<TuyaEvChargerKind>(),
         factory::<EnergyChartsKind>(),
         factory::<http_json::HttpJsonKind>(),
         factory::<fixed::StaticKind>(),
@@ -260,6 +262,47 @@ impl DriverKind for TuyaCableKind {
     }
 }
 
+/// `kind = "tuya_evcharger"`: a Tuya EV charger of category `qccdz` (standard charging-pile
+/// DPs), local protocol 3.5 by default: the EV3's charger since the Kolanky cable was replaced.
+pub struct TuyaEvChargerKind;
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TuyaEvChargerTable {
+    /// `ip` or `ip:port` (port 6668 by default).
+    pub address: String,
+    pub device_id: String,
+    /// A file holding the 16-character local key.
+    pub local_key_file: PathBuf,
+    /// The local protocol, `"3.5"` (default) or `"3.4"`.
+    #[serde(default = "evcharger_protocol")]
+    pub protocol: String,
+}
+
+fn evcharger_protocol() -> String {
+    "3.5".into()
+}
+
+impl DriverKind for TuyaEvChargerKind {
+    type Config = TuyaEvChargerTable;
+    const NAME: &'static str = "tuya_evcharger";
+    const SLOTS: &'static [Slot] = &[Slot::ChargerEv3];
+    const WRITABLE: bool = true;
+
+    fn check(c: &TuyaEvChargerTable) -> Result<()> {
+        socket(&c.address, 6668)?;
+        Version::parse(&c.protocol).map(drop)
+    }
+
+    fn build(c: TuyaEvChargerTable, _: &BuildCx) -> Result<Box<dyn Driver>> {
+        let cfg = CableConfig {
+            version: Version::parse(&c.protocol)?,
+            ..evcharger::config(socket(&c.address, 6668)?, &c.device_id, &read_secret(&c.local_key_file)?)
+        };
+        Ok(Box::new(EvChargerHandle::spawn(cfg)?))
+    }
+}
+
 /// `kind = "energy_charts"`: day-ahead prices from energy-charts with the ENTSO-E fallback.
 pub struct EnergyChartsKind;
 
@@ -313,6 +356,7 @@ mod tests {
             ("omnik", Slot::Pv, false, 30_000),
             ("smartevse_mqtt", Slot::ChargerBuzz, true, 1000),
             ("tuya_cable", Slot::ChargerEv3, true, 1000),
+            ("tuya_evcharger", Slot::ChargerEv3, true, 1000),
             ("energy_charts", Slot::PriceFeed, true, 10_000),
         ];
         for (name, slot, writable, poll) in table {
@@ -357,6 +401,18 @@ mod tests {
         assert!(
             addr("tuya_cable", json!({"address": "x", "device_id": "d", "local_key_file": "k"})).contains("address")
         );
+        let charger: TuyaEvChargerTable =
+            serde_json::from_value(json!({"address": "a", "device_id": "d", "local_key_file": "k"})).unwrap();
+        assert_eq!(charger.protocol, "3.5");
+        let ev = |extra: serde_json::Value| {
+            let mut t = json!({"address": "192.168.1.179", "device_id": "d", "local_key_file": "k"});
+            t.as_object_mut().unwrap().extend(extra.as_object().unwrap().clone());
+            get("tuya_evcharger").check(&t)
+        };
+        ev(json!({})).unwrap();
+        ev(json!({"protocol": "3.4"})).unwrap();
+        assert!(ev(json!({"protocol": "3.3"})).unwrap_err().to_string().contains("3.3"));
+        assert!(ev(json!({"address": "x"})).unwrap_err().to_string().contains("address"));
         get("omnik").check(&json!({"base_url": "http://192.168.1.40"})).unwrap();
         get("energy_charts").check(&json!({})).unwrap();
     }
