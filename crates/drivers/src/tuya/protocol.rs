@@ -40,6 +40,8 @@ pub mod cmd {
     pub const HEART_BEAT: u32 = 0x09;
     pub const CONTROL_NEW: u32 = 0x0d;
     pub const DP_QUERY_NEW: u32 = 0x10;
+    /// Ask the device to report DPs it does not send by itself (`{"dpId": [..]}`).
+    pub const UPDATEDPS: u32 = 0x12;
 }
 
 /// `"3.4"` followed by 12 zero bytes.
@@ -143,6 +145,7 @@ pub fn has_version_header(cmd: u32) -> bool {
     !matches!(
         cmd,
         cmd::DP_QUERY_NEW
+            | cmd::UPDATEDPS
             | cmd::HEART_BEAT
             | cmd::SESS_KEY_NEG_START
             | cmd::SESS_KEY_NEG_RESP

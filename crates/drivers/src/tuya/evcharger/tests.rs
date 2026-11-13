@@ -16,6 +16,7 @@ const KEY: &str = "0123456789abcdef";
 fn cfg(addr: SocketAddr) -> ChargerConfig {
     ChargerConfig {
         heartbeat: Duration::from_millis(200),
+        refresh: Duration::from_millis(50),
         reconnect_delay: Duration::from_millis(30),
         timeout: Duration::from_millis(500),
         ..config(addr, "bf00000000000000000000", KEY)
@@ -118,6 +119,55 @@ fn charging_without_power_reads_the_set_current() {
     }
 }
 
+/// DP 6 as the real charger sends it at rest (all zeros), the live sample's numbers (229 V,
+/// 5.3 A, 1213 W) through the encoding, and what is not a meter reading.
+#[test]
+fn phase_meter_decoding() {
+    let at = |v: &str| dps(json!({ "6": v }));
+    assert_eq!(phase(&at("AAAAAAAAAAA=")), Some((0.0, 0.0, 0.0)));
+    assert_eq!(phase(&at(&encode_phase(229.0, 5.3, 1213.0))), Some((229.0, 5.3, 1213.0)));
+    // 0x08F2 = 229.0 V, 0x0014B4 = 5300 mA, 0x0004BD = 1213 W.
+    assert_eq!(encode_phase(229.0, 5.3, 1213.0), "CPIAFLQABL0=");
+    for bad in ["", "AAAA", "not base64!", "AAAAAAAAAAAA"] {
+        assert_eq!(phase(&at(bad)), None, "{bad:?}");
+    }
+    assert_eq!(phase(&dps(json!({ "6": 5 }))), None);
+    assert_eq!(phase(&Dps::new()), None);
+}
+
+/// A live DP 6 is the reading, whatever DP 9 says (the real charger sent 1 at 1.2 kW); at rest
+/// (all zeros) the reading falls back to DP 9 and the set current.
+#[test]
+fn the_meter_wins_over_dp9() {
+    let mut d = evcharger_dps();
+    d.insert("3".into(), json!("charger_charging"));
+    d.insert("4".into(), json!(6));
+    d.insert("9".into(), json!(1));
+    d.insert("6".into(), json!(encode_phase(229.0, 5.3, 1213.0)));
+    let c = cable_from_dps(&d);
+    assert_eq!((c.voltage_v, c.current_a, c.power_kw), (Some(229.0), Some(5.3), Some(1.213)));
+    assert_eq!((c.status.as_deref(), c.set_current_a), (Some("charging"), Some(6.0)));
+    d.insert("6".into(), json!("AAAAAAAAAAA="));
+    let c = cable_from_dps(&d);
+    assert_eq!((c.voltage_v, c.current_a, c.power_kw), (None, Some(6.0), Some(1.38)), "fallback");
+    // Stopped: DP 6 still holds the session's last values until the next refresh.
+    d.insert("3".into(), json!("charger_end"));
+    d.insert("9".into(), json!(0));
+    d.insert("6".into(), json!(encode_phase(229.0, 5.3, 1213.0)));
+    let c = cable_from_dps(&d);
+    assert_eq!((c.status.as_deref(), c.current_a, c.power_kw), (Some("charged"), Some(0.0), Some(0.0)), "stale");
+}
+
+/// The worker asks for DP 6 every refresh; the charger never sends it in a query or a push.
+#[tokio::test]
+async fn the_meter_is_refreshed() {
+    let sim = sim().await;
+    let h = connected(&sim).await;
+    assert_eq!(h.dps().get("6"), None, "not in the query");
+    eventually("refreshes", || sim.refreshes() >= 3).await;
+    assert_eq!(h.dps().get("6"), Some(&json!("AAAAAAAAAAA=")));
+}
+
 /// Over protocol 3.5 the handshake and the first query give a plugged-in charger.
 #[tokio::test]
 async fn connects_over_35_and_reads() {
@@ -139,8 +189,12 @@ async fn start_sets_current_and_switch_at_once() {
     eventually("charging", || h.dps().get("3") == Some(&json!("charger_charging"))).await;
     assert_eq!(sim.sets().len(), 1);
     assert_eq!(sim.sets()[0].1, dps(json!({"4": 10, "18": true})));
+    eventually("the meter", || phase(&h.dps()).is_some_and(|(v, _, _)| v > 0.0)).await;
     let Reading::Cable(c) = h.read().await.unwrap() else { panic!() };
-    assert_eq!((c.status.as_deref(), c.current_a, c.power_kw), (Some("charging"), Some(10.0), Some(2.3)));
+    assert_eq!(
+        (c.status.as_deref(), c.voltage_v, c.current_a, c.power_kw),
+        (Some("charging"), Some(230.0), Some(10.0), Some(2.3))
+    );
     tokio::time::sleep(Duration::from_millis(100)).await;
     assert_eq!(sim.sets().len(), 1, "no deferred write");
 }
@@ -180,7 +234,7 @@ async fn set_current_within_range() {
     let mut h = connected(&sim).await;
     h.apply(&Command::CableStart { amps: 6 }).await.unwrap();
     assert_eq!(h.apply(&Command::CableSetCurrent(13)).await.unwrap(), Applied::Done);
-    eventually("13 A", || h.dps().get("9") == Some(&json!(2990))).await;
+    eventually("13 A", || phase(&h.dps()).is_some_and(|(_, a, _)| a == 13.0)).await;
     for bad in [5, 17] {
         assert!(matches!(h.apply(&Command::CableSetCurrent(bad)).await, Err(DriverError::OutOfRange(_))));
     }
@@ -268,5 +322,5 @@ async fn wrong_key_or_version_never_connects() {
 #[test]
 fn production_config() {
     let c = config("192.168.1.179:6668".parse().unwrap(), "id", KEY);
-    assert_eq!((c.version, c.heartbeat), (Version::V35, Duration::from_secs(10)));
+    assert_eq!((c.version, c.heartbeat, c.refresh), (Version::V35, Duration::from_secs(10), Duration::from_secs(5)));
 }

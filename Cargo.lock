@@ -961,6 +961,7 @@ dependencies = [
  "aes-gcm",
  "async-trait",
  "axum 0.8.9",
+ "base64 0.22.1",
  "chrono",
  "chrono-tz",
  "ecb",

@@ -35,6 +35,9 @@ pub trait Profile: Send + Sync + 'static {
     const NAME: &'static str;
     /// The note on a start's deferred current write in plans.
     const DEFERRED_NOTE: &'static str = "after start_delay";
+    /// DPs the device only reports when asked (`UPDATEDPS`), such as a meter: requested every
+    /// [`ChargerConfig::refresh`] while connected.
+    const REFRESH: &'static [u32] = &[];
 
     /// The `charger:ev3` reading from the DPs.
     fn cable(dps: &Dps) -> Cable;
@@ -63,6 +66,8 @@ pub struct ChargerConfig {
     pub version: Version,
     /// Heartbeat period; the link counts as dead after three periods without any frame.
     pub heartbeat: Duration,
+    /// How often [`Profile::REFRESH`] DPs are requested.
+    pub refresh: Duration,
     /// Delay between the start DPs and a deferred current ([`Profile::start`]).
     pub start_delay: Duration,
     /// Wait before reconnecting after the link drops.
@@ -80,6 +85,7 @@ impl ChargerConfig {
             local_key: local_key.into(),
             version: Version::V34,
             heartbeat: Duration::from_secs(10),
+            refresh: Duration::from_secs(5),
             start_delay: Duration::from_secs(3),
             reconnect_delay: Duration::from_secs(5),
             timeout: Duration::from_secs(5),
@@ -335,6 +341,8 @@ impl<P: Profile> Worker<P> {
         let mut last_rx = Instant::now();
         let mut beat = tokio::time::interval_at(Instant::now() + self.cfg.heartbeat, self.cfg.heartbeat);
         let heartbeat = json!({"gwId": self.cfg.device_id, "devId": self.cfg.device_id}).to_string();
+        let mut refresh = tokio::time::interval(self.cfg.refresh);
+        let update = json!({ "dpId": P::REFRESH }).to_string();
         loop {
             let deadline = self.pending.map(|(at, _)| at);
             tokio::select! {
@@ -350,6 +358,9 @@ impl<P: Profile> Worker<P> {
                         return Exit::Lost;
                     }
                     let _ = wr.send(cmd::HEART_BEAT, heartbeat.as_bytes()).await;
+                }
+                _ = refresh.tick(), if !P::REFRESH.is_empty() => {
+                    let _ = wr.send(cmd::UPDATEDPS, update.as_bytes()).await;
                 }
                 _ = sleep_until(deadline.unwrap_or_else(Instant::now)), if deadline.is_some() => {
                     let (_, amps) = self.pending.take().expect("pending");

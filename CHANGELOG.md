@@ -3,6 +3,15 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## 0.5.3 - 2026-11-13
+
+- `tuya_evcharger` reads the charger's phase meter: DP 6, eight bytes of voltage, current and
+  power that the charger only sends when asked. The driver asks for it every 5 s (`UPDATEDPS`,
+  as the Smart Life app does), and while charging the reading is the measured voltage, current
+  and power. The set-current estimate is left as the fallback for when DP 6 is not there.
+- A Tuya profile can list DPs to refresh (`Profile::REFRESH`, `ChargerConfig::refresh`); the
+  Kolanky cable lists none. The simulator models DP 6 and answers `UPDATEDPS`.
+
 ## 0.5.2 - 2026-11-13
 
 - `tuya_evcharger`: a power below 0.1 kW while charging counts as not metered too. The EV3's

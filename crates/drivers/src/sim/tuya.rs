@@ -31,9 +31,10 @@ pub fn default_dps() -> Map<String, Value> {
 }
 
 /// The `qccdz` charger at rest with a car connected (its DP ids; values as read from the device).
+/// DP 6, the phase meter, is only sent on `UPDATEDPS`, never in a query or a push.
 pub fn evcharger_dps() -> Map<String, Value> {
-    let v = json!({"1": 1, "3": "charger_insert", "4": 16, "5": 0, "9": 0, "10": 0, "14": "charge_now",
-        "18": false, "23": "2.0.0", "24": 18, "25": 0, "27": "online"});
+    let v = json!({"1": 1, "3": "charger_insert", "4": 16, "5": 0, "6": "AAAAAAAAAAA=", "9": 0, "10": 0,
+        "14": "charge_now", "18": false, "23": "2.0.0", "24": 18, "25": 0, "27": "online"});
     v.as_object().expect("object").clone()
 }
 
@@ -54,11 +55,18 @@ struct Dev {
     answer_heartbeats: bool,
     corrupt_next: bool,
     query_override: Option<Value>,
+    refreshes: usize,
 }
 
 impl Dev {
     fn query_reply(&self) -> Value {
-        self.query_override.clone().unwrap_or_else(|| json!({"dps": self.dps}))
+        self.query_override.clone().unwrap_or_else(|| json!({"dps": self.reported(&self.dps)}))
+    }
+
+    /// What a query or a push carries: the charger leaves out its phase meter (DP 6).
+    fn reported(&self, dps: &Map<String, Value>) -> Map<String, Value> {
+        let hidden = |k: &str| self.model == Model::EvCharger && k == "6";
+        dps.iter().filter(|(k, _)| !hidden(k)).map(|(k, v)| (k.clone(), v.clone())).collect()
     }
 
     fn amps(&self) -> i64 {
@@ -86,10 +94,14 @@ impl Dev {
 
     fn apply_evcharger(&mut self, set: &Map<String, Value>) {
         let state = self.dps["3"].as_str().unwrap_or_default().to_string();
+        // As the real one: the meter is DP 6; DP 9 and DP 5 come in whole kW.
         let draw = |d: &mut Self, on: bool| {
-            let w = if on { d.dps["4"].as_i64().unwrap_or(0) * 230 } else { 0 };
-            d.dps.insert("9".into(), json!(w));
-            d.dps.insert("5".into(), json!(w));
+            let amps = if on { d.dps["4"].as_i64().unwrap_or(0) } else { 0 };
+            let w = amps * 230;
+            let volts = if on { 230.0 } else { 0.0 };
+            d.dps.insert("6".into(), json!(crate::tuya::evcharger::encode_phase(volts, amps as f64, w as f64)));
+            d.dps.insert("9".into(), json!(w / 1000));
+            d.dps.insert("5".into(), json!(w / 1000));
         };
         match set.get("18").and_then(Value::as_bool) {
             Some(true) if state != "charger_free" && !state.contains("fault") => {
@@ -229,8 +241,21 @@ async fn session(mut stream: TcpStream, dev: Shared, mut events: broadcast::Rece
                             d.sets.push((Instant::now(), set.clone()));
                             d.apply(&set)
                         };
+                        let changed = dev.lock().unwrap().reported(&changed);
                         send(&mut wr, &dev, &key, f.seq, cmd::CONTROL_NEW, None).await
                             && send(&mut wr, &dev, &key, seq, cmd::STATUS, Some(&status_json(&changed))).await
+                    }
+                    cmd::UPDATEDPS => {
+                        let v: Value = serde_json::from_slice(&plain).unwrap_or_default();
+                        let asked: Vec<String> =
+                            v["dpId"].as_array().into_iter().flatten().filter_map(Value::as_u64).map(|i| i.to_string()).collect();
+                        let dps: Map<String, Value> = {
+                            let mut d = dev.lock().unwrap();
+                            d.refreshes += 1;
+                            asked.iter().filter_map(|k| d.dps.get(k).map(|v| (k.clone(), v.clone()))).collect()
+                        };
+                        send(&mut wr, &dev, &key, f.seq, cmd::UPDATEDPS, None).await
+                            && (dps.is_empty() || send(&mut wr, &dev, &key, seq, cmd::STATUS, Some(&status_json(&dps))).await)
                     }
                     _ => true,
                 };
@@ -269,6 +294,7 @@ impl TuyaSim {
             answer_heartbeats: true,
             corrupt_next: false,
             query_override: None,
+            refreshes: 0,
         }));
         let (events, _) = broadcast::channel(64);
         let (d, ev) = (dev.clone(), events.clone());
@@ -302,6 +328,11 @@ impl TuyaSim {
     /// Every set received, with its arrival time.
     pub fn sets(&self) -> Vec<(Instant, Map<String, Value>)> {
         self.dev.lock().unwrap().sets.clone()
+    }
+
+    /// `UPDATEDPS` requests received so far.
+    pub fn refreshes(&self) -> usize {
+        self.dev.lock().unwrap().refreshes
     }
 
     /// Completed handshakes so far.

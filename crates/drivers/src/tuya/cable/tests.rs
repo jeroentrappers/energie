@@ -253,6 +253,7 @@ async fn silent_device_is_detected_by_heartbeat() {
     eventually("connect", || h.connected()).await;
     tokio::time::sleep(Duration::from_millis(120)).await;
     assert_eq!(sim.handshakes(), 1, "answered heartbeats keep the session");
+    assert_eq!(sim.refreshes(), 0, "the Kolanky reports everything by itself: no UPDATEDPS");
     sim.answer_heartbeats(false);
     eventually("reconnect", || sim.handshakes() >= 2).await;
 }

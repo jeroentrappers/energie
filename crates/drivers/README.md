@@ -166,10 +166,10 @@ Known-answer tests against tinytuya 1.21.
 | DP | Code | `world::Cable` | Encoding |
 | --- | --- | --- | --- |
 | 3 | `work_state` | `status` | `charger_free` available; `charger_insert`, `charger_wait`, `charger_pause` plugged_in; `charger_charging` charging; `charger_end` charged; `charger_fault`, `charger_free_fault` fault |
-| 9 | `power_total` | `power_kw`, `current_a` (W / 230) | kW ×1000 |
+| 6 | phase meter (no cloud code) | `voltage_v`, `current_a`, `power_kw` while `charger_charging` | base64 of 8 bytes: V ×10 (u16), mA (u24), W (u24); only sent on `UPDATEDPS` (0x12, `{"dpId":[6]}`), requested every 5 s |
+| 9 | `power_total` | without DP 6: `power_kw`, `current_a` (W / 230); below 0.1 kW while charging, the set current at 230 V | kW ×1000, in practice whole kW |
 | 4 | `charge_cur_set` | `set_current_a` | A; written 6..16 |
 | — | | `set_current_max_a` | 16 |
-| — | | `voltage_v` | unset (no DP) |
 | 18 | `switch` | (start / stop) | bool |
 | 14 | `work_mode` | (a start selects `charge_now`) | `charge_now`, `charge_pct`, `charge_energy`, `charge_schedule` |
 
@@ -251,7 +251,7 @@ against HA on 2026-11-07 13:47: 0.37692 offtake, 0.2099 injection, 18.6 % (with 
 | `sim::homewizard::HomeWizardSim` | HTTPS (throwaway CA from `rcgen`), bearer check | `set_measurement`, `set_status`, `set_raw_body`, `last_api_version`, `config(token)` |
 | `sim::solis::SolisSim` | Modbus TCP server with the register map, RC model | `set_input/holding`, `remove_holding`, `set_battery`, `set_pv`, `writes`, `fail_next(exception)`, `set_stall` |
 | `sim::mqtt::Broker` + `SmartEvseSim` | embedded `rumqttd` broker; charger client with will | `set(topic, payload)`, `get`, `received`, `kill` |
-| `sim::tuya::TuyaSim` | Kolanky cable (3.4, `start`) or `qccdz` charger (3.5, `start_evcharger`), one connection at a time | `set_dp` (pushes), `dps`, `sets`, `handshakes`, `drop_connection`, `answer_heartbeats`, `corrupt_next_frame`, `set_query_reply` |
+| `sim::tuya::TuyaSim` | Kolanky cable (3.4, `start`) or `qccdz` charger (3.5, `start_evcharger`), one connection at a time | `set_dp` (pushes), `dps`, `sets`, `handshakes`, `refreshes`, `drop_connection`, `answer_heartbeats`, `corrupt_next_frame`, `set_query_reply` |
 | `sim::omnik::OmnikSim` | HTTP `js/status.js` | `set_power`, `set_body`, `set_status`, `set_content_type` |
 | `sim::prices::PriceSim` | energy-charts JSON + ENTSO-E XML from one per-day table | `set_day`, `remove_day`, `set_energy_charts_status`, `set_entsoe_status`, `hits` |
 | `sim::proxy::TcpProxy` | TCP pass-through | `drop_all` (cut every connection) |
