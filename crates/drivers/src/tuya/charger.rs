@@ -66,7 +66,7 @@ pub struct ChargerConfig {
     pub version: Version,
     /// Heartbeat period; the link counts as dead after three periods without any frame.
     pub heartbeat: Duration,
-    /// How often [`Profile::REFRESH`] DPs are requested.
+    /// How often [`Profile::REFRESH`] DPs are requested; zero: never.
     pub refresh: Duration,
     /// Delay between the start DPs and a deferred current ([`Profile::start`]).
     pub start_delay: Duration,
@@ -288,7 +288,10 @@ impl<P: Profile> Worker<P> {
         loop {
             let exit = match self.connect().await {
                 Ok(session) => self.serve(session).await,
-                Err(_) => Exit::Lost,
+                Err(e) => {
+                    tracing::debug!(driver = P::NAME, error = %e, "tuya: connect failed");
+                    Exit::Lost
+                }
             };
             {
                 let mut s = self.state.lock().unwrap();
@@ -359,13 +362,22 @@ impl<P: Profile> Worker<P> {
         let mut last_rx = Instant::now();
         let mut beat = tokio::time::interval_at(Instant::now() + self.cfg.heartbeat, self.cfg.heartbeat);
         let heartbeat = json!({"gwId": self.cfg.device_id, "devId": self.cfg.device_id}).to_string();
-        let mut refresh = tokio::time::interval(self.cfg.refresh);
+        // `interval` refuses a zero period; a zero refresh is never polled (see the branch below).
+        let mut refresh = tokio::time::interval(self.cfg.refresh.max(Duration::from_millis(1)));
+        let refreshing = !P::REFRESH.is_empty() && !self.cfg.refresh.is_zero();
         let update = json!({ "dpId": P::REFRESH }).to_string();
+        let started = Instant::now();
         loop {
             let deadline = self.pending.map(|(at, _)| at);
             tokio::select! {
                 frame = rd.recv() => {
-                    let Ok(frame) = frame else { return Exit::Lost };
+                    let frame = match frame {
+                        Ok(f) => f,
+                        Err(e) => {
+                            tracing::warn!(driver = P::NAME, error = %e, after_s = started.elapsed().as_secs(), "tuya: session lost");
+                            return Exit::Lost;
+                        }
+                    };
                     last_rx = Instant::now();
                     if let Some(dps) = wr.open(&frame).ok().as_deref().and_then(dps_of) {
                         let mut s = self.state.lock().unwrap();
@@ -380,11 +392,12 @@ impl<P: Profile> Worker<P> {
                 }
                 _ = beat.tick() => {
                     if last_rx.elapsed() > self.cfg.heartbeat * 3 {
+                        tracing::warn!(driver = P::NAME, after_s = started.elapsed().as_secs(), "tuya: session lost: device silent");
                         return Exit::Lost;
                     }
                     let _ = wr.send(cmd::HEART_BEAT, heartbeat.as_bytes()).await;
                 }
-                _ = refresh.tick(), if !P::REFRESH.is_empty() => {
+                _ = refresh.tick(), if refreshing => {
                     let _ = wr.send(cmd::UPDATEDPS, update.as_bytes()).await;
                 }
                 _ = sleep_until(deadline.unwrap_or_else(Instant::now)), if deadline.is_some() => {

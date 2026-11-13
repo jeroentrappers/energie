@@ -985,6 +985,7 @@ dependencies = [
  "tokio-modbus",
  "tokio-rustls",
  "tower",
+ "tracing",
 ]
 
 [[package]]

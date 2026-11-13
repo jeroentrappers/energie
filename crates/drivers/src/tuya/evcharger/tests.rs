@@ -170,6 +170,16 @@ async fn the_meter_is_refreshed() {
     assert_eq!(h.dps().get("6"), Some(&json!("AAAAAAAAAAA=")));
 }
 
+/// A zero refresh never asks for the meter.
+#[tokio::test]
+async fn a_zero_refresh_never_asks() {
+    let sim = sim().await;
+    let h = EvChargerHandle::spawn(ChargerConfig { refresh: Duration::ZERO, ..cfg(sim.addr) }).unwrap();
+    eventually("connect", || h.connected()).await;
+    tokio::time::sleep(Duration::from_millis(200)).await;
+    assert_eq!(sim.refreshes(), 0);
+}
+
 /// Over protocol 3.5 the handshake and the first query give a plugged-in charger.
 #[tokio::test]
 async fn connects_over_35_and_reads() {

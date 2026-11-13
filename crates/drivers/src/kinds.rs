@@ -277,10 +277,18 @@ pub struct TuyaEvChargerTable {
     /// The local protocol, `"3.5"` (default) or `"3.4"`.
     #[serde(default = "evcharger_protocol")]
     pub protocol: String,
+    /// How often the phase meter (DP 6) is requested, s (default 5); `0`: never, and the reading
+    /// estimates the current from the set current while charging.
+    #[serde(default = "evcharger_meter_refresh_s")]
+    pub meter_refresh_s: u64,
 }
 
 fn evcharger_protocol() -> String {
     "3.5".into()
+}
+
+fn evcharger_meter_refresh_s() -> u64 {
+    5
 }
 
 impl DriverKind for TuyaEvChargerKind {
@@ -297,6 +305,7 @@ impl DriverKind for TuyaEvChargerKind {
     fn build(c: TuyaEvChargerTable, _: &BuildCx) -> Result<Box<dyn Driver>> {
         let cfg = CableConfig {
             version: Version::parse(&c.protocol)?,
+            refresh: Duration::from_secs(c.meter_refresh_s),
             ..evcharger::config(socket(&c.address, 6668)?, &c.device_id, &read_secret(&c.local_key_file)?)
         };
         Ok(Box::new(EvChargerHandle::spawn(cfg)?))
