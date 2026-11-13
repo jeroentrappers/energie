@@ -3,6 +3,14 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## 0.5.1 - 2026-11-13
+
+- `tuya_evcharger`: the EV3's charger turns out not to meter (0 W and no energy while the car
+  draws 2.2 kW). While it reports `charger_charging` without power, its set current now stands
+  for the current, and the power is that at 230 V, so the EV3 modulator sees the car drawing.
+  A charger that does report power is read as measured. Start and current changes were checked
+  with the car connected.
+
 ## 0.5.0 - 2026-11-13
 
 - New driver kind `tuya_evcharger` for Tuya EV chargers of category `qccdz` (the EV3's new
