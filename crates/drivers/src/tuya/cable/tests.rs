@@ -108,12 +108,14 @@ async fn connects_and_reads_dps() {
 async fn start_selects_then_sets_current_after_delay() {
     let sim = sim().await;
     let mut h = connected(&sim).await;
+    let sent = tokio::time::Instant::now();
     assert_eq!(h.apply(&Command::CableStart { amps: 10 }).await.unwrap(), Applied::Scheduled);
     eventually("two sets", || sim.sets().len() == 2).await;
     let sets = sim.sets();
     assert_eq!(sets[0].1, json!({"124": "OpenCharging"}).as_object().unwrap().clone());
     assert_eq!(sets[1].1, json!({"114": 10}).as_object().unwrap().clone());
-    assert!(sets[1].0 - sets[0].0 >= Duration::from_millis(60));
+    // The delay runs from the start command, not from when the simulator got the first set.
+    assert!(sets[1].0 - sent >= Duration::from_millis(60));
     eventually("charging at 10 A", || h.dps().get("105") == Some(&json!(100))).await;
     let Reading::Cable(c) = h.read().await.unwrap() else { panic!() };
     assert_eq!((c.status.as_deref(), c.current_a, c.power_kw), (Some("charging"), Some(10.0), Some(2.3)));
@@ -127,13 +129,14 @@ async fn second_start_restarts_the_sequence() {
     let mut h = connected(&sim).await;
     h.apply(&Command::CableStart { amps: 8 }).await.unwrap();
     tokio::time::sleep(Duration::from_millis(20)).await;
+    let sent = tokio::time::Instant::now();
     h.apply(&Command::CableStart { amps: 12 }).await.unwrap();
     eventually("three sets", || sim.sets().len() == 3).await;
     tokio::time::sleep(Duration::from_millis(100)).await;
     let sets = sim.sets();
     assert_eq!(sets.len(), 3);
     assert_eq!(sets[2].1, json!({"114": 12}).as_object().unwrap().clone());
-    assert!(sets[2].0 - sets[1].0 >= Duration::from_millis(60));
+    assert!(sets[2].0 - sent >= Duration::from_millis(60));
 }
 
 /// `script.laadkabel_stop_laden` selects `Stop charging`.
