@@ -86,9 +86,36 @@ fn dps_map_to_the_cable_reading() {
     );
     d.insert("9".into(), json!(1395));
     assert_eq!(cable_from_dps(&d).current_a, Some(6.07));
+    d.insert("3".into(), json!("charger_wait"));
     d.remove("9");
     let c = cable_from_dps(&d);
     assert_eq!((c.power_kw, c.current_a), (None, None));
+}
+
+/// The EV3's charger reports 0 W while it charges: then the set current stands for the
+/// current, and the power is that at 230 V. Outside `charger_charging` 0 W stays 0 W, and a
+/// reported power always wins.
+#[test]
+fn charging_without_power_reads_the_set_current() {
+    let mut d = evcharger_dps();
+    d.insert("3".into(), json!("charger_charging"));
+    d.insert("4".into(), json!(10));
+    for power in [Some(json!(0)), None] {
+        match power {
+            Some(p) => d.insert("9".into(), p),
+            None => d.remove("9"),
+        };
+        let c = cable_from_dps(&d);
+        assert_eq!((c.current_a, c.power_kw), (Some(10.0), Some(2.3)), "power {:?}", d.get("9"));
+    }
+    d.insert("9".into(), json!(1380));
+    assert_eq!(cable_from_dps(&d).current_a, Some(6.0), "measured power wins");
+    for (state, status) in [("charger_pause", "plugged_in"), ("charger_end", "charged")] {
+        d.insert("3".into(), json!(state));
+        d.insert("9".into(), json!(0));
+        let c = cable_from_dps(&d);
+        assert_eq!((c.status.as_deref(), c.current_a, c.power_kw), (Some(status), Some(0.0), Some(0.0)));
+    }
 }
 
 /// Over protocol 3.5 the handshake and the first query give a plugged-in charger.

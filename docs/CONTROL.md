@@ -150,12 +150,16 @@ client, 10 s heartbeat, lost after 3 silent periods, reconnect after 5 s), in pr
 Extra read-only entities (`cable_<key>`): total and session energy, phase power, temperature,
 mode, switch, raw status, fault bitfield, firmware (`tuya/evcharger.rs` `HA_ENTITIES`).
 
+The charger does not meter: power (DP 9, DP 5) and energy (DP 1, DP 25) stay 0 while the car
+charges. While it is `charger_charging` with no power, the set current stands for the current
+and the power is that at 230 V (`cable_from_dps`), an upper bound on what the car takes.
+
 Checked against the real charger with no car connected: reads, the session, and setting the
 current (DP 4 follows within a second). Without a car the charger refuses the switch: it answers
 `{"18": false}` and stays `charger_free`, while the set is still acknowledged, so a start then
-reports `Done` and the status shows nothing happened. A start, a current change while charging
-and a stop with the EV3 connected are not yet checked: run control mode with `dry_run = true`
-first, then watch them.
+reports `Done` and the status shows nothing happened. With the EV3 connected (2026-11-13), a start (from
+`charge_delay`: mode to `charge_now`, switch on, `charger_charging` within 5 s) and current
+changes while charging (10 → 6 → 10 A) worked; the car took 2.2 kW at 10 A.
 
 ## SmartEVSE (Buzz, MQTT)
 
