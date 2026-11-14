@@ -269,6 +269,16 @@ async fn an_end_of_its_own_reads_charged() {
     assert_eq!(status(h.read().await.unwrap()).as_deref(), Some("charged"), "the car's own end");
 }
 
+/// A current between the charger's levels is written as the level below, as the charger
+/// would keep it anyway.
+#[test]
+fn currents_round_down_to_the_levels() {
+    let d = evcharger_dps();
+    let written: Vec<_> = (6..=16).map(|a| EvCharger::current(a, &d).unwrap()["4"].clone()).collect();
+    let want = [6, 6, 8, 8, 10, 10, 10, 13, 13, 13, 16].map(|a| json!(a));
+    assert_eq!(written, want);
+}
+
 /// The current goes to DP 4 within 6..16 A; anything else is refused without a write. A new
 /// current while charging changes the draw.
 #[tokio::test]
@@ -309,11 +319,15 @@ async fn plan_and_execute_report_the_dp_sets() {
     tokio::time::sleep(Duration::from_millis(50)).await;
     assert!(sim.sets().is_empty(), "a dry run sends nothing");
     let done = h.execute(&Command::CableSetCurrent(14)).await.unwrap();
-    assert_eq!(done, Outcome { applied: Applied::Done, writes: vec![dp("4", json!(14), json!(16))] });
+    assert_eq!(
+        done,
+        Outcome { applied: Applied::Done, writes: vec![dp("4", json!(13), json!(16))] },
+        "the level below"
+    );
     eventually("set", || sim.sets().len() == 1).await;
-    eventually("14 A reported", || h.dps().get("4") == Some(&json!(14))).await;
+    eventually("13 A reported", || h.dps().get("4") == Some(&json!(13))).await;
     let stepped = h.plan(&Command::CableSetCurrent(6)).await.unwrap().writes;
-    assert_eq!(stepped, vec![dp("4", json!(6), json!(14)).note("in steps of 3 A")]);
+    assert_eq!(stepped, vec![dp("4", json!(6), json!(13)).note("in steps of 3 A")]);
 }
 
 /// A charging session that only gets acknowledgements (no meter, no pushes) queries the DPs, so
@@ -341,14 +355,14 @@ async fn a_large_drop_goes_down_in_steps() {
     assert_eq!(h.apply(&Command::CableSetCurrent(6)).await.unwrap(), Applied::Done);
     eventually("the last step", || sim.sets().len() == 5).await;
     let amps: Vec<_> = sim.sets().iter().skip(1).map(|(_, m)| m["4"].clone()).collect();
-    assert_eq!(amps, [json!(13), json!(10), json!(7), json!(6)]);
+    assert_eq!(amps, [json!(13), json!(10), json!(8), json!(6)], "the levels, at most 3 A apart");
     let gaps: Vec<_> = sim.sets().windows(2).skip(1).map(|w| w[1].0 - w[0].0).collect();
     assert!(gaps.iter().all(|g| *g >= Duration::from_millis(25)), "{gaps:?}");
 
     h.apply(&Command::CableSetCurrent(9)).await.unwrap();
     h.apply(&Command::CableSetCurrent(7)).await.unwrap();
     eventually("two sets", || sim.sets().len() == 7).await;
-    assert_eq!((sim.sets()[5].1["4"].clone(), sim.sets()[6].1["4"].clone()), (json!(9), json!(7)));
+    assert_eq!((sim.sets()[5].1["4"].clone(), sim.sets()[6].1["4"].clone()), (json!(8), json!(6)), "the level below");
 
     h.apply(&Command::CableSetCurrent(16)).await.unwrap();
     h.apply(&Command::CableSetCurrent(6)).await.unwrap();

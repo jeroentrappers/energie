@@ -168,7 +168,7 @@ Known-answer tests against tinytuya 1.21.
 | 3 | `work_state` | `status` | `charger_free` available; `charger_insert`, `charger_wait`, `charger_pause` plugged_in; `charger_charging` charging; `charger_end` charged; `charger_fault`, `charger_free_fault` fault |
 | 6 | phase meter (no cloud code) | `voltage_v`, `current_a`, `power_kw` while `charger_charging` | base64 of 8 bytes: V ×10 (u16), mA (u24), W (u24); only sent on `UPDATEDPS` (0x12, `{"dpId":[6]}`), requested every 5 s |
 | 9 | `power_total` | without DP 6: `power_kw`, `current_a` (W / 230); below 0.1 kW while charging, the set current at 230 V | kW ×1000, in practice whole kW |
-| 4 | `charge_cur_set` | `set_current_a` | A; written 6..16 |
+| 4 | `charge_cur_set` | `set_current_a` | A; written 6..16, as the level at or below (6, 8, 10, 13, 16): the charger keeps no other |
 | — | | `set_current_max_a` | 16 |
 | 18 | `switch` | (start / stop) | bool |
 | 14 | `work_mode` | (a start selects `charge_now`) | `charge_now`, `charge_pct`, `charge_energy`, `charge_schedule` |

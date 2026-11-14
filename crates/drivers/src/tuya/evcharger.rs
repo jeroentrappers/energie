@@ -9,7 +9,7 @@
 //! | --- | --- | --- | --- |
 //! | 1 | `forward_energy_total` | kWh ×100 | entity `energy_total_kwh` |
 //! | 3 | `work_state` | `charger_free`, `charger_insert`, `charger_wait`, `charger_charging`, `charger_pause`, `charger_end`, `charger_fault`, `charger_free_fault` | `status` ([`status_name`]) |
-//! | 4 | `charge_cur_set` | A (the device takes 1..255; we write 6..=[`MAX_A`]) | `set_current_a` |
+//! | 4 | `charge_cur_set` | A (the device accepts 1..255 but keeps only [`LEVELS`]; we write the level at or below, 6..=[`MAX_A`]) | `set_current_a` |
 //! | 5 | `sigle_phase_power` | kW ×1000 (in practice whole kW) | entity `phase_power_kw` |
 //! | 6 | phase meter (not in the cloud map) | base64 of 8 bytes: V ×10 (u16), mA (u24), W (u24); only sent on `UPDATEDPS` | `voltage_v`, `current_a`, `power_kw` ([`phase`]) |
 //! | 9 | `power_total` | kW ×1000 (in practice whole kW) | `power_kw` when DP 6 is not there (see below) |
@@ -57,6 +57,9 @@ pub type EvChargerHandle = TuyaCharger<EvCharger>;
 pub const MIN_A: u8 = 6;
 /// The highest current written: the charger's rating (it reports 16 A as its setting at full).
 pub const MAX_A: u8 = 16;
+/// The currents the charger takes. It takes any value in DP 4 but keeps the level below:
+/// 11 A reads back as 10, 14 as 13 (2026-11-14). Nothing else was ever reported.
+pub const LEVELS: &[u8] = &[6, 8, 10, 13, 16];
 /// The voltage the current is derived at.
 const VOLT: f64 = 230.0;
 /// Below this a power reported while charging is not a measurement (the EV3's charger reports
@@ -177,6 +180,7 @@ impl Profile for EvCharger {
     /// It tripped on overcurrent (`charger_fault`, latched until the car is unplugged) 3 s after
     /// a drop from 13 to 6 A while the car drew 13 A; drops of 4 A never did (2026-11-14).
     const STEP_DOWN: Option<u8> = Some(3);
+    const LEVELS: &'static [u8] = LEVELS;
 
     fn cable(dps: &Dps) -> Cable {
         cable_from_dps(dps)
@@ -206,7 +210,9 @@ impl Profile for EvCharger {
         if !(MIN_A..=MAX_A).contains(&amps) {
             return Err(DriverError::OutOfRange(format!("{amps} A, charger accepts {MIN_A}..{MAX_A}")));
         }
-        Ok(dp("4", json!(amps)))
+        // The level at or below: what the charger would keep anyway, so the reading matches.
+        let level = LEVELS.iter().rev().copied().find(|l| *l <= amps).unwrap_or(MIN_A);
+        Ok(dp("4", json!(level)))
     }
 }
 

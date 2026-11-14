@@ -42,6 +42,10 @@ pub trait Profile: Send + Sync + 'static {
     /// steps of this size every [`ChargerConfig::step_interval`], so the car can follow; a
     /// charger that sees the car draw well over a new, much lower setting trips on overcurrent.
     const STEP_DOWN: Option<u8> = None;
+    /// The currents the device takes, ascending (empty: any whole ampere in range). A
+    /// [`Profile::current`] between them should write the level below; the steps of a lowered
+    /// current land on these levels.
+    const LEVELS: &'static [u8] = &[];
 
     /// The `charger:ev3` reading from the DPs.
     fn cable(dps: &Dps) -> Cable;
@@ -249,6 +253,12 @@ fn writes_of<P: Profile>(op: &Op, dps: &Dps) -> Result<Vec<Write>> {
     })
 }
 
+/// The level at or below `amps` ([`Profile::LEVELS`]; `amps` when there are none, or none is
+/// that low).
+fn floor_level<P: Profile>(amps: u8) -> u8 {
+    P::LEVELS.iter().rev().copied().find(|l| *l <= amps).unwrap_or(amps)
+}
+
 /// The set current as last reported (`charge_cur_set`, DP 4 on both chargers).
 fn set_current<P: Profile>(dps: &Dps) -> Option<u8> {
     P::cable(dps).set_current_a.and_then(|a| u8::try_from(a.round() as i64).ok())
@@ -392,14 +402,9 @@ impl<P: Profile> Worker<P> {
     /// [`Profile::STEP_DOWN`]) one step now and the rest from [`Worker::step`].
     async fn current(&mut self, wr: &mut Writer<TcpStream>, target: u8) -> Result<()> {
         P::current(target, &self.state.lock().unwrap().dps)?;
-        // The higher of what was written and what the device reports: the car may still draw
-        // either.
-        let from = self.written.max(set_current::<P>(&self.state.lock().unwrap().dps));
         self.ramp = None;
-        let first = match (P::STEP_DOWN, from) {
-            (Some(step), Some(from)) if from > target.saturating_add(step) => from - step,
-            _ => target,
-        };
+        let target = floor_level::<P>(target);
+        let first = self.next_step(target, self.written.max(set_current::<P>(&self.state.lock().unwrap().dps)));
         self.set_current(wr, first).await?;
         if first != target {
             self.ramp = Some(Ramp { at: Instant::now() + self.cfg.step_interval, target });
@@ -407,11 +412,25 @@ impl<P: Profile> Worker<P> {
         Ok(())
     }
 
+    /// The current to write next on the way from `from` to `target` (a level): `target`
+    /// itself, unless that drops by more than [`Profile::STEP_DOWN`]; then the lowest level
+    /// within one step. A new current starts from the higher of what was written and what the
+    /// device reports (the car may still draw either); a step from the one before it, as the
+    /// report may lag (by up to a query period in a session without pushes).
+    fn next_step(&self, target: u8, from: Option<u8>) -> u8 {
+        match (P::STEP_DOWN, from) {
+            (Some(step), Some(from)) if from > target.saturating_add(step) => {
+                let low = from - step;
+                P::LEVELS.iter().copied().find(|l| *l >= low).unwrap_or(low).max(target)
+            }
+            _ => target,
+        }
+    }
+
     /// The next step of a lowered current.
     async fn step(&mut self, wr: &mut Writer<TcpStream>) {
         let Some(Ramp { target, .. }) = self.ramp.take() else { return };
-        let level = self.written.unwrap_or(target);
-        let next = target.max(level.saturating_sub(P::STEP_DOWN.unwrap_or(u8::MAX)));
+        let next = self.next_step(target, self.written);
         if let Err(e) = self.set_current(wr, next).await {
             tracing::warn!(driver = P::NAME, error = %e, amps = next, "tuya: current step failed");
         }

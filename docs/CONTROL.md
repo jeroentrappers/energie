@@ -142,7 +142,7 @@ same commands the cable took.
 | --- | --- |
 | `CableStart { amps }` | 14 `charge_now` (only when another mode is selected), 4 the current (only within 6..16 A), 18 `true` |
 | `CableStop` | 18 `false`; the charger ends the session (`charger_end`) |
-| `CableSetCurrent(a)` | 4, 6..16 A; out of range is refused without a write. A drop of more than 3 A goes down 3 A every 5 s |
+| `CableSetCurrent(a)` | 4, 6..16 A, as the level at or below (6, 8, 10, 13, 16); out of range is refused without a write. A drop of more than 3 A goes down through the levels, 5 s apart |
 | `CableReconnect` | session dropped and renegotiated |
 
 A start is `Done`, not `Scheduled`: no current follows later. Session as for the cable (one
@@ -156,14 +156,26 @@ switch-off. The worker therefore remembers its own stop: until the next start, o
 charger reports charging again (whoever started it), `charger_end` reads `plugged_in`, and the
 logic restarts the car as soon as there is room.
 
+The charger keeps only 6, 8, 10, 13 and 16 A: it acknowledges any value in DP 4 and keeps the
+level below (11 A reads back 10, 14 A 13; checked 2026-11-14 against all its reports since
+install). The driver writes that level itself, so the reading matches what was written.
+
 A lower current is written in steps of at most 3 A, 5 s apart (`Profile::STEP_DOWN`,
 `ChargerConfig::step_interval`). On 2026-11-14 the peak limit cut the EV3 from 13 to 6 A in one
 write while the car drew 13 A. Three seconds later the charger reported `charger_fault`
 (overcurrent in the Smart Life app), switched off, and stayed there: switching it off and on
 again through the Tuya cloud did not clear it, so energie cannot recover from it on its own.
 Drops of 4 A had never tripped it. A step is measured from the higher of the last current
-written and the one reported, a new current replaces the remaining steps, and a raise is
+written and the one reported (each later step from the step before), the steps land on the
+levels (16 → 13 → 10 → 8 → 6), a new current replaces the remaining steps, and a raise is
 written at once.
+
+Some sessions get no status frames at all: requests are acknowledged, but the meter (DP 6), the
+pushes and most echoes of a set never come, for hours and in every new session (2026-11-14,
+with and without the Smart Life app open; its app still showed the meter through the cloud).
+While charging, after 30 s without a status frame the worker queries the DPs (every 30 s until
+one comes), so status and set current stay current; the current then falls back to the set
+current at 230 V.
 
 The meter is DP 6 (voltage, current, power), which the charger only sends when asked: the
 worker requests it every 5 s with `UPDATEDPS`. DP 9 and DP 5 come in whole kW. While

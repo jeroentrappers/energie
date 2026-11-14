@@ -3,6 +3,16 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## Unreleased
+
+- `tuya_evcharger` writes only the currents the charger keeps: 6, 8, 10, 13 and 16 A, as the
+  level at or below the one asked for. The charger silently kept the level below (11 A read
+  back as 10), so the logic asked for 11 A hundreds of times while 10 A flowed. Lowering steps
+  through the levels (16 → 13 → 10 → 8 → 6). A profile lists its levels in `Profile::LEVELS`.
+- A charging Tuya charger that sends no status frames for 30 s is queried for its DPs: some
+  sessions only get acknowledgements, and the reading stayed as it was at connect.
+- Incoming Tuya frames are traced at debug level (`RUST_LOG=energie_drivers::tuya=debug`).
+
 ## 0.5.5 - 2026-11-14
 
 - `tuya_evcharger` lowers the current in steps of at most 3 A, 5 s apart. A cut from 13 to 6 A

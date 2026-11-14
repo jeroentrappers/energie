@@ -96,6 +96,12 @@ impl Dev {
     }
 
     fn apply_evcharger(&mut self, set: &Map<String, Value>) {
+        // As the real one: a current between its levels is taken as the level below.
+        if let Some(a) = set.get("4").and_then(Value::as_u64) {
+            let levels = crate::tuya::evcharger::LEVELS;
+            let level = levels.iter().rev().find(|l| u64::from(**l) <= a).copied().unwrap_or(levels[0]);
+            self.dps.insert("4".into(), json!(level));
+        }
         let state = self.dps["3"].as_str().unwrap_or_default().to_string();
         // As the real one: the meter is DP 6; DP 9 and DP 5 come in whole kW.
         let draw = |d: &mut Self, on: bool| {
