@@ -463,7 +463,15 @@ impl<P: Profile> Worker<P> {
                         }
                     };
                     last_rx = Instant::now();
-                    if let Some(dps) = wr.open(&frame).ok().as_deref().and_then(dps_of) {
+                    let plain = wr.open(&frame);
+                    if tracing::enabled!(tracing::Level::DEBUG) {
+                        let body = match &plain {
+                            Ok(p) => String::from_utf8_lossy(p).into_owned(),
+                            Err(e) => format!("<{e}>"),
+                        };
+                        tracing::debug!(driver = P::NAME, cmd = frame.cmd, retcode = ?frame.retcode, %body, "tuya: frame");
+                    }
+                    if let Some(dps) = plain.ok().as_deref().and_then(dps_of) {
                         let mut s = self.state.lock().unwrap();
                         // The device reports charging (again), whoever started it: a later end is
                         // the car's own. Only this frame's DPs count: a meter refresh between the
