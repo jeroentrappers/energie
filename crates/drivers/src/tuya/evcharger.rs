@@ -174,6 +174,9 @@ pub struct EvCharger;
 impl Profile for EvCharger {
     const NAME: &'static str = "tuya_evcharger";
     const REFRESH: &'static [u32] = &[6];
+    /// It tripped on overcurrent (`charger_fault`, latched until the car is unplugged) 3 s after
+    /// a drop from 13 to 6 A while the car drew 13 A; drops of 4 A never did (2026-11-14).
+    const STEP_DOWN: Option<u8> = Some(3);
 
     fn cable(dps: &Dps) -> Cable {
         cable_from_dps(dps)

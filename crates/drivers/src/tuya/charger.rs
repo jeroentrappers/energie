@@ -38,6 +38,10 @@ pub trait Profile: Send + Sync + 'static {
     /// DPs the device only reports when asked (`UPDATEDPS`), such as a meter: requested every
     /// [`ChargerConfig::refresh`] while connected.
     const REFRESH: &'static [u32] = &[];
+    /// The largest drop in set current per write (`None`: any). A larger drop is written in
+    /// steps of this size every [`ChargerConfig::step_interval`], so the car can follow; a
+    /// charger that sees the car draw well over a new, much lower setting trips on overcurrent.
+    const STEP_DOWN: Option<u8> = None;
 
     /// The `charger:ev3` reading from the DPs.
     fn cable(dps: &Dps) -> Cable;
@@ -68,6 +72,8 @@ pub struct ChargerConfig {
     pub heartbeat: Duration,
     /// How often [`Profile::REFRESH`] DPs are requested; zero: never.
     pub refresh: Duration,
+    /// Time between the steps of a lowered current ([`Profile::STEP_DOWN`]).
+    pub step_interval: Duration,
     /// Delay between the start DPs and a deferred current ([`Profile::start`]).
     pub start_delay: Duration,
     /// Wait before reconnecting after the link drops.
@@ -86,6 +92,7 @@ impl ChargerConfig {
             version: Version::V34,
             heartbeat: Duration::from_secs(10),
             refresh: Duration::from_secs(5),
+            step_interval: Duration::from_secs(5),
             start_delay: Duration::from_secs(3),
             reconnect_delay: Duration::from_secs(5),
             timeout: Duration::from_secs(5),
@@ -148,7 +155,19 @@ impl<P: Profile> TuyaCharger<P> {
         let key = protocol::parse_key(&cfg.local_key)?;
         let state: Shared = Arc::default();
         let (tx, rx) = mpsc::channel(16);
-        tokio::spawn(Worker::<P> { cfg, key, state: state.clone(), rx, pending: None, profile: PhantomData }.run());
+        tokio::spawn(
+            Worker::<P> {
+                cfg,
+                key,
+                state: state.clone(),
+                rx,
+                pending: None,
+                ramp: None,
+                written: None,
+                profile: PhantomData,
+            }
+            .run(),
+        );
         Ok(TuyaCharger { tx, state, profile: PhantomData })
     }
 
@@ -212,9 +231,22 @@ fn writes_of<P: Profile>(op: &Op, dps: &Dps) -> Result<Vec<Write>> {
             w
         }
         Op::Stop => set(P::stop(dps)),
-        Op::Current(amps) => set(P::current(amps, dps)?),
+        Op::Current(amps) => {
+            let w = set(P::current(amps, dps)?);
+            match (P::STEP_DOWN, set_current::<P>(dps)) {
+                (Some(step), Some(from)) if from > amps.saturating_add(step) => {
+                    w.into_iter().map(|w| w.note(format!("in steps of {step} A"))).collect()
+                }
+                _ => w,
+            }
+        }
         Op::Reconnect => vec![Write::new("tuya session", "reconnect")],
     })
+}
+
+/// The set current as last reported (`charge_cur_set`, DP 4 on both chargers).
+fn set_current<P: Profile>(dps: &Dps) -> Option<u8> {
+    P::cable(dps).set_current_a.and_then(|a| u8::try_from(a.round() as i64).ok())
 }
 
 #[async_trait]
@@ -263,7 +295,17 @@ struct Worker<P> {
     rx: mpsc::Receiver<(Op, Reply)>,
     /// The pending second half of a `CableStart`: when, and which current.
     pending: Option<(Instant, u8)>,
+    /// A current being lowered in steps: when the next step is due, and the target.
+    ramp: Option<Ramp>,
+    /// The set current last written in this session (the device reports it a moment later).
+    written: Option<u8>,
     profile: PhantomData<fn() -> P>,
+}
+
+#[derive(Clone, Copy)]
+struct Ramp {
+    at: Instant,
+    target: u8,
 }
 
 type Session = (Reader<TcpStream>, Writer<TcpStream>);
@@ -299,6 +341,8 @@ impl<P: Profile> Worker<P> {
                 s.dps.clear();
             }
             self.pending = None;
+            self.ramp = None;
+            self.written = None;
             match exit {
                 Exit::Closed => return,
                 Exit::Reconnect => continue,
@@ -324,20 +368,58 @@ impl<P: Profile> Worker<P> {
         }
     }
 
-    async fn set(&self, wr: &mut Writer<TcpStream>, dps: Dps) -> Result<()> {
+    async fn set(&mut self, wr: &mut Writer<TcpStream>, dps: Dps) -> Result<()> {
         let t = chrono::Utc::now().timestamp();
-        wr.send(cmd::CONTROL_NEW, json!({"protocol": 5, "t": t, "data": {"dps": dps}}).to_string().as_bytes()).await
+        let amps = P::cable(&dps).set_current_a.and_then(|a| u8::try_from(a.round() as i64).ok());
+        wr.send(cmd::CONTROL_NEW, json!({"protocol": 5, "t": t, "data": {"dps": dps}}).to_string().as_bytes()).await?;
+        if amps.is_some() {
+            self.written = amps;
+        }
+        Ok(())
     }
 
-    async fn set_current(&self, wr: &mut Writer<TcpStream>, amps: u8) -> Result<()> {
+    async fn set_current(&mut self, wr: &mut Writer<TcpStream>, amps: u8) -> Result<()> {
         let m = P::current(amps, &self.state.lock().unwrap().dps)?;
         self.set(wr, m).await
+    }
+
+    /// Lower or raise the current towards `target`: at once, or (lowering by more than
+    /// [`Profile::STEP_DOWN`]) one step now and the rest from [`Worker::step`].
+    async fn current(&mut self, wr: &mut Writer<TcpStream>, target: u8) -> Result<()> {
+        P::current(target, &self.state.lock().unwrap().dps)?;
+        // The higher of what was written and what the device reports: the car may still draw
+        // either.
+        let from = self.written.max(set_current::<P>(&self.state.lock().unwrap().dps));
+        self.ramp = None;
+        let first = match (P::STEP_DOWN, from) {
+            (Some(step), Some(from)) if from > target.saturating_add(step) => from - step,
+            _ => target,
+        };
+        self.set_current(wr, first).await?;
+        if first != target {
+            self.ramp = Some(Ramp { at: Instant::now() + self.cfg.step_interval, target });
+        }
+        Ok(())
+    }
+
+    /// The next step of a lowered current.
+    async fn step(&mut self, wr: &mut Writer<TcpStream>) {
+        let Some(Ramp { target, .. }) = self.ramp.take() else { return };
+        let level = self.written.unwrap_or(target);
+        let next = target.max(level.saturating_sub(P::STEP_DOWN.unwrap_or(u8::MAX)));
+        if let Err(e) = self.set_current(wr, next).await {
+            tracing::warn!(driver = P::NAME, error = %e, amps = next, "tuya: current step failed");
+        }
+        if next != target {
+            self.ramp = Some(Ramp { at: Instant::now() + self.cfg.step_interval, target });
+        }
     }
 
     async fn command(&mut self, wr: &mut Writer<TcpStream>, op: Op) -> Result<Applied> {
         match op {
             Op::Start(amps) => {
                 let (now, later) = P::start(amps, &self.state.lock().unwrap().dps);
+                self.ramp = None;
                 self.set(wr, now).await?;
                 self.state.lock().unwrap().stopped = false;
                 // `mode: restart`: a new start replaces a pending one.
@@ -345,12 +427,13 @@ impl<P: Profile> Worker<P> {
                 Ok(if later.is_some() { Applied::Scheduled } else { Applied::Done })
             }
             Op::Stop => {
+                self.ramp = None;
                 let m = P::stop(&self.state.lock().unwrap().dps);
                 self.set(wr, m).await?;
                 self.state.lock().unwrap().stopped = true;
                 Ok(Applied::Done)
             }
-            Op::Current(amps) => self.set_current(wr, amps).await.map(|()| Applied::Done),
+            Op::Current(amps) => self.current(wr, amps).await.map(|()| Applied::Done),
             Op::Reconnect => Ok(Applied::Done),
         }
     }
@@ -369,6 +452,7 @@ impl<P: Profile> Worker<P> {
         let started = Instant::now();
         loop {
             let deadline = self.pending.map(|(at, _)| at);
+            let step_at = self.ramp.map(|r| r.at);
             tokio::select! {
                 frame = rd.recv() => {
                     let frame = match frame {
@@ -404,6 +488,9 @@ impl<P: Profile> Worker<P> {
                     let (_, amps) = self.pending.take().expect("pending");
                     // HA's script fails at `number.set_value` on a bad value; the start stays.
                     let _ = self.set_current(&mut wr, amps).await;
+                }
+                _ = sleep_until(step_at.unwrap_or_else(Instant::now)), if step_at.is_some() => {
+                    self.step(&mut wr).await;
                 }
                 m = self.rx.recv() => {
                     let Some((op, reply)) = m else { return Exit::Closed };

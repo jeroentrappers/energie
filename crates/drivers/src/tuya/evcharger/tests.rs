@@ -17,6 +17,7 @@ fn cfg(addr: SocketAddr) -> ChargerConfig {
     ChargerConfig {
         heartbeat: Duration::from_millis(200),
         refresh: Duration::from_millis(50),
+        step_interval: Duration::from_millis(30),
         reconnect_delay: Duration::from_millis(30),
         timeout: Duration::from_millis(500),
         ..config(addr, "bf00000000000000000000", KEY)
@@ -306,9 +307,40 @@ async fn plan_and_execute_report_the_dp_sets() {
     assert_eq!(h.plan(&Command::SolisReconnect).await.unwrap().applied, Applied::NotMine);
     tokio::time::sleep(Duration::from_millis(50)).await;
     assert!(sim.sets().is_empty(), "a dry run sends nothing");
-    let done = h.execute(&Command::CableSetCurrent(12)).await.unwrap();
-    assert_eq!(done, Outcome { applied: Applied::Done, writes: vec![dp("4", json!(12), json!(16))] });
+    let done = h.execute(&Command::CableSetCurrent(14)).await.unwrap();
+    assert_eq!(done, Outcome { applied: Applied::Done, writes: vec![dp("4", json!(14), json!(16))] });
     eventually("set", || sim.sets().len() == 1).await;
+    eventually("14 A reported", || h.dps().get("4") == Some(&json!(14))).await;
+    let stepped = h.plan(&Command::CableSetCurrent(6)).await.unwrap().writes;
+    assert_eq!(stepped, vec![dp("4", json!(6), json!(14)).note("in steps of 3 A")]);
+}
+
+/// A drop of more than 3 A goes down in steps of 3 A, so the car follows before the charger
+/// sees it over the new setting (it latched an overcurrent fault on 13 → 6 A). Raising, and a
+/// small drop, are written at once; a new current or a stop replaces the steps.
+#[tokio::test]
+async fn a_large_drop_goes_down_in_steps() {
+    let sim = sim().await;
+    let mut h = connected(&sim).await;
+    h.apply(&Command::CableStart { amps: 16 }).await.unwrap();
+    assert_eq!(h.apply(&Command::CableSetCurrent(6)).await.unwrap(), Applied::Done);
+    eventually("the last step", || sim.sets().len() == 5).await;
+    let amps: Vec<_> = sim.sets().iter().skip(1).map(|(_, m)| m["4"].clone()).collect();
+    assert_eq!(amps, [json!(13), json!(10), json!(7), json!(6)]);
+    let gaps: Vec<_> = sim.sets().windows(2).skip(1).map(|w| w[1].0 - w[0].0).collect();
+    assert!(gaps.iter().all(|g| *g >= Duration::from_millis(25)), "{gaps:?}");
+
+    h.apply(&Command::CableSetCurrent(9)).await.unwrap();
+    h.apply(&Command::CableSetCurrent(7)).await.unwrap();
+    eventually("two sets", || sim.sets().len() == 7).await;
+    assert_eq!((sim.sets()[5].1["4"].clone(), sim.sets()[6].1["4"].clone()), (json!(9), json!(7)));
+
+    h.apply(&Command::CableSetCurrent(16)).await.unwrap();
+    h.apply(&Command::CableSetCurrent(6)).await.unwrap();
+    h.apply(&Command::CableStop).await.unwrap();
+    tokio::time::sleep(Duration::from_millis(120)).await;
+    let tail: Vec<_> = sim.sets().iter().skip(7).map(|(_, m)| m.clone()).collect();
+    assert_eq!(tail, [dps(json!({"4": 16})), dps(json!({"4": 13})), dps(json!({"18": false}))]);
 }
 
 /// The extra entities come from the DPs already reported, with the Tuya cloud entities they

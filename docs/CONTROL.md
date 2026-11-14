@@ -142,7 +142,7 @@ same commands the cable took.
 | --- | --- |
 | `CableStart { amps }` | 14 `charge_now` (only when another mode is selected), 4 the current (only within 6..16 A), 18 `true` |
 | `CableStop` | 18 `false`; the charger ends the session (`charger_end`) |
-| `CableSetCurrent(a)` | 4, 6..16 A; out of range is refused without a write |
+| `CableSetCurrent(a)` | 4, 6..16 A; out of range is refused without a write. A drop of more than 3 A goes down 3 A every 5 s |
 | `CableReconnect` | session dropped and renegotiated |
 
 A start is `Done`, not `Scheduled`: no current follows later. Session as for the cable (one
@@ -155,6 +155,15 @@ mode, switch, raw status, fault bitfield, firmware (`tuya/evcharger.rs` `HA_ENTI
 switch-off. The worker therefore remembers its own stop: until the next start, or until the
 charger reports charging again (whoever started it), `charger_end` reads `plugged_in`, and the
 logic restarts the car as soon as there is room.
+
+A lower current is written in steps of at most 3 A, 5 s apart (`Profile::STEP_DOWN`,
+`ChargerConfig::step_interval`). On 2026-11-14 the peak limit cut the EV3 from 13 to 6 A in one
+write while the car drew 13 A. Three seconds later the charger reported `charger_fault`
+(overcurrent in the Smart Life app), switched off, and stayed there: switching it off and on
+again through the Tuya cloud did not clear it, so energie cannot recover from it on its own.
+Drops of 4 A had never tripped it. A step is measured from the higher of the last current
+written and the one reported, a new current replaces the remaining steps, and a raise is
+written at once.
 
 The meter is DP 6 (voltage, current, power), which the charger only sends when asked: the
 worker requests it every 5 s with `UPDATEDPS`. DP 9 and DP 5 come in whole kW. While

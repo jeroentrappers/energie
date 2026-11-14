@@ -3,6 +3,16 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## Unreleased
+
+- `tuya_evcharger` lowers the current in steps of at most 3 A, 5 s apart. A cut from 13 to 6 A
+  in one write, with the car drawing 13 A, tripped the charger into an overcurrent fault that
+  holds until the car is unplugged. Raising stays immediate. Any Tuya profile can set a step
+  (`Profile::STEP_DOWN`, `ChargerConfig::step_interval`); the Kolanky cable has none.
+- Tuya chargers log why a session ends (`tuya: session lost`, with the error and how long it
+  lasted).
+- `tuya_evcharger` takes `meter_refresh_s` (default 5; 0 stops the DP 6 requests).
+
 ## 0.5.4 - 2026-11-13
 
 - Tuya chargers: after energie's own stop, a session the charger ends (`charger_end` on the
