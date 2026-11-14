@@ -72,6 +72,10 @@ pub struct ChargerConfig {
     pub heartbeat: Duration,
     /// How often [`Profile::REFRESH`] DPs are requested; zero: never.
     pub refresh: Duration,
+    /// While charging and refreshing, after this long without a status frame the DPs are
+    /// queried (again every period until one arrives): the device may acknowledge requests
+    /// but stop reporting.
+    pub status_timeout: Duration,
     /// Time between the steps of a lowered current ([`Profile::STEP_DOWN`]).
     pub step_interval: Duration,
     /// Delay between the start DPs and a deferred current ([`Profile::start`]).
@@ -92,6 +96,7 @@ impl ChargerConfig {
             version: Version::V34,
             heartbeat: Duration::from_secs(10),
             refresh: Duration::from_secs(5),
+            status_timeout: Duration::from_secs(30),
             step_interval: Duration::from_secs(5),
             start_delay: Duration::from_secs(3),
             reconnect_delay: Duration::from_secs(5),
@@ -450,6 +455,9 @@ impl<P: Profile> Worker<P> {
         let refreshing = !P::REFRESH.is_empty() && !self.cfg.refresh.is_zero();
         let update = json!({ "dpId": P::REFRESH }).to_string();
         let started = Instant::now();
+        // The query in `connect` counts as the first status.
+        let mut last_status = Instant::now();
+        let mut last_query = Instant::now();
         loop {
             let deadline = self.pending.map(|(at, _)| at);
             let step_at = self.ramp.map(|r| r.at);
@@ -472,6 +480,7 @@ impl<P: Profile> Worker<P> {
                         tracing::debug!(driver = P::NAME, cmd = frame.cmd, retcode = ?frame.retcode, %body, "tuya: frame");
                     }
                     if let Some(dps) = plain.ok().as_deref().and_then(dps_of) {
+                        last_status = Instant::now();
                         let mut s = self.state.lock().unwrap();
                         // The device reports charging (again), whoever started it: a later end is
                         // the car's own. Only this frame's DPs count: a meter refresh between the
@@ -490,6 +499,17 @@ impl<P: Profile> Worker<P> {
                     let _ = wr.send(cmd::HEART_BEAT, heartbeat.as_bytes()).await;
                 }
                 _ = refresh.tick(), if refreshing => {
+                    // The `qccdz` sometimes only acknowledges: no meter, no pushes, rarely an echo
+                    // of a set, in every session for hours (a reconnect does not help; its app
+                    // still gets the meter through the cloud). The readings would stay as they
+                    // were at connect, so ask for them; the device answers queries.
+                    let charging = self.state.lock().unwrap().cable::<P>().status.as_deref() == Some("charging");
+                    let quiet = last_status.elapsed().min(last_query.elapsed());
+                    if charging && quiet > self.cfg.status_timeout {
+                        tracing::debug!(driver = P::NAME, silent_s = last_status.elapsed().as_secs(), "tuya: no status; querying");
+                        last_query = Instant::now();
+                        let _ = wr.send(cmd::DP_QUERY_NEW, b"{}").await;
+                    }
                     let _ = wr.send(cmd::UPDATEDPS, update.as_bytes()).await;
                 }
                 _ = sleep_until(deadline.unwrap_or_else(Instant::now)), if deadline.is_some() => {

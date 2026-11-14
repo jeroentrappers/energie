@@ -17,6 +17,7 @@ fn cfg(addr: SocketAddr) -> ChargerConfig {
     ChargerConfig {
         heartbeat: Duration::from_millis(200),
         refresh: Duration::from_millis(50),
+        status_timeout: Duration::from_millis(300),
         step_interval: Duration::from_millis(30),
         reconnect_delay: Duration::from_millis(30),
         timeout: Duration::from_millis(500),
@@ -313,6 +314,20 @@ async fn plan_and_execute_report_the_dp_sets() {
     eventually("14 A reported", || h.dps().get("4") == Some(&json!(14))).await;
     let stepped = h.plan(&Command::CableSetCurrent(6)).await.unwrap().writes;
     assert_eq!(stepped, vec![dp("4", json!(6), json!(14)).note("in steps of 3 A")]);
+}
+
+/// A charging session that only gets acknowledgements (no meter, no pushes) queries the DPs, so
+/// the reading follows the device; the session stays.
+#[tokio::test]
+async fn a_charging_session_without_status_queries() {
+    let sim = sim().await;
+    let mut h = connected(&sim).await;
+    h.apply(&Command::CableStart { amps: 10 }).await.unwrap();
+    eventually("charging", || h.dps().get("3") == Some(&json!("charger_charging"))).await;
+    sim.push_status(false);
+    sim.set_dp("3", json!("charger_end"));
+    eventually("the end, from a query", || cable_from_dps(&h.dps()).status.as_deref() == Some("charged")).await;
+    assert_eq!(sim.handshakes(), 1, "no reconnect");
 }
 
 /// A drop of more than 3 A goes down in steps of 3 A, so the car follows before the charger

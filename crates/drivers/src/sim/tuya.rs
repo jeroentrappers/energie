@@ -54,6 +54,8 @@ struct Dev {
     handshakes: usize,
     active: bool,
     answer_heartbeats: bool,
+    /// Send status frames (`STATUS`: pushes, set echoes, `UPDATEDPS` answers).
+    push_status: bool,
     corrupt_next: bool,
     query_override: Option<Value>,
     refreshes: usize,
@@ -195,6 +197,9 @@ async fn send(
     command: u32,
     plain: Option<&[u8]>,
 ) -> bool {
+    if command == cmd::STATUS && !dev.lock().unwrap().push_status {
+        return true;
+    }
     let (v, corrupt) = {
         let mut d = dev.lock().unwrap();
         (d.version, std::mem::take(&mut d.corrupt_next))
@@ -294,6 +299,7 @@ impl TuyaSim {
             handshakes: 0,
             active: false,
             answer_heartbeats: true,
+            push_status: true,
             corrupt_next: false,
             query_override: None,
             refreshes: 0,
@@ -350,6 +356,13 @@ impl TuyaSim {
     /// Stop (or resume) answering heartbeats.
     pub fn answer_heartbeats(&self, on: bool) {
         self.dev.lock().unwrap().answer_heartbeats = on;
+    }
+
+    /// Stop (or resume) sending status frames while still acknowledging every request, as the
+    /// `qccdz` charger does in some sessions (seen 2026-11-14): no pushes, no echo of a set, no
+    /// answer to `UPDATEDPS`. A new session gets them again unless this is still off.
+    pub fn push_status(&self, on: bool) {
+        self.dev.lock().unwrap().push_status = on;
     }
 
     /// Answer DP queries with this JSON instead of `{"dps": ..}`.
