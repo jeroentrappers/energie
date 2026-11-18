@@ -3,6 +3,15 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## 0.5.7 - 2026-11-18
+
+- `[notify]` takes `include` and `exclude` globs on the title. High-priority notifications
+  are always pushed; the rest stay in the log and on the dashboard.
+- `ev_vol_laadt_niet` notifies once when the battery is full, there is more than 1 kW of solar
+  surplus and the Buzz is plugged in below its target but hasn't drawn for 10 minutes. It
+  re-arms after 15 minutes of charging or an unplug.
+- Glob matching no longer slices inside multi-byte characters.
+
 ## 0.5.6 - 2026-11-18
 
 - From SoC 90 % the battery reservation is what the battery charges now plus 10 %, at
