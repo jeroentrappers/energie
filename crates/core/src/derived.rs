@@ -449,6 +449,7 @@ pub fn compute_with(now: Ts, w: &World, s: &Settings, m: &Memory) -> (Derived, R
             if elig { min2(mx, cur + (27.0 - maxphase)) * 230.0 } else { 0.0 }
         };
         let manual = if s.batterij_reservering_actief { s.batterij_reservering_w } else { 0.0 };
+        let manual_reach = cascade::reservation_reach_w(w, manual);
         let auto =
             max2(0.0, allowed - load_nonsteer - max_w(ev3_elig, ev3_mx, ev3_cur) - max_w(buzz_elig, bz_mx, bz_cur));
         let need = |drawing: bool, mx: f64, cur: f64| if drawing { min2(max2(mx - cur, 0.0), 4.0) } else { 0.0 };
@@ -460,7 +461,7 @@ pub fn compute_with(now: Ts, w: &World, s: &Settings, m: &Memory) -> (Derived, R
             0.0
         } else if w.p1.power_w.is_some() && w.solis.battery_power_w.is_some() {
             let manual_bound = max2(0.0, batt_chg + (27.0 - maxphase) * 230.0);
-            round(max2(min2(manual, manual_bound), min2(auto, phase_bound)), 0)
+            round(max2(min2(manual_reach, manual_bound), min2(auto, phase_bound)), 0)
         } else {
             round(manual, 0)
         }
@@ -1362,6 +1363,32 @@ mod tests {
         assert_eq!(resv(&w, &manual_off()), 3535.0);
         let s = Settings { batterij_reservering_actief: true, batterij_reservering_w: 5000.0, ..Settings::default() };
         assert_eq!(resv(&w, &s), 3910.0);
+    }
+
+    /// From SoC 90 the manual reservation is what the battery charges plus 10 %, at least
+    /// 100 W, at most the setting. An EV3 at 8 of 16 A with the worst phase at 20 A takes all
+    /// of `auto`, so the manual part shows. 1250 W manual:
+    /// - SoC 95, charging 250 W: 275; charging nothing: 100; charging 1200 W: 1250;
+    /// - SoC 89, charging 250 W: the whole 1250.
+    #[test]
+    fn a_tapering_battery_reserves_what_it_takes_plus_ten_percent() {
+        let s = Settings { batterij_reservering_actief: true, batterij_reservering_w: 1250.0, ..Settings::default() };
+        let mut w = resv_world(20.0);
+        w.cable.status = Some("plugged_in".into());
+        w.cable.set_current_a = Some(8.0);
+        w.ev3.ac_limit = Some(80.0);
+        w.ev3.soc = Some(50.0);
+        w.p1.power_w = Some(4000.0);
+        w.solis.soc = Some(95.0);
+        w.solis.battery_power_w = Some(-250.0);
+        assert_eq!(resv(&w, &s), 275.0);
+        w.solis.battery_power_w = Some(0.0);
+        assert_eq!(resv(&w, &s), 100.0);
+        w.solis.battery_power_w = Some(-1200.0);
+        assert_eq!(resv(&w, &s), 1250.0);
+        w.solis.soc = Some(89.0);
+        w.solis.battery_power_w = Some(-250.0);
+        assert_eq!(resv(&w, &s), 1250.0);
     }
 
     /// `Kwartier toegestaan vermogen` reads `now()`, so HA re-renders it on a change of the

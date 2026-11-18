@@ -117,6 +117,28 @@ pub fn batt_discharge_w(w: &World) -> f64 {
     batt_w(w).max(0.0)
 }
 
+/// From this SoC, %, the battery tapers: it charges less than it is offered.
+pub const RESERVATION_TAPER_SOC: f64 = 90.0;
+/// In the taper, the reservation is what the battery charges now plus this share of it.
+pub const RESERVATION_TAPER_MARGIN: f64 = 0.10;
+/// In the taper, the reservation is never less than this, W, so a battery that charges
+/// nothing gets room to start again.
+pub const RESERVATION_TAPER_MIN_W: f64 = 100.0;
+
+/// The manual reservation `manual` W, held to what the battery takes. Below
+/// [`RESERVATION_TAPER_SOC`] the battery takes what it is offered, so it is `manual`. From
+/// there it charges less (250 W of 1250 W near full), and the cars yielded the whole
+/// reservation, which then went unused under the peak. So in the taper it is the charge now
+/// plus [`RESERVATION_TAPER_MARGIN`], at least [`RESERVATION_TAPER_MIN_W`], at most `manual`.
+/// The margin lets the reservation follow a battery that can take more, 10 % per tick.
+pub fn reservation_reach_w(w: &World, manual: f64) -> f64 {
+    if w.solis.soc.unwrap_or(0.0) < RESERVATION_TAPER_SOC {
+        return manual;
+    }
+    let taken = (batt_charge_w(w) * (1.0 + RESERVATION_TAPER_MARGIN)).round();
+    manual.min(taken.max(RESERVATION_TAPER_MIN_W))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

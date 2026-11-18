@@ -105,6 +105,14 @@ only is convergent: before the battery starts it yields everything (which is wha
 and once the battery holds its reservation it yields nothing extra, so import lands **on** the
 ceiling with the reservation inside it. Note the ceiling is `maandtarget − NET_LADEN_MARGIN_W`, not `maandtarget`.
 
+Not in HA: from SoC 90 the manual reservation is held to what the battery takes,
+`min(resv, max(100, battery_charge × 1.1))` (`cascade::reservation_reach_w`). A battery close
+to full charges less than its reservation, and the cars yielded the whole amount anyway. On
+2026-11-17/18 under `Max tot piek` with a 1250 W reservation, most of it went unused while the
+EV3 charged. The 10 % lets the reservation follow a battery that can take more, one step per
+tick; the 100 W minimum lets a battery that charges nothing start again. Below SoC 90 the battery
+takes what it is offered, so the whole reservation applies as before.
+
 ### Quarter-hour budget control (the peak setpoint)
 
 Fluvius bills the **average** import over each quarter-hour, **independently per quarter**. So the

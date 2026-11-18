@@ -5,6 +5,11 @@ version may include breaking changes.
 
 ## Unreleased
 
+- From SoC 90 % the battery reservation is what the battery charges now plus 10 %, at
+  least 100 W, at most the setting. A battery near full takes less than its reservation
+  (250 W of 1250 W), and the cars kept yielding all of it. Under `Max tot piek` that left the
+  rest of the peak unused, and the charger's cap shrank each tick until the car fell to 6 A
+  or stopped. Below 90 % the whole reservation still applies.
 - `tuya_evcharger` writes only the currents the charger keeps: 6, 8, 10, 13 and 16 A, as the
   level at or below the one asked for. The charger silently kept the level below (11 A read
   back as 10), so the logic asked for 11 A hundreds of times while 10 A flowed. Lowering steps

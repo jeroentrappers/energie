@@ -238,8 +238,10 @@ pub fn law(v: &ChargerView, now: Ts, w: &World, d: &Derived, s: &Settings, m: &M
     // session); then the battery's unrealised reservation, down to the 6 A floor.
     let maxphase = cascade::maxphase(w);
     let ramp_cap = if v.started { v.cur + 3.0 } else { FLOOR_A };
+    // A full battery takes no reservation; from SoC 90, where it tapers, only what it charges
+    // now plus 10 % is held back (`cascade::reservation_reach_w`).
     let resv_on = s.batterij_reservering_actief && soc < 100.0;
-    let resv_target = if resv_on { s.batterij_reservering_w } else { 0.0 };
+    let resv_target = if resv_on { cascade::reservation_reach_w(w, s.batterij_reservering_w) } else { 0.0 };
     let batt_charge_raw = cascade::batt_charge_w(w);
     let resv_short_a = max2(0.0, resv_target - batt_charge_raw) / VOLT;
     let mut hard_max = min2(min2(v.mx, v.cur + (PHASE_CAP_A - maxphase)), ramp_cap);
@@ -257,8 +259,7 @@ pub fn law(v: &ChargerView, now: Ts, w: &World, d: &Derived, s: &Settings, m: &M
     let besch = d.pv_overschot_beschikbaar_w;
     let k = if v.drawing && v.act >= 4.0 && v.cur >= v.act { min2(1.4, v.cur / v.act) } else { 1.0 };
     let batt_charge = if !batt_above { batt_charge_raw } else { 0.0 };
-    // `resv_on`: a full battery takes no reservation.
-    let resv = if resv_on { s.batterij_reservering_w } else { 0.0 };
+    let resv = resv_target;
     let avail_raw = round_floor(((besch + batt_charge) / VOLT + v.act) * k, 1);
     // The reservation only trims what is above the 6 A floor; whether to charge is judged on
     // the unreserved figure (LOGIC.md "Battery reservation").
@@ -762,8 +763,8 @@ mod tests {
     }
 
     /// `resv_on` (toggle and soc < 100) gates both `resv_target` (phase shortfall and peak
-    /// formula) and `resv` (solar trim): at SoC 100 nothing is held back (avail 10.0); at 99.5
-    /// the 460 W (2 A) trims avail to 8.0.
+    /// formula) and `resv` (solar trim): at SoC 100 nothing is held back (avail 10.0); at 89.5,
+    /// under the taper, the 460 W (2 A) trims avail to 8.0.
     #[test]
     fn reservation_terms_and_soc_100() {
         let (mut w, mut d, mut s, m) = sunny();
@@ -775,7 +776,7 @@ mod tests {
         assert_eq!(l.resv_target, 0.0);
         assert_eq!(l.resv_short_a, 0.0);
         assert_eq!(l.avail, 10.0, "a full battery reserves nothing");
-        w.solis.soc = Some(99.5);
+        w.solis.soc = Some(89.5);
         let l = buzz(&w, &d, &s, &m);
         assert_eq!(l.avail, 8.0);
         assert_eq!(l.resv_target, 460.0);
@@ -786,14 +787,15 @@ mod tests {
 
     /// `hard_max = [6, hard_max - resv_short_a]|max if hard_max >= 6`, after the gate's cap:
     /// the reservation shortfall never stops a car at the floor on a phase-limited import.
-    /// cur 6, maxphase 24.5 → cap 6 + 2.5 = 8.5; 8.5 − 700/230 = 5.46 → lifted to 6 → the car
-    /// keeps 6 A (the old order gated on 5.46 < 6 and stopped it).
+    /// SoC 80, under the taper. cur 6, maxphase 24.5 → cap 6 + 2.5 = 8.5; 8.5 − 700/230 = 5.46
+    /// → lifted to 6 → the car keeps 6 A (the old order gated on 5.46 < 6 and stopped it).
     #[test]
     fn the_reservation_shortfall_never_disarms_a_floor_car_on_the_phase_cap() {
         let (mut w, mut d, mut s, m) = sunny();
         w.evse.override_a = Some(6.0);
         d.ev_laadvermogen_smartevse_w = 1380.0;
         w.p1.phase_a = [Some(24.5), None, None];
+        w.solis.soc = Some(80.0);
         d.pv_overschot_beschikbaar_w = 0.0;
         s.ev_batterij_niveau = BatterijNiveau::Brug6A;
         assert_eq!(buzz(&w, &d, &s, &m).target, 6.0, "6A-brug, no reservation");
@@ -805,16 +807,16 @@ mod tests {
     }
 
     /// Above the floor the shortfall trims the cap in full: cur 10, ramp cap 13, a 690 W
-    /// reservation with the battery idle is 3.0 A short → hard_max 10.0; a cap already under 6
-    /// (cur 6, maxphase 27.5 → 5.5) is left alone and gates the car.
+    /// reservation with the battery idle (SoC 80, under the taper) is 3.0 A short → hard_max
+    /// 10.0; a cap already under 6 (cur 6, maxphase 27.5 → 5.5) is left alone and gates the car.
     #[test]
     fn the_reservation_shortfall_trims_the_cap_above_the_floor() {
-        let (w, d, mut s, m) = sunny();
+        let (mut w, d, mut s, m) = sunny();
+        w.solis.soc = Some(80.0);
         s.batterij_reservering_actief = true;
         s.batterij_reservering_w = 690.0;
         let l = buzz(&w, &d, &s, &m);
         assert_eq!((l.resv_short_a, l.hard_max), (3.0, 10.0));
-        let mut w = w;
         w.evse.override_a = Some(6.0);
         w.p1.phase_a = [Some(27.5), None, None];
         let l = buzz(&w, &d, &s, &m);
@@ -1009,6 +1011,36 @@ mod tests {
         d.batterij_reservering_effectief_w = 690.0;
         // (3837 − 1240 − 690)/230 = 8.29 → 8.2
         assert_eq!(buzz(&w, &d, &s, &m).target, 8.2);
+    }
+
+    /// Night 2026-11-17/18: a 1250 W reservation under `Max tot piek` with the battery at
+    /// SoC 95, taking only 250 W. The car yields what the battery takes plus 10 % (275 W), not
+    /// the whole 1250 W: load 1700 − 250 = 1450, (3837 − 1450 − 275)/230 = 9.18 → 9.1 A; the
+    /// shortfall is 25 W, so the cap stays near 13. Yielding the whole reservation left
+    /// (3837 − 1450 − 1250)/230 = 4.9 A, under the 6 A floor, and stopped the car while 975 W
+    /// of the peak went unused.
+    #[test]
+    fn grid_max_yields_only_what_a_tapering_battery_takes() {
+        let (mut w, d, mut s, m) = night_grid();
+        s.batterij_reservering_actief = true;
+        s.batterij_reservering_w = 1250.0;
+        w.solis.soc = Some(95.0);
+        w.solis.battery_power_w = Some(-250.0);
+        let l = buzz(&w, &d, &s, &m);
+        assert_eq!(l.resv_target, 275.0);
+        assert_eq!((l.branch, l.target), (Branch::GridMax, 9.1));
+        // Charging 1200 W still in the taper: 1320 is more than asked, so the whole 1250.
+        // load 1700 − 1200 = 500, (3837 − 500 − 1250)/230 = 9.07 → 9.0.
+        w.solis.battery_power_w = Some(-1200.0);
+        let l = buzz(&w, &d, &s, &m);
+        assert_eq!((l.resv_target, l.target), (1250.0, 9.0));
+        // Charging nothing: 100 W, so it can start again; (3837 − 1700 − 100)/230 = 8.86 → 8.8.
+        w.solis.battery_power_w = Some(0.0);
+        let l = buzz(&w, &d, &s, &m);
+        assert_eq!((l.resv_target, l.target), (100.0, 8.8));
+        // Under 90 % the battery takes what it is offered: all 1250 W, even while idle.
+        w.solis.soc = Some(89.0);
+        assert_eq!(buzz(&w, &d, &s, &m).resv_target, 1250.0);
     }
 
     /// Starting needs 10 A of room, keeping a session needs 6.
