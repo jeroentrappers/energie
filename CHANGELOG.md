@@ -3,7 +3,7 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
-## Unreleased
+## 0.5.6 - 2026-11-18
 
 - From SoC 90 % the battery reservation is what the battery charges now plus 10 %, at
   least 100 W, at most the setting. A battery near full takes less than its reservation
