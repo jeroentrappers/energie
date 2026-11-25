@@ -118,6 +118,8 @@ readings arrive, normally within seconds. A device with no reading yet gets no c
 | Liveness | `GET /healthz`: `200` while running, `503` if starting or stalled. Needs no password. |
 | Device health | `GET /api/state`, under `drivers`: `available`, `consecutive_errors`, `last_error`. |
 | Writes | `GET /api/control`, or `<state_dir>/control-audit.jsonl`. |
+| Self-check | Under systemd with `Type=notify` and `WatchdogSec` (the supplied unit), energie asks its own `/healthz` over the web port every third of the period and only then pings the watchdog. A stalled web server or control loop gets the process killed and restarted. |
+| Memory | A `memory` line every 15 minutes: `rss_kb`, `history_rows`, `history_kb`. |
 | Logs | `journalctl -u energie` |
 | Alarms | Failed writes send a notification when [`[notify]`](CONFIGURATION.md#notifications) is set. |
 
@@ -174,4 +176,7 @@ your config **with addresses and identifiers removed**.
 ## Resource use
 
 Measured on one x86-64 server in control mode, with about ten devices: 18 MB of memory, 0.35 %
-of one CPU core and 0.6 KB/s of disk writes. The supplied systemd unit caps memory at 128 MB.
+of one CPU core and 0.6 KB/s of disk writes. The supplied systemd unit caps memory at 128 MB
+and allows no swap (`MemorySwapMax=0`): at the cap the process is ended and restarted instead of
+slowing down in swap. The history store takes most of the memory; a year of 15-minute rows is
+the largest part.

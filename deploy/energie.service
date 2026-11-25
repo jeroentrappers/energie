@@ -5,10 +5,14 @@ Wants=network-online.target
 After=network-online.target time-sync.target
 
 [Service]
-Type=exec
+# notify: energie says READY=1 once it listens, then pings the watchdog while its own /healthz
+# answers 200 (accept loop, router and control loop all alive). A hung process is killed and
+# restarted after WatchdogSec. Needs energie >= 0.5.8; older versions need Type=exec.
+Type=notify
+WatchdogSec=60
 ExecStartPre=/usr/local/bin/energie --check-config /etc/energie/energie.toml
 ExecStart=/usr/local/bin/energie --config /etc/energie/energie.toml
-Restart=on-failure
+Restart=always
 RestartSec=5s
 Environment=RUST_LOG=info
 
@@ -34,6 +38,8 @@ WorkingDirectory=/var/lib/energie
 
 # Resources: generous for this program, and small enough for a single-board computer.
 MemoryMax=128M
+# At the limit, end the process (and restart it) instead of swapping it into a crawl.
+MemorySwapMax=0
 TasksMax=64
 CPUQuota=150%
 

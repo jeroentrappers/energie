@@ -33,6 +33,36 @@ use crate::shadow::log::MismatchLog;
 use crate::sim::{House, SimHandle};
 use crate::web::{self, AppState};
 
+/// How often the memory census is logged.
+const CENSUS_EVERY: Duration = Duration::from_secs(15 * 60);
+
+/// The process's resident memory, kB (Linux only).
+pub fn rss_kb() -> Option<u64> {
+    let status = std::fs::read_to_string("/proc/self/status").ok()?;
+    status.lines().find_map(|l| l.strip_prefix("VmRSS:")).and_then(|v| v.split_whitespace().next()?.parse().ok())
+}
+
+/// Log the resident memory and the history store's size now and then, so slow growth shows in
+/// the journal long before a memory limit is reached.
+async fn census(history: Option<SharedHistory>, mut stop: watch::Receiver<bool>) {
+    let mut iv = tokio::time::interval_at(tokio::time::Instant::now() + Duration::from_secs(60), CENSUS_EVERY);
+    iv.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    loop {
+        tokio::select! {
+            _ = iv.tick() => {}
+            _ = stop.wait_for(|s| *s) => return,
+        }
+        let (rows, kb) = history
+            .as_ref()
+            .map(|h| {
+                let h = h.lock().expect("history lock");
+                (h.tiers().iter().map(|t| t.rows).sum::<usize>(), h.approx_bytes() / 1024)
+            })
+            .unwrap_or_default();
+        tracing::info!(rss_kb = rss_kb(), history_rows = rows, history_kb = kb, "memory");
+    }
+}
+
 /// Wall-clock time, or a virtual clock that advances one tick per tick (simulate mode).
 pub struct TickClock {
     virt: Option<Mutex<Ts>>,
@@ -411,6 +441,16 @@ pub async fn start(cfg: Config, drivers: &dyn DriverFactory) -> Result<Running> 
         axum::serve(listener, app).with_graceful_shutdown(shutdown).await.expect("axum::serve does not fail");
     }));
     tracing::info!(mode = cfg.mode.label(), "listening on http://{addr}");
+    if let Some(n) = crate::watchdog::Notifier::from_env() {
+        tasks.push(tokio::spawn(crate::watchdog::run(
+            n,
+            crate::watchdog::watchdog_from_env(),
+            startup_wait + Duration::from_secs(60),
+            addr,
+            stop_rx.clone(),
+        )));
+    }
+    tasks.push(tokio::spawn(census(history.clone(), stop_rx.clone())));
     let (boot_rt, boot_clock, mut boot_stop) = (rt.clone(), clock.clone(), stop_rx.clone());
     tasks.push(tokio::spawn(async move {
         if let Some(gate) = gate {

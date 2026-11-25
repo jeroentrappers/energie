@@ -208,6 +208,11 @@ sudo systemctl restart energie
 Settings and history stay in `/var/lib/energie`. To roll back, restore `energie.prev` and
 restart.
 
+From 0.5.8 the supplied unit uses `Type=notify` with a watchdog. Copy the new
+`deploy/energie.service` (keep your `LoadCredential=` lines) and `sudo systemctl daemon-reload`.
+A version before 0.5.8 never reports ready: rolling back that far needs `Type=exec` again
+and no `WatchdogSec=`.
+
 ## Removing
 
 ```sh

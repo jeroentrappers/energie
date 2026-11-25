@@ -311,6 +311,18 @@ impl History {
         }
     }
 
+    /// Roughly what the rows take in memory: the values, the row headers, the queue slots.
+    pub fn approx_bytes(&self) -> usize {
+        [Res::Recent, Res::Minute, Res::Quarter, Res::Day]
+            .into_iter()
+            .map(|r| {
+                let t = self.tier(r);
+                t.rows.capacity() * std::mem::size_of::<tier::Row>()
+                    + t.rows.len() * t.cols.len() * std::mem::size_of::<tier::Agg>()
+            })
+            .sum()
+    }
+
     pub fn tiers(&self) -> Vec<TierInfo> {
         [Res::Recent, Res::Minute, Res::Quarter, Res::Day]
             .into_iter()
