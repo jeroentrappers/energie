@@ -3,6 +3,28 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## 0.5.8 - 2026-11-25
+
+- The Linux binaries and the container use mimalloc instead of musl's allocator. On a live
+  installation with the dashboard open, memory grew by up to 2 MB a minute and stayed up
+  after the dashboard closed, though no data structure grew. After six days the service was
+  at its 128 MB limit with 1.3 GB in swap, and the web port stopped accepting connections
+  while the control loop kept running.
+- The dashboard's event stream sends a snapshot field only when it changed since that
+  stream's last event (`now`, `tick` and `mode` always go). The first event is still the
+  whole snapshot. Before this, every event carried the whole control log and command list,
+  38 KB a second per open dashboard.
+- systemd watchdog: under `Type=notify` energie reports ready once it listens. It then
+  pings the watchdog only while its own `/healthz`, asked over the web port, answers 200.
+  During startup any answer counts, for `control.startup_wait_s` plus 60 s. A hung web
+  server or control loop gets the service restarted.
+- The supplied unit: `Type=notify`, `WatchdogSec=60`, `Restart=always`, `MemorySwapMax=0`.
+  A process that reaches its memory limit is restarted instead of crawling along in swap.
+  Rolling back below 0.5.8 needs `Type=exec` again.
+- A `memory` log line every 15 minutes (`rss_kb`, `history_rows`, `history_kb`).
+- `examples/soak.rs` runs a control-mode energie binary against every protocol simulator,
+  with dashboard clients and device faults, and prints its memory once a minute.
+
 ## 0.5.7 - 2026-11-18
 
 - `[notify]` takes `include` and `exclude` globs on the title. High-priority notifications
