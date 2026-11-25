@@ -3,6 +3,12 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## Unreleased
+
+- Dashboard: the arrow in the grid circle of the energy flow diagram points the way the
+  power flows: right, towards the house, when importing, and left when exporting. It was the
+  other way round.
+
 ## 0.5.8 - 2026-11-25
 
 - The Linux binaries and the container use mimalloc instead of musl's allocator. On a live

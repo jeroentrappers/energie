@@ -417,7 +417,8 @@ function renderFlow(s) {
   };
   const sp = d.batterij_setpoint_w;
   const doel = sp < 0 ? T("doel laden") + " " + num(-sp) + " W" : sp > 0 ? T("doel ontladen") + " " + num(sp) + " W" : T("doel vasthouden");
-  const gridTxt = imp > 0 ? "← " + Wf(imp) : exp > 0 ? "→ " + Wf(exp) : "0 W";
+  // The grid node sits left of the house: importing flows right (→), exporting left (←).
+  const gridTxt = imp > 0 ? "→ " + Wf(imp) : exp > 0 ? "← " + Wf(exp) : "0 W";
   const airco = [w.airco.beneden_on ? T("beneden") : null, w.airco.zolder_on ? T("zolder") : null].filter(Boolean);
   // The paths stay in the DOM: replacing them would restart every dot's animation on each update.
   if (!host.querySelector("svg")) {
