@@ -253,7 +253,9 @@ for a kWh total `TotalIncreasing`). The MQTT bridge's discovery uses both
   `EvseCurrentDeciA(145)`), routed like the engine's own; `404` unknown, `409` not settable now,
   `400` a value the control does not accept.
 - `GET /api/events` — each `state` event carries `entities`: the values that changed since that
-  stream's previous event (all of them in the first).
+  stream's previous event (all of them in the first). The other snapshot fields are the same
+  way: the first event is the whole `/api/state`, later ones carry `now`, `tick`, `mode` and only
+  the fields whose value changed, so a client keeps the last value of each field.
 
 `[[publish]]` rules (glob on the id, later rules win) set what a publisher sends:
 

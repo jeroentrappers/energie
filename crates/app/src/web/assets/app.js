@@ -805,7 +805,9 @@ fetch("/auth/me").then((r) => (r.ok ? r.json() : null)).then((me) => {
 }).catch(() => {});
 const es = new EventSource("/api/events");
 es.addEventListener("state", (e) => {
-  const s = JSON.parse(e.data);
+  // After the first event the server leaves out what did not change: keep the rest. A
+  // reconnect's first event is complete again and replaces every field.
+  const s = Object.assign({}, S.snap || {}, JSON.parse(e.data));
   applyEntities(s.entities);
   render(s);
 });

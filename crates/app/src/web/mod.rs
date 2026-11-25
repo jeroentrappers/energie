@@ -9,7 +9,7 @@
 //! | `GET /api/shadow` | the shadow comparison stats (`404` outside shadow mode) |
 //! | `GET /api/entities` | every entity with its metadata and value ([`crate::entities`]) |
 //! | `POST /api/entities/{id}` | `{"value": …}`: set a settable entity |
-//! | `GET /api/events` | Server-Sent Events, one `state` event per tick; its `entities` field holds the entity values that changed since the stream's last event (all of them in the first) |
+//! | `GET /api/events` | Server-Sent Events, one `state` event per tick; its `entities` field holds the entity values that changed since the stream's last event (all of them in the first); of the other fields only `now`, `tick`, `mode` and the ones that changed (all of them in the first) |
 //! | `GET /api/history` | the history store: series and tiers, or `?series=a,b:max&from=&to=&step=` |
 //! | `GET /api/prices` | today's (and tomorrow's) offtake and injection quarter prices |
 //! | `GET /api/cloud` | `{id: {kind, auth}}`: the sign-in state of every device that logs in with a password |
@@ -464,12 +464,37 @@ async fn healthz(State(st): State<AppState>) -> Response {
     (code, Json(body)).into_response()
 }
 
-/// One event stream: the snapshot receiver, the stop signal, and the entity values it sent.
+/// One event stream: the snapshot receiver, the stop signal, the entity values and the
+/// snapshot fields it sent.
 struct EventStream {
     rx: watch::Receiver<Arc<Snapshot>>,
     stop: watch::Receiver<bool>,
     sent: std::collections::BTreeMap<String, energie_drivers::entity::Value>,
+    fields: serde_json::Map<String, Value>,
     last: Option<tokio::time::Instant>,
+}
+
+/// Snapshot fields every event carries; the others only when they changed.
+const EVERY_EVENT: [&str; 3] = ["now", "tick", "mode"];
+
+/// Drop the fields of `data` that `fields` already holds with the same value, and remember the
+/// rest. The first event of a stream is the whole snapshot; the browser keeps what it has.
+fn unchanged_out(data: &mut Value, fields: &mut serde_json::Map<String, Value>) {
+    let Value::Object(m) = data else { return };
+    let mut same = Vec::new();
+    for (k, v) in m.iter() {
+        if EVERY_EVENT.contains(&k.as_str()) {
+            continue;
+        }
+        if fields.get(k) == Some(v) {
+            same.push(k.clone());
+        } else {
+            fields.insert(k.clone(), v.clone());
+        }
+    }
+    for k in same {
+        m.remove(&k);
+    }
 }
 
 /// The shortest time between two updates of one event stream.
@@ -478,7 +503,8 @@ const MIN_EVENT_GAP: Duration = Duration::from_millis(900);
 async fn events(State(st): State<AppState>) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let mut rx = st.snap.clone();
     rx.mark_changed();
-    let start = EventStream { rx, stop: st.stop.clone(), sent: Default::default(), last: None };
+    let start =
+        EventStream { rx, stop: st.stop.clone(), sent: Default::default(), fields: Default::default(), last: None };
     let stream = futures_util::stream::unfold(start, |mut s| async move {
         // A faster-than-real simulation ticks many times a second; a browser needs one update.
         if let Some(wait) = s.last.map(|at: tokio::time::Instant| MIN_EVENT_GAP.saturating_sub(at.elapsed())) {
@@ -494,6 +520,7 @@ async fn events(State(st): State<AppState>) -> Sse<impl Stream<Item = Result<Eve
         let snap = s.rx.borrow_and_update().clone();
         let now = values(&snap.entities);
         let mut data = live_json(&snap);
+        unchanged_out(&mut data, &mut s.fields);
         data["entities"] = json!(changes(&s.sent, &now));
         s.sent = now;
         s.last = Some(tokio::time::Instant::now());
@@ -735,6 +762,48 @@ mod tests {
         // Shutdown ends the stream.
         stop.send(true).unwrap();
         assert!(body.frame().await.is_none());
+    }
+
+    /// After the first event, a field goes out only when it changed; now, tick and mode always.
+    #[tokio::test]
+    async fn events_leave_out_unchanged_fields() {
+        let (app, rt, _stop) = app_with_stop(Mode::Simulate, false);
+        let r = app.clone().oneshot(get("/api/events")).await.unwrap();
+        let mut body = r.into_body();
+        let json_of = |b: axum::body::Bytes| -> Value {
+            let text = String::from_utf8_lossy(&b).into_owned();
+            let line = text.lines().find_map(|l| l.strip_prefix("data: ")).unwrap().to_string();
+            serde_json::from_str(&line).unwrap()
+        };
+        let first = json_of(body.frame().await.unwrap().unwrap().into_data().unwrap());
+        for k in ["settings", "sources", "actuators", "world", "now", "tick", "mode"] {
+            assert!(first.get(k).is_some(), "the first event has {k}");
+        }
+        rt.lock().unwrap().step(t0());
+        let next = json_of(body.frame().await.unwrap().unwrap().into_data().unwrap());
+        assert_eq!(next["tick"], 1);
+        for k in ["now", "mode"] {
+            assert!(next.get(k).is_some(), "every event has {k}");
+        }
+        for k in ["settings", "sources", "actuators"] {
+            assert!(next.get(k).is_none(), "{k} did not change: {next}");
+        }
+        assert!(next.get("world").is_some(), "the world changed with the tick");
+    }
+
+    #[test]
+    fn unchanged_fields_are_left_out() {
+        let mut held = serde_json::Map::new();
+        let mut a = json!({"now": "t1", "tick": 1, "mode": "x", "control": {"a": 1}, "commands": []});
+        unchanged_out(&mut a, &mut held);
+        assert_eq!(a, json!({"now": "t1", "tick": 1, "mode": "x", "control": {"a": 1}, "commands": []}));
+        let mut b = json!({"now": "t2", "tick": 2, "mode": "x", "control": {"a": 1}, "commands": [1]});
+        unchanged_out(&mut b, &mut held);
+        assert_eq!(b, json!({"now": "t2", "tick": 2, "mode": "x", "commands": [1]}));
+        // A field that turns null is sent as null.
+        let mut c = json!({"now": "t3", "tick": 3, "mode": "x", "control": null, "commands": [1]});
+        unchanged_out(&mut c, &mut held);
+        assert_eq!(c, json!({"now": "t3", "tick": 3, "mode": "x", "control": null}));
     }
 
     /// A runtime that records into a history store, behind the router.
