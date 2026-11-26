@@ -341,6 +341,17 @@ The car is never blocked while stalled — the modulator still commands it — s
 Elapsed time is an explicit timestamp helper, not a template trigger with `for:` (a template trigger
 starts its timer on a false→true *transition*, so a condition already true at load never fires).
 
+**The stall belongs to one car** (2026-11-26). HA kept a single latch, cleared when *either* car
+drew. With EV3 → Buzz → Batterij and a full EV3 that loops: the EV3 stalls, so the Buzz may
+start; the Buzz drawing clears the latch; the full EV3 blocks the Buzz again, which is paused once
+`MIN_CHARGE_S` allows; six minutes later the EV3 stalls anew. A Buzz session teardown every ~11
+minutes, the very thing the charge-session protection exists to prevent. energie keeps a stall
+per car: a car stalls when it is plugged, ranked above the battery, has the opportunity, does not
+draw, and no car ranked above it holds the cascade (draws, or is plugged and not stalled itself:
+that car is *waiting*). Only its own drawing clears it. Every reader asks about the car it would
+yield to: the other car's modulator, the battery's yield, the airco dump and cheap grid charging.
+`input_boolean.ev_hoger_laadstil` remains as "either car stalled".
+
 ## The surplus cascade (6 A modes)
 
 Export is offered down the `zonprioriteit` list:

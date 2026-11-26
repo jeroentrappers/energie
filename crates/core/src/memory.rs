@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::meters::MetersState;
 use crate::render::Renders;
+use crate::settings::Consumer;
 use crate::time::Ts;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -30,6 +31,10 @@ pub struct Memory {
     pub ev_hoger_laadstil: bool,
     /// `input_number.ev_hoger_laadstil_sinds`: epoch seconds the stall started, 0 = none.
     pub ev_hoger_laadstil_sinds: f64,
+    /// Not in HA: the per-car stalls behind [`Memory::ev_hoger_laadstil`], which is their OR
+    /// (see [`crate::automations::ev_hoger_laadstil`]). A stall belongs to one car, so the
+    /// other car drawing does not clear it.
+    pub laadstil: CarStalls,
     /// `input_boolean.airco_dump_sessie_bezig`.
     pub airco_dump_sessie_bezig: bool,
     /// `input_text.smartevse_plug_laatst_bekend`: last valid SmartEVSE plug state.
@@ -91,6 +96,7 @@ impl Default for Memory {
             soluna_absorptie_bezig: false,
             ev_hoger_laadstil: false,
             ev_hoger_laadstil_sinds: 0.0,
+            laadstil: CarStalls::default(),
             airco_dump_sessie_bezig: false,
             smartevse_plug_laatst_bekend: String::new(),
             batterij_naar_auto_start_kwh: 0.0,
@@ -115,7 +121,47 @@ impl Default for Memory {
     }
 }
 
+/// One car's stall: eligible for the surplus but not drawing, since `sinds` (epoch s, 0 = no
+/// stall), latched once that lasted [`STALL_S`](crate::automations::ev_hoger_laadstil::STALL_S).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Stall {
+    pub latched: bool,
+    pub sinds: f64,
+}
+
+/// The stall of each car.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct CarStalls {
+    pub ev3: Stall,
+    pub buzz: Stall,
+}
+
+impl CarStalls {
+    pub fn get(&self, car: Consumer) -> Stall {
+        match car {
+            Consumer::Ev3 => self.ev3,
+            Consumer::Buzz => self.buzz,
+            Consumer::Batterij => Stall::default(),
+        }
+    }
+
+    pub fn get_mut(&mut self, car: Consumer) -> Option<&mut Stall> {
+        match car {
+            Consumer::Ev3 => Some(&mut self.ev3),
+            Consumer::Buzz => Some(&mut self.buzz),
+            Consumer::Batterij => None,
+        }
+    }
+}
+
 impl Memory {
+    /// `car` has stalled: the cascade treats it as not hungry, so the consumers below it go on.
+    pub fn stalled(&self, car: Consumer) -> bool {
+        self.laadstil.get(car).latched
+    }
+
     pub fn last_triggered(&self, id: &str) -> Option<Ts> {
         self.last_triggered.get(id).copied()
     }

@@ -888,8 +888,13 @@ fn hungry_only_in_solar_mode() {
 #[test]
 fn a_stalled_higher_car_does_not_make_the_battery_yield() {
     let s = levels(NetNiveau::Uit, BatterijNiveau::Uit);
-    let m = Memory { ev_hoger_laadstil: true, ..Memory::default() };
+    let mut m = Memory::default();
+    m.laadstil.buzz.latched = true;
     assert!(!flags(&buzz_world(), &s, &m, &solar(3000.0)).ev_higher_hungry);
+    // Only the stalled car is released: another car's stall leaves the Buzz eligible.
+    let mut m = Memory::default();
+    m.laadstil.ev3.latched = true;
+    assert!(flags(&buzz_world(), &s, &m, &solar(3000.0)).ev_higher_hungry);
 }
 
 /// `_buzz_elig`: ranked above the battery, wants (plug or pilot B/C, latch fallback),

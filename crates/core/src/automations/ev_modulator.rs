@@ -115,7 +115,7 @@ pub struct ChargerView {
     pub cur: f64,
     /// The command entity's `max`, A.
     pub mx: f64,
-    /// The other car is plugged, not stalled (`ev_hoger_laadstil`), and its charger reachable.
+    /// The other car is plugged, not stalled (its own `ev_hoger_laadstil` stall), and its charger reachable.
     pub other_plugged: bool,
     /// The other car is at its maximum.
     pub other_maxed: bool,
@@ -140,7 +140,7 @@ impl ChargerView {
             ctrl: cascade::buzz_ctrl(w),
             cur: w.evse.override_a.unwrap_or(6.0),
             mx: cascade::buzz_max_a(w),
-            other_plugged: cascade::ev3_wants(w) && !m.ev_hoger_laadstil && cascade::ev3_ctrl(w),
+            other_plugged: cascade::ev3_wants(w) && !m.stalled(Consumer::Ev3) && cascade::ev3_ctrl(w),
             // `>= state_attr('number.ev_charging_cable_charge_current', 'max')|float(16)`.
             other_maxed: w.cable.set_current_a.unwrap_or(0.0) >= cascade::ev3_max_a(w),
             started: matches!(w.evse.state.as_deref(), Some("Charging" | "Charging Stopped")),
@@ -161,7 +161,7 @@ impl ChargerView {
             ctrl: cascade::ev3_ctrl(w),
             cur: w.cable.set_current_a.unwrap_or(6.0),
             mx: cascade::ev3_max_a(w),
-            other_plugged: cascade::buzz_wants(w, m) && !m.ev_hoger_laadstil && cascade::buzz_ctrl(w),
+            other_plugged: cascade::buzz_wants(w, m) && !m.stalled(Consumer::Buzz) && cascade::buzz_ctrl(w),
             other_maxed: w.evse.override_a.unwrap_or(0.0) >= cascade::buzz_max_a(w) - 0.5,
             started: cascade::ev3_current_flowing(w),
             drawing: cascade::ev3_current_flowing(w),
@@ -504,9 +504,12 @@ mod tests {
         // Other plugged needs the EV3 plugged, not stalled, and the cable reachable.
         ev3_charging(&mut w);
         assert!(ChargerView::buzz(&w, &d, &m).other_plugged);
-        m.ev_hoger_laadstil = true;
+        m.laadstil.ev3.latched = true;
         assert!(!ChargerView::buzz(&w, &d, &m).other_plugged, "a stalled car does not hold the cascade");
-        m.ev_hoger_laadstil = false;
+        m.laadstil.buzz.latched = true;
+        m.laadstil.ev3.latched = false;
+        assert!(ChargerView::buzz(&w, &d, &m).other_plugged, "only the EV3's own stall counts");
+        m.laadstil.buzz.latched = false;
         w.cable.set_current_a = None;
         assert!(!ChargerView::buzz(&w, &d, &m).other_plugged, "an offline cable is transparent");
     }
@@ -553,9 +556,9 @@ mod tests {
         assert!(v.plugged, "cable offline: the car's own plug sensor");
         w.cable.current_a = Some(10.0);
         assert_eq!(ChargerView::cable(&w, &m).own_w, 2300.0, "voltage |float(230)");
-        m.ev_hoger_laadstil = true;
+        m.laadstil.buzz.latched = true;
         assert!(!ChargerView::cable(&w, &m).other_plugged);
-        m.ev_hoger_laadstil = false;
+        m.laadstil.buzz.latched = false;
         w.evse.override_a = None;
         assert!(!ChargerView::cable(&w, &m).other_plugged, "an offline EVSE is transparent");
     }
@@ -896,13 +899,13 @@ mod tests {
         assert_eq!(l.target, 13.0);
     }
 
-    /// A stalled higher-ranked car (`ev_hoger_laadstil`) does not hold the lower one.
+    /// A stalled higher-ranked car (its `ev_hoger_laadstil` stall) does not hold the lower one.
     #[test]
     fn a_stalled_higher_car_releases_the_cascade() {
         let (mut w, d, mut s, mut m) = sunny();
         ev3_charging(&mut w);
         s.zonprioriteit = Zonprioriteit([Ev3, Buzz, Batterij]);
-        m.ev_hoger_laadstil = true;
+        m.laadstil.ev3.latched = true;
         let l = buzz(&w, &d, &s, &m);
         assert!(l.allowed && l.primary);
     }

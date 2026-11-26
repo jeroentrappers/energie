@@ -3,7 +3,7 @@
 //!
 //! The airco dump sits below both cars and the battery: in summer, 10:00–18:30, with the battery
 //! ~full and a surplus left over, both units cool on solar. It waits while a car will still take
-//! the surplus, unless the cascade has latched that car as stalled (`ev_hoger_laadstil`).
+//! the surplus, unless the cascade has latched that car as stalled (`ev_hoger_laadstil`, per car).
 //!
 //! The `numeric_state` thresholds are helpers (`above: input_number...`). HA reads the
 //! threshold when the *source* changes; here it is read every tick, so a threshold edit alone
@@ -15,6 +15,7 @@ use super::{Automation, Cx};
 use crate::cascade;
 use crate::command::{AircoUnit, Command};
 use crate::jinja;
+use crate::settings::Consumer;
 use crate::trigger::Held;
 
 const TITLE: &str = "❄️ Airco-dump";
@@ -43,9 +44,10 @@ fn no_car_takes_the_surplus(cx: &Cx) -> bool {
     let ev3_maxed = w.cable.set_current_a.unwrap_or(0.0) >= 16.0;
     // `override|float(0) >= max|float(32) - 1.5`.
     let buzz_maxed = w.evse.override_a.unwrap_or(0.0) >= cascade::buzz_max_a(w) - 1.5;
-    let ev3_hungry = cascade::ev3_wants(w) && !ev3_maxed;
-    let buzz_hungry = cascade::buzz_wants(w, cx.m) && !buzz_maxed;
-    cx.m.ev_hoger_laadstil || (!ev3_hungry && !buzz_hungry)
+    // A stalled car (`ev_hoger_laadstil`, per car) is not hungry.
+    let ev3_hungry = cascade::ev3_wants(w) && !ev3_maxed && !cx.m.stalled(Consumer::Ev3);
+    let buzz_hungry = cascade::buzz_wants(w, cx.m) && !buzz_maxed && !cx.m.stalled(Consumer::Buzz);
+    !ev3_hungry && !buzz_hungry
 }
 
 #[derive(Debug, Default)]
@@ -201,7 +203,7 @@ mod tests {
         r.w.ev3.plugged = Some(true);
         r.w.cable.status = Some("unavailable".into()); // falls back to the car's plug sensor
         assert!(recheck(&mut r).is_empty());
-        r.m.ev_hoger_laadstil = true;
+        r.m.laadstil.ev3.latched = true;
         assert_eq!(recheck(&mut r).len(), 3);
     }
 

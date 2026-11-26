@@ -3,6 +3,16 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
+## Unreleased
+
+- Charging order: a car that stops taking power is marked as stalled on its own, and only
+  that car charging again clears it. With EV3 → Buzz → Batterij and a full EV3, the Buzz
+  charging used to clear the shared stall, so the full EV3 blocked the Buzz again; the Buzz
+  was paused and restarted about every 11 minutes, with an "Auto laadt niet" notification
+  each time. Now the Buzz keeps charging until the EV3 takes power again. A car waiting
+  behind a car ranked above it no longer counts as stalled either, and the notification
+  names the car.
+
 ## 0.5.9 - 2026-11-25
 
 - Dashboard: the arrow in the grid circle of the energy flow diagram points the way the

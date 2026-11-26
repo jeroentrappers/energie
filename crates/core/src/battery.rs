@@ -94,8 +94,7 @@ impl Flags {
         Flags {
             ev_higher_hungry: solar_mode
                 && d.pv_bruto_overschot_w > yt
-                && (ev3_elig || buzz_elig)
-                && !m.ev_hoger_laadstil,
+                && ((ev3_elig && !m.stalled(Consumer::Ev3)) || (buzz_elig && !m.stalled(Consumer::Buzz))),
             ev_grid_laden: grid_max && any_wants && any_drawing,
             ev_grid_parked: grid_max && any_wants && !any_drawing,
             ev_batterij_auto_laden: batt_dump && any_drawing,

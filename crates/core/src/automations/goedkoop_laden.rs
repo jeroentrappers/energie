@@ -50,7 +50,8 @@ impl GoedkoopLaden {
         let batt_dump = s.ev_batterij_niveau == BatterijNiveau::OntlaadBudget;
         // `plug_known == 'Connected' or stateid in ['B', 'C']`, as in the setpoint template.
         let buzz_wants = cascade::buzz_wants(w, m);
-        let car_wants = (buzz_wants || cascade::ev3_wants(w)) && !m.ev_hoger_laadstil;
+        let car_wants =
+            (buzz_wants && !m.stalled(Consumer::Buzz)) || (cascade::ev3_wants(w) && !m.stalled(Consumer::Ev3));
         let zp = s.zonprioriteit;
         let batt_first = zp.above(Consumer::Batterij, Consumer::Buzz) && zp.above(Consumer::Batterij, Consumer::Ev3);
         grid_max && batt_wants && !batt_dump && (batt_first || !car_wants)
@@ -265,7 +266,7 @@ mod tests {
         assert!(!r.m.batterij_net_laden, "Buzz → Batterij → EV3 with the Buzz plugged");
         let mut r = rig();
         r.w.evse.plug = Some("Connected".into());
-        r.m.ev_hoger_laadstil = true;
+        r.m.laadstil.buzz.latched = true;
         r.tick(t0());
         assert!(r.m.batterij_net_laden, "stalled car");
         let mut r = rig();

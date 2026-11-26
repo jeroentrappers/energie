@@ -9,6 +9,16 @@
 //! `input_number.ev_hoger_laadstil_sinds`, epoch seconds) as soon as that no longer holds.
 //! The car is never blocked: the modulators keep commanding it, so the latch self-clears.
 //!
+//! Unlike HA's single latch, the stall is kept per car ([`Memory::laadstil`]), and the
+//! consumers below a car read that car's stall: the battery, the other car, the airco dump and
+//! cheap grid charging. A car that draws clears only its own stall. With one latch for both,
+//! EV3 → Buzz → Batterij and a full EV3 looped: the EV3 stalled, so the Buzz started; the Buzz
+//! drawing cleared the latch, the full EV3 blocked the Buzz again, it was paused 5 minutes
+//! later, and 6 minutes after that the EV3 stalled anew: a Buzz session teardown every 11
+//! minutes. The HA helpers stay: `ev_hoger_laadstil` is either car stalled.
+//!
+//! [`Memory::laadstil`]: crate::memory::Memory::laadstil
+//!
 //! Triggers: `time_pattern minutes: /1`; state changes of `sensor.ev_laadvermogen_smartevse_w`,
 //! `sensor.ev_charging_cable_vermogen`, `sensor.smartevse_1234_ev_plug_state`,
 //! `sensor.smartevse_1234_stateid`, `input_select.zonprioriteit`; `homeassistant: start`.
@@ -25,19 +35,47 @@ pub const STALL_S: f64 = 360.0;
 #[derive(Debug, Default)]
 pub struct EvHogerLaadstil;
 
-/// `eligible and opportunity and not drawing`: a car ranked above the battery is plugged, there is
-/// gross surplus (> 200 W) or cheap Max-tot-piek grid, and neither car draws (cable > 0.2 kW,
-/// SmartEVSE > 200 W).
-pub fn stalled(cx: &Cx) -> bool {
+/// A car is drawing: the cable above 0.2 kW, the SmartEVSE above 200 W.
+fn drawing(cx: &Cx, car: Consumer) -> bool {
+    match car {
+        Consumer::Ev3 => cascade::ev3_power_above(cx.w, 0.2),
+        Consumer::Buzz => cx.d.ev_laadvermogen_smartevse_w > 200.0,
+        Consumer::Batterij => false,
+    }
+}
+
+/// `car` wants to charge and its charger is reachable.
+fn plugged(cx: &Cx, car: Consumer) -> bool {
+    match car {
+        Consumer::Ev3 => cascade::ev3_wants(cx.w) && cascade::ev3_ctrl(cx.w),
+        Consumer::Buzz => cascade::buzz_wants(cx.w, cx.m) && cascade::buzz_ctrl(cx.w),
+        Consumer::Batterij => false,
+    }
+}
+
+/// `car` is stalling: it is ranked above the battery and plugged, there is gross surplus
+/// (> 200 W) or cheap Max-tot-piek grid, it does not draw, and no car ranked above it holds the
+/// cascade (draws, or is plugged and not stalled itself). A car held back that way is waiting,
+/// not stalled. A car ranked *below* that draws does not count: it charges *because* this car
+/// stalled, and counting it cleared the stall, blocked that car again and paused it, then
+/// stalled anew. Reads the other car's latch, so run the cars in ranking order.
+pub fn stalling(cx: &Cx, car: Consumer) -> bool {
     let (w, d, s, m) = (cx.w, cx.d, &*cx.s, &*cx.m);
     let zp = s.zonprioriteit;
-    let ev3_above = zp.above(Consumer::Ev3, Consumer::Batterij);
-    let buzz_above = zp.above(Consumer::Buzz, Consumer::Batterij);
-    let eligible = (ev3_above && cascade::ev3_wants(w)) || (buzz_above && cascade::buzz_wants(w, m));
-    let drawing = cascade::ev3_power_above(w, 0.2) || d.ev_laadvermogen_smartevse_w > 200.0;
-    let surplus = d.pv_bruto_overschot_w > 200.0;
-    let opportunity = surplus || cascade::grid_max(w, d, s);
-    eligible && opportunity && !drawing
+    let other = if car == Consumer::Ev3 { Consumer::Buzz } else { Consumer::Ev3 };
+    let wants = match car {
+        Consumer::Ev3 => cascade::ev3_wants(w),
+        Consumer::Buzz => cascade::buzz_wants(w, m),
+        Consumer::Batterij => return false,
+    };
+    let opportunity = d.pv_bruto_overschot_w > 200.0 || cascade::grid_max(w, d, s);
+    let held = zp.above(other, car) && (drawing(cx, other) || (plugged(cx, other) && !m.stalled(other)));
+    zp.above(car, Consumer::Batterij) && wants && opportunity && !drawing(cx, car) && !held
+}
+
+/// Either car is stalling (the original single-latch condition, with the ranking rule above).
+pub fn stalled(cx: &Cx) -> bool {
+    stalling(cx, Consumer::Ev3) || stalling(cx, Consumer::Buzz)
 }
 
 impl Automation for EvHogerLaadstil {
@@ -57,24 +95,37 @@ impl Automation for EvHogerLaadstil {
             return;
         }
         cx.mark(self.id());
-        let sinds = cx.m.ev_hoger_laadstil_sinds;
         let now_s = time::epoch(cx.now);
-        if !stalled(cx) {
-            if sinds != 0.0 {
-                cx.m.ev_hoger_laadstil_sinds = 0.0;
+        // Ranking order: a car's stall reads the latch of the car above it.
+        for car in cx.s.zonprioriteit.0 {
+            let stalling = stalling(cx, car);
+            let Some(st) = cx.m.laadstil.get_mut(car) else { continue };
+            if !stalling {
+                *st = Default::default();
+            } else if st.sinds == 0.0 {
+                st.sinds = round(now_s, 0);
+            } else if now_s - st.sinds >= STALL_S && !st.latched {
+                st.latched = true;
+                let name = if car == Consumer::Ev3 { "De EV3" } else { "De Buzz" };
+                cx.send(crate::command::Command::notify(
+                    "🔌 Auto laadt niet — batterij neemt over",
+                    format!(
+                        "{name} komt al 6 min in aanmerking voor het overschot maar laadt niet. \
+                         Wat na hem komt in de zonprioriteit (de andere auto, de batterij) neemt het \
+                         overschot (anders injecteren we het). Gaat automatisch terug zodra hij wél laadt."
+                    ),
+                ));
             }
-            cx.m.ev_hoger_laadstil = false;
-        } else if sinds == 0.0 {
-            cx.m.ev_hoger_laadstil_sinds = round(now_s, 0);
-        } else if sinds > 0.0 && now_s - sinds >= STALL_S && !cx.m.ev_hoger_laadstil {
-            cx.m.ev_hoger_laadstil = true;
-            cx.send(crate::command::Command::notify(
-                "🔌 Auto laadt niet — batterij neemt over",
-                "De auto vóór de batterij komt al 6 min in aanmerking voor het zonoverschot maar laadt niet. \
-                 De batterij stopt met wijken en neemt het overschot (anders injecteren we het). \
-                 Gaat automatisch terug zodra de auto wél laadt.",
-            ));
         }
+        // The HA helpers: either car stalled, and since the earliest stall still running.
+        let l = cx.m.laadstil;
+        cx.m.ev_hoger_laadstil = l.ev3.latched || l.buzz.latched;
+        cx.m.ev_hoger_laadstil_sinds = [l.ev3.sinds, l.buzz.sinds].into_iter().filter(|x| *x > 0.0).fold(
+            0.0,
+            |a, x| {
+                if a == 0.0 { x } else { a.min(x) }
+            },
+        );
     }
 }
 
@@ -134,7 +185,7 @@ mod tests {
         let mut r = rig();
         let mut a = EvHogerLaadstil;
         r.run(&mut a);
-        r.m.ev_hoger_laadstil_sinds = time::epoch(r.now) + 50.0 - 360.0;
+        r.m.laadstil.buzz.sinds = time::epoch(r.now) + 50.0 - 360.0;
         r.wait(50);
         r.run(&mut a);
         assert!(r.m.ev_hoger_laadstil);
@@ -183,17 +234,89 @@ mod tests {
         assert!(r.m.ev_hoger_laadstil_sinds > 0.0);
     }
 
-    /// Drawing on either charger is not a stall: cable > 0.2 kW or SmartEVSE > 200 W.
+    /// A car drawing is not stalling (cable > 0.2 kW, SmartEVSE > 200 W), and neither is a car
+    /// waiting behind a car ranked above it that draws. A car ranked *below* that draws does not
+    /// clear the stall.
     #[test]
-    fn either_car_drawing_is_not_a_stall() {
+    fn drawing_and_waiting_are_not_a_stall() {
         let mut r = rig();
-        r.w.cable.power_kw = Some(0.21);
+        r.d.ev_laadvermogen_smartevse_w = 210.0;
         r.run(&mut EvHogerLaadstil);
-        assert_eq!(r.m.ev_hoger_laadstil_sinds, 0.0);
+        assert_eq!(r.m.ev_hoger_laadstil_sinds, 0.0, "the Buzz draws");
         let mut r = rig();
         r.d.ev_laadvermogen_smartevse_w = 200.0;
         r.run(&mut EvHogerLaadstil);
         assert!(r.m.ev_hoger_laadstil_sinds > 0.0, "200 W is not > 200");
+        // Buzz → Batterij → EV3: the EV3, ranked below, drawing leaves the Buzz stalling.
+        let mut r = rig();
+        r.w.cable.power_kw = Some(0.21);
+        r.run(&mut EvHogerLaadstil);
+        assert!(r.m.laadstil.buzz.sinds > 0.0);
+        // EV3 → Buzz → Batterij: the Buzz waits while the EV3 draws.
+        let mut r = rig();
+        r.s.zonprioriteit = Zonprioriteit([Ev3, Buzz, Batterij]);
+        r.w.cable.status = Some("charging".into());
+        r.w.cable.power_kw = Some(3.0);
+        r.run(&mut EvHogerLaadstil);
+        assert_eq!(r.m.laadstil, Default::default());
+    }
+
+    /// EV3 → Buzz → Batterij at night on cheap Max tot piek, the EV3 plugged but full, the Buzz
+    /// plugged. The EV3 stalls after 6 min and the Buzz may charge. The Buzz drawing must not
+    /// clear the EV3's stall: that blocked the Buzz again, paused it 5 min later and restarted
+    /// it after the next 6 min, a session teardown every 11 min. The stall ends when the EV3
+    /// draws, and then the Buzz waits again.
+    #[test]
+    fn a_lower_car_charging_keeps_the_higher_cars_stall() {
+        use crate::automations::ev_modulator::{ChargerView, law};
+        let mut r = Rig::new();
+        r.s.zonprioriteit = Zonprioriteit([Ev3, Buzz, Batterij]);
+        r.s.ev_net_niveau = NetNiveau::MaxTotPiek;
+        r.s.pv_overschot_laden_actief = true;
+        r.d.stroomprijs_nu = Some(0.05);
+        r.d.capaciteit_maandtarget_kw = 6.0;
+        r.d.kwartier_toegestaan_vermogen_w = Some(6000.0);
+        r.w.p1.power_w = Some(300.0);
+        r.w.solis.soc = Some(99.0);
+        r.w.cable.status = Some("charged".into());
+        r.w.cable.set_current_a = Some(6.0);
+        r.w.cable.set_current_max_a = Some(16.0);
+        r.w.cable.power_kw = Some(0.0);
+        r.w.evse.plug = Some("Connected".into());
+        r.w.evse.state_id = Some("B".into());
+        r.w.evse.state = Some("Connected to EV".into());
+        r.w.evse.override_a = Some(6.0);
+        r.w.evse.override_max_a = Some(29.0);
+        let buzz_allowed = |r: &Rig| law(&ChargerView::buzz(&r.w, &r.d, &r.m), r.now, &r.w, &r.d, &r.s, &r.m).allowed;
+        let mut a = EvHogerLaadstil;
+
+        r.run(&mut a);
+        assert!(!buzz_allowed(&r), "the EV3 is first and plugged");
+        r.wait(420);
+        let out = r.run(&mut a);
+        assert!(r.m.stalled(Ev3) && r.m.ev_hoger_laadstil);
+        assert_eq!(out.len(), 1, "one notification");
+        assert!(buzz_allowed(&r), "the stalled EV3 lets the Buzz charge");
+
+        // The Buzz starts and draws; the EV3 stays full. Twenty minutes, one run a minute.
+        r.w.evse.state = Some("Charging".into());
+        r.w.evse.state_id = Some("C".into());
+        r.d.ev_laadvermogen_smartevse_w = 3000.0;
+        for _ in 0..20 {
+            r.wait(60);
+            assert!(r.run(&mut a).is_empty(), "no new notification");
+            assert!(r.m.stalled(Ev3), "the Buzz drawing keeps the EV3's stall");
+            assert!(buzz_allowed(&r), "so the Buzz keeps charging");
+        }
+
+        // The EV3 wakes up and draws: its stall ends and the Buzz waits for it again.
+        r.w.cable.status = Some("charging".into());
+        r.w.cable.power_kw = Some(1.4);
+        r.wait(5);
+        r.run(&mut a);
+        assert!(!r.m.stalled(Ev3) && !r.m.ev_hoger_laadstil);
+        assert_eq!(r.m.ev_hoger_laadstil_sinds, 0.0);
+        assert!(!buzz_allowed(&r));
     }
 
     /// Each listed state change triggers a run; nothing else between the minute marks.
