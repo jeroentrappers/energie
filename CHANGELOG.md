@@ -3,7 +3,7 @@
 This project follows [Semantic Versioning](https://semver.org). While it is at 0.x, a minor
 version may include breaking changes.
 
-## Unreleased
+## 0.5.10 - 2026-11-26
 
 - Charging order: a car that stops taking power is marked as stalled on its own, and only
   that car charging again clears it. With EV3 → Buzz → Batterij and a full EV3, the Buzz
